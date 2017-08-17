@@ -1,7 +1,7 @@
 
 
 #include <engine/graphics.h>
-#include <engine/map.h>
+#include <engine/mapengine.h>
 #include <engine/storage.h>
 #include <game/client/component.h>
 #include <game/mapitems.h>

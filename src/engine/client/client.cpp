@@ -16,7 +16,7 @@
 #include <engine/graphics.h>
 #include <engine/input.h>
 #include <engine/keys.h>
-#include <engine/map.h>
+#include <engine/mapengine.h>
 #include <engine/masterserver.h>
 #include <engine/serverbrowser.h>
 #include <engine/sound.h>

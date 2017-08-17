@@ -5,6 +5,8 @@
 #include "kernel.h"
 #include "message.h"
 
+class CGameMap;
+
 class IServer : public IInterface
 {
 	MACRO_INTERFACE("server", 0)
@@ -64,8 +66,9 @@ public:
 	virtual bool IsAuthed(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 
-	virtual void DemoRecorder_HandleAutoStart() = 0;
-	virtual bool DemoRecorder_IsRecording() = 0;
+	virtual CGameMap *CurrentGameMap(int ClientID) = 0;
+	virtual int GetNumMaps() = 0;
+	virtual CGameMap *GetGameMap(int Index) = 0;
 };
 
 class IGameServer : public IInterface
@@ -89,6 +92,8 @@ public:
 	virtual void OnClientDrop(int ClientID, const char *pReason) = 0;
 	virtual void OnClientDirectInput(int ClientID, void *pInput) = 0;
 	virtual void OnClientPredictedInput(int ClientID, void *pInput) = 0;
+
+	virtual bool GameMapInit(CGameMap *pMap) = 0;
 
 	virtual bool IsClientReady(int ClientID) = 0;
 	virtual bool IsClientPlayer(int ClientID) = 0;

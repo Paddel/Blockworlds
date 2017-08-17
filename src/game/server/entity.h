@@ -74,6 +74,7 @@ public:
 	class CGameWorld *GameWorld() { return m_pGameWorld; }
 	class CGameContext *GameServer() { return GameWorld()->GameServer(); }
 	class IServer *Server() { return GameWorld()->Server(); }
+	class CGameMap *GameMap() { return GameWorld()->GameMap(); }
 
 
 	CEntity *TypeNext() { return m_pNextTypeEntity; }
@@ -105,11 +106,6 @@ public:
 	*/
 	virtual void TickDefered() {}
 
-	/*
-		Function: TickPaused
-			Called when the game is paused, to freeze the state and position of the entity.
-	*/
-	virtual void TickPaused() {}
 
 	/*
 		Function: snap

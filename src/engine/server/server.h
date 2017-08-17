@@ -3,7 +3,18 @@
 #ifndef ENGINE_SERVER_SERVER_H
 #define ENGINE_SERVER_SERVER_H
 
+#include <base/tl/array.h>
+
 #include <engine/server.h>
+#include <engine/masterserver.h>
+#include <engine/shared/netban.h>
+#include <engine/shared/protocol.h>
+#include <engine/shared/snapshot.h>
+#include <engine/shared/network.h>
+#include <engine/shared/econ.h>
+
+#include "register.h"
+#include "map.h"
 
 
 class CSnapIDPool
@@ -122,6 +133,8 @@ public:
 		int m_Authed;
 		int m_AuthTries;
 
+		CMap *m_pMap;
+
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 
 		void Reset();
@@ -136,12 +149,9 @@ public:
 	CEcon m_Econ;
 	CServerBan m_ServerBan;
 
-	IEngineMap *m_pMap;
-
 	int64 m_GameStartTime;
 	//int m_CurrentGameTick;
 	int m_RunServer;
-	int m_MapReload;
 	int m_RconClientID;
 	int m_RconAuthLevel;
 	int m_PrintCBIndex;
@@ -149,14 +159,10 @@ public:
 	int64 m_Lastheartbeat;
 	//static NETADDR4 master_server;
 
-	char m_aCurrentMap[64];
-	unsigned m_CurrentMapCrc;
-	unsigned char *m_pCurrentMapData;
-	int m_CurrentMapSize;
+	array<CMap *> m_lpMaps;
+	CMap *m_pMainMap;
 
-	CDemoRecorder m_DemoRecorder;
 	CRegister m_Register;
-	CMapChecker m_MapChecker;
 
 	CServer();
 
@@ -168,9 +174,6 @@ public:
 	virtual void SetClientScore(int ClientID, int Score);
 
 	void Kick(int ClientID, const char *pReason);
-
-	void DemoRecorder_HandleAutoStart();
-	bool DemoRecorder_IsRecording();
 
 	//int Tick()
 	int64 TickStartTime(int Tick);
@@ -196,6 +199,8 @@ public:
 	static int NewClientCallback(int ClientID, void *pUser);
 	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
+	CMap *FindMap(const char *pName);
+	bool MovePlayer(int ClientID, CMap *pMap);
 	void SendMap(int ClientID);
 	void SendConnectionReady(int ClientID);
 	void SendRconLine(int ClientID, const char *pLine);
@@ -212,8 +217,7 @@ public:
 
 	void PumpNetwork();
 
-	char *GetMapName();
-	int LoadMap(const char *pMapName);
+	CMap *LoadMap(const char *pMapName);
 
 	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
 	int Run();
@@ -221,10 +225,9 @@ public:
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
 	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
-	static void ConRecord(IConsole::IResult *pResult, void *pUser);
-	static void ConStopRecord(IConsole::IResult *pResult, void *pUser);
-	static void ConMapReload(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
+	static void ConAddMap(IConsole::IResult *pResult, void *pUser);
+	static void ConMovePlayer(IConsole::IResult *pResult, void *pUser);
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -237,6 +240,11 @@ public:
 	virtual void SnapFreeID(int ID);
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
+
+	virtual CMap *CurrentMap(int ClientID);
+	virtual CGameMap *CurrentGameMap(int ClientID);
+	virtual int GetNumMaps();
+	virtual CGameMap *GetGameMap(int Index);
 };
 
 #endif

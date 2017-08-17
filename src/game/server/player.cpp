@@ -2,12 +2,14 @@
 
 #include <new>
 #include <engine/shared/config.h>
+#include <game/server/gamemap.h>
 #include "player.h"
 
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
+CGameMap *CPlayer::GameMap() const { return m_pGameServer->Server()->CurrentGameMap(m_ClientID); }
 
 CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 {
@@ -60,37 +62,26 @@ void CPlayer::Tick()
 		}
 	}
 
-	if(!GameServer()->m_World.m_Paused)
+	if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
+		m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
+
+	if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
+		m_Spawning = true;
+
+	if(m_pCharacter)
 	{
-		if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
-			m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
-
-		if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
-			m_Spawning = true;
-
-		if(m_pCharacter)
+		if(m_pCharacter->IsAlive())
 		{
-			if(m_pCharacter->IsAlive())
-			{
-				m_ViewPos = m_pCharacter->m_Pos;
-			}
-			else
-			{
-				delete m_pCharacter;
-				m_pCharacter = 0;
-			}
+			m_ViewPos = m_pCharacter->m_Pos;
 		}
-		else if(m_Spawning && m_RespawnTick <= Server()->Tick())
-			TryRespawn();
+		else
+		{
+			delete m_pCharacter;
+			m_pCharacter = 0;
+		}
 	}
-	else
-	{
-		++m_RespawnTick;
-		++m_DieTick;
-		++m_ScoreStartTick;
-		++m_LastActionTick;
-		++m_TeamChangeTick;
- 	}
+	else if(m_Spawning && m_RespawnTick <= Server()->Tick())
+		TryRespawn();
 }
 
 void CPlayer::PostTick()
@@ -265,8 +256,6 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", m_ClientID, Server()->ClientName(m_ClientID), m_Team);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
-	GameServer()->m_pController->OnPlayerInfoChange(GameServer()->m_apPlayers[m_ClientID]);
-
 	if(Team == TEAM_SPECTATORS)
 	{
 		// update spectator modes
@@ -282,11 +271,11 @@ void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
 
-	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos))
+	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos, GameMap()))
 		return;
 
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
+	m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos);
+	GameServer()->CreatePlayerSpawn(GameMap(), SpawnPos);
 }

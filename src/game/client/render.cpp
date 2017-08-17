@@ -6,7 +6,7 @@
 
 #include <engine/shared/config.h>
 #include <engine/graphics.h>
-#include <engine/map.h>
+#include <engine/mapengine.h>
 #include <game/generated/client_data.h>
 #include <game/generated/protocol.h>
 #include <game/layers.h>

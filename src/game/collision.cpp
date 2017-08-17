@@ -5,7 +5,7 @@
 #include <base/vmath.h>
 
 #include <math.h>
-#include <engine/map.h>
+#include <engine/mapengine.h>
 #include <engine/kernel.h>
 
 #include <game/mapitems.h>
@@ -26,29 +26,6 @@ void CCollision::Init(class CLayers *pLayers)
 	m_Width = m_pLayers->GameLayer()->m_Width;
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
-
-	for(int i = 0; i < m_Width*m_Height; i++)
-	{
-		int Index = m_pTiles[i].m_Index;
-
-		if(Index > 128)
-			continue;
-
-		switch(Index)
-		{
-		case TILE_DEATH:
-			m_pTiles[i].m_Index = COLFLAG_DEATH;
-			break;
-		case TILE_SOLID:
-			m_pTiles[i].m_Index = COLFLAG_SOLID;
-			break;
-		case TILE_NOHOOK:
-			m_pTiles[i].m_Index = COLFLAG_SOLID|COLFLAG_NOHOOK;
-			break;
-		default:
-			m_pTiles[i].m_Index = 0;
-		}
-	}
 }
 
 int CCollision::GetTile(int x, int y)
@@ -61,7 +38,11 @@ int CCollision::GetTile(int x, int y)
 
 bool CCollision::IsTileSolid(int x, int y)
 {
-	return GetTile(x, y)&COLFLAG_SOLID;
+	int Tile = GetTile(x, y);
+	if (Tile == TILE_SOLID || Tile == TILE_NOHOOK)
+		return true;
+	else
+		return false;
 }
 
 // TODO: rewrite this smarter!

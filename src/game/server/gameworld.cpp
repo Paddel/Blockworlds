@@ -4,6 +4,7 @@
 #include "gameworld.h"
 #include "entity.h"
 #include "gamecontext.h"
+#include "gamemap.h"
 
 //////////////////////////////////////////////////
 // game world
@@ -13,7 +14,6 @@ CGameWorld::CGameWorld()
 	m_pGameServer = 0x0;
 	m_pServer = 0x0;
 
-	m_Paused = false;
 	m_ResetRequested = false;
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 		m_apFirstEntityTypes[i] = 0;
@@ -27,10 +27,11 @@ CGameWorld::~CGameWorld()
 			delete m_apFirstEntityTypes[i];
 }
 
-void CGameWorld::SetGameServer(CGameContext *pGameServer)
+void CGameWorld::SetGameMap(CGameMap *pGameMap)
 {
-	m_pGameServer = pGameServer;
-	m_pServer = m_pGameServer->Server();
+	m_pGameMap = pGameMap;
+	m_pGameServer = pGameMap->GameServer();
+	m_pServer = pGameMap->GameServer()->Server();
 }
 
 CEntity *CGameWorld::FindFirst(int Type)
@@ -152,38 +153,24 @@ void CGameWorld::Tick()
 	if(m_ResetRequested)
 		Reset();
 
-	if(!m_Paused)
-	{
-		if(GameServer()->m_pController->IsForceBalanced())
-			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "Teams have been balanced");
-		// update all objects
-		for(int i = 0; i < NUM_ENTTYPES; i++)
-			for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
-			{
-				m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-				pEnt->Tick();
-				pEnt = m_pNextTraverseEntity;
-			}
+	if(GameServer()->m_pController->IsForceBalanced())
+		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "Teams have been balanced");
+	// update all objects
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
+		{
+			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
+			pEnt->Tick();
+			pEnt = m_pNextTraverseEntity;
+		}
 
-		for(int i = 0; i < NUM_ENTTYPES; i++)
-			for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
-			{
-				m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-				pEnt->TickDefered();
-				pEnt = m_pNextTraverseEntity;
-			}
-	}
-	else
-	{
-		// update all objects
-		for(int i = 0; i < NUM_ENTTYPES; i++)
-			for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
-			{
-				m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-				pEnt->TickPaused();
-				pEnt = m_pNextTraverseEntity;
-			}
-	}
+	for(int i = 0; i < NUM_ENTTYPES; i++)
+		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
+		{
+			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
+			pEnt->TickDefered();
+			pEnt = m_pNextTraverseEntity;
+		}
 
 	RemoveEntities();
 }
@@ -226,7 +213,7 @@ CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotTh
 	float ClosestRange = Radius*2;
 	CCharacter *pClosest = 0;
 
-	CCharacter *p = (CCharacter *)GameServer()->m_World.FindFirst(ENTTYPE_CHARACTER);
+	CCharacter *p = (CCharacter *)FindFirst(ENTTYPE_CHARACTER);
 	for(; p; p = (CCharacter *)p->TypeNext())
  	{
 		if(p == pNotThis)

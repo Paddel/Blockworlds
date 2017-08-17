@@ -5,16 +5,15 @@
 
 #include <base/vmath.h>
 
+class CGameMap;
+
 /*
 	Class: Game Controller
 		Controls the main game logic. Keeping track of team and player score,
 		winning conditions and specific game logic.
 */
-class IGameController
+class CGameController
 {
-	vec2 m_aaSpawnPoints[3][64];
-	int m_aNumSpawnPoints[3];
-
 	class CGameContext *m_pGameServer;
 	class IServer *m_pServer;
 
@@ -37,15 +36,9 @@ protected:
 		float m_Score;
 	};
 
-	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos);
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type);
+	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, CGameMap *pGameMap);
+	void EvaluateSpawnType(CSpawnEval *pEval, int Type, CGameMap *pGameMap);
 	bool EvaluateSpawn(class CPlayer *pP, vec2 *pPos);
-
-	void CycleMap();
-	void ResetGame();
-
-	char m_aMapWish[128];
-
 
 	int m_RoundStartTick;
 	int m_GameOverTick;
@@ -64,20 +57,8 @@ protected:
 public:
 	const char *m_pGameType;
 
-	bool IsTeamplay() const;
-	bool IsGameOver() const { return m_GameOverTick != -1; }
-
-	IGameController(class CGameContext *pGameServer);
-	virtual ~IGameController();
-
-	virtual void DoWincheck();
-
-	void DoWarmup(int Seconds);
-	void TogglePause();
-
-	void StartRound();
-	void EndRound();
-	void ChangeMap(const char *pToMap);
+	CGameController(class CGameContext *pGameServer);
+	virtual ~CGameController();
 
 	bool IsFriendlyFire(int ClientID1, int ClientID2);
 
@@ -86,7 +67,6 @@ public:
 	/*
 
 	*/
-	virtual bool CanBeMovedOnBalance(int ClientID);
 
 	virtual void Tick();
 
@@ -104,7 +84,7 @@ public:
 		Returns:
 			bool?
 	*/
-	virtual bool OnEntity(int Index, vec2 Pos);
+	virtual bool OnEntity(int Index, vec2 Pos, CGameMap *pGameMap);
 
 	/*
 		Function: on_CCharacter_spawn
@@ -128,19 +108,14 @@ public:
 	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
 
 
-	virtual void OnPlayerInfoChange(class CPlayer *pP);
-
 	//
-	virtual bool CanSpawn(int Team, vec2 *pPos);
+	virtual bool CanSpawn(int Team, vec2 *pPos, CGameMap *pGameMap);
 
 	/*
 
 	*/
 	virtual const char *GetTeamName(int Team);
-	virtual int GetAutoTeam(int NotThisID);
 	virtual bool CanJoinTeam(int Team, int NotThisID);
-	bool CheckTeamBalance();
-	bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam);
 	int ClampTeam(int Team);
 
 	virtual void PostReset();

@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
 
+#include <base/tl/array.h>
+
 #include <engine/server.h>
 #include <engine/console.h>
 #include <engine/shared/memheap.h>
@@ -10,9 +12,7 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
-#include "eventhandler.h"
 #include "gamecontroller.h"
-#include "gameworld.h"
 #include "player.h"
 
 /*
@@ -40,23 +40,16 @@ class CGameContext : public IGameServer
 {
 	IServer *m_pServer;
 	class IConsole *m_pConsole;
-	CLayers m_Layers;
-	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneDump(IConsole::IResult *pResult, void *pUserData);
-	static void ConPause(IConsole::IResult *pResult, void *pUserData);
-	static void ConChangeMap(IConsole::IResult *pResult, void *pUserData);
-	static void ConRestart(IConsole::IResult *pResult, void *pUserData);
 	static void ConBroadcast(IConsole::IResult *pResult, void *pUserData);
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeamAll(IConsole::IResult *pResult, void *pUserData);
-	static void ConSwapTeams(IConsole::IResult *pResult, void *pUserData);
-	static void ConShuffleTeams(IConsole::IResult *pResult, void *pUserData);
 	static void ConLockTeams(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveVote(IConsole::IResult *pResult, void *pUserData);
@@ -72,7 +65,6 @@ class CGameContext : public IGameServer
 public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
-	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 
 	CGameContext();
@@ -80,11 +72,9 @@ public:
 
 	void Clear();
 
-	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
 
-	IGameController *m_pController;
-	CGameWorld m_World;
+	CGameController *m_pController;
 
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);
@@ -118,12 +108,12 @@ public:
 	CVoteOptionServer *m_pVoteOptionLast;
 
 	// helper functions
-	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage);
-	void CreateHammerHit(vec2 Pos);
-	void CreatePlayerSpawn(vec2 Pos);
-	void CreateDeath(vec2 Pos, int Who);
-	void CreateSound(vec2 Pos, int Sound, int Mask=-1);
+	void CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float AngleMod, int Amount);
+	void CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner, int Weapon, bool NoDamage);
+	void CreateHammerHit(CGameMap *pGameMap, vec2 Pos);
+	void CreatePlayerSpawn(CGameMap *pGameMap, vec2 Pos);
+	void CreateDeath(CGameMap *pGameMap, vec2 Pos, int Who);
+	void CreateSound(CGameMap *pGameMap, vec2 Pos, int Sound, int Mask=-1);
 	void CreateSoundGlobal(int Sound, int Target=-1);
 
 
@@ -147,9 +137,6 @@ public:
 	void CheckPureTuning();
 	void SendTuningParams(int ClientID);
 
-	//
-	void SwapTeams();
-
 	// engine events
 	virtual void OnInit();
 	virtual void OnConsoleInit();
@@ -167,6 +154,8 @@ public:
 	virtual void OnClientDrop(int ClientID, const char *pReason);
 	virtual void OnClientDirectInput(int ClientID, void *pInput);
 	virtual void OnClientPredictedInput(int ClientID, void *pInput);
+
+	virtual bool GameMapInit(CGameMap *pMap);
 
 	virtual bool IsClientReady(int ClientID);
 	virtual bool IsClientPlayer(int ClientID);

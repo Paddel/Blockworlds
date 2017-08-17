@@ -102,6 +102,7 @@ private:
 
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const;
+	CGameMap *GameMap() const;
 
 	//
 	bool m_Spawning;

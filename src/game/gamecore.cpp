@@ -1,4 +1,5 @@
 
+#include <game/mapitems.h>
 
 #include "gamecore.h"
 
@@ -200,7 +201,7 @@ void CCharacterCore::Tick(bool UseInput)
 		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0);
 		if(Hit)
 		{
-			if(Hit&CCollision::COLFLAG_NOHOOK)
+			if(Hit == TILE_NOHOOK)
 				GoingToRetract = true;
 			else
 				GoingToHitGround = true;

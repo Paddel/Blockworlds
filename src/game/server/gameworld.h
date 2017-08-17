@@ -33,21 +33,22 @@ private:
 	CEntity *m_pNextTraverseEntity;
 	CEntity *m_apFirstEntityTypes[NUM_ENTTYPES];
 
+	class CGameMap *m_pGameMap;
 	class CGameContext *m_pGameServer;
 	class IServer *m_pServer;
 
 public:
 	class CGameContext *GameServer() { return m_pGameServer; }
 	class IServer *Server() { return m_pServer; }
+	class CGameMap *GameMap() { return m_pGameMap; }
 
 	bool m_ResetRequested;
-	bool m_Paused;
 	CWorldCore m_Core;
 
 	CGameWorld();
 	~CGameWorld();
 
-	void SetGameServer(CGameContext *pGameServer);
+	void SetGameMap(CGameMap *pGameMap);
 
 	CEntity *FindFirst(int Type);
 

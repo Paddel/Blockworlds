@@ -3,6 +3,7 @@
 #ifndef GAME_COLLISION_H
 #define GAME_COLLISION_H
 
+#include <base/math.h>
 #include <base/vmath.h>
 
 class CCollision
@@ -16,12 +17,6 @@ class CCollision
 	int GetTile(int x, int y);
 
 public:
-	enum
-	{
-		COLFLAG_SOLID=1,
-		COLFLAG_DEATH=2,
-		COLFLAG_NOHOOK=4,
-	};
 
 	CCollision();
 	void Init(class CLayers *pLayers);

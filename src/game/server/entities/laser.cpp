@@ -2,6 +2,7 @@
 
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
+#include <game/server/gamemap.h>
 #include "laser.h"
 
 CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
@@ -22,7 +23,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
 	vec2 At;
 	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
-	CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
+	CCharacter *pHit = GameWorld()->IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
 	if(!pHit)
 		return false;
 
@@ -39,13 +40,13 @@ void CLaser::DoBounce()
 
 	if(m_Energy < 0)
 	{
-		GameServer()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
 	vec2 To = m_Pos + m_Dir * m_Energy;
 
-	if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
+	if(GameMap()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
 	{
 		if(!HitCharacter(m_Pos, To))
 		{
@@ -56,7 +57,7 @@ void CLaser::DoBounce()
 			vec2 TempPos = m_Pos;
 			vec2 TempDir = m_Dir * 4.0f;
 
-			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
+			GameMap()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
 			m_Pos = TempPos;
 			m_Dir = normalize(TempDir);
 
@@ -66,7 +67,7 @@ void CLaser::DoBounce()
 			if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
 				m_Energy = -1;
 
-			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
+			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_RIFLE_BOUNCE);
 		}
 	}
 	else
@@ -82,7 +83,7 @@ void CLaser::DoBounce()
 
 void CLaser::Reset()
 {
-	GameServer()->m_World.DestroyEntity(this);
+	GameWorld()->DestroyEntity(this);
 }
 
 void CLaser::Tick()

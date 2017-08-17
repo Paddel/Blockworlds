@@ -1,5 +1,5 @@
-
-
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef ENGINE_MAP_H
 #define ENGINE_MAP_H
 
@@ -30,5 +30,26 @@ public:
 };
 
 extern IEngineMap *CreateEngineMap();
+
+class CEngineMap : public IMap
+{
+	class CDataFileReader *m_pDataFile;
+
+public:
+	CEngineMap();
+
+	virtual void *GetData(int Index);
+	virtual void *GetDataSwapped(int Index);
+	virtual void UnloadData(int Index);
+	virtual void *GetItem(int Index, int *pType, int *pID);
+	virtual void GetType(int Type, int *pStart, int *pNum);
+	virtual void *FindItem(int Type, int ID);
+	virtual int NumItems();
+
+	bool Load(const char *pMapName, class IStorage *pStorage);
+	bool IsLoaded();
+	void Unload();
+	unsigned Crc();
+};
 
 #endif

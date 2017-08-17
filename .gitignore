@@ -22,3 +22,11 @@ tileset_border*
 versionsrv*
 
 bam.exe
+logs.txt
+*.db
+Blockworlds_cl_d.pdb
+*.pdb
+Blockworlds_cl_d.exe
+*.exe
+*.sln
+*.suo

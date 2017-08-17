@@ -6,7 +6,7 @@
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 #include <engine/demo.h>
-#include <engine/map.h>
+#include <engine/mapengine.h>
 #include <engine/storage.h>
 #include <engine/sound.h>
 #include <engine/serverbrowser.h>
@@ -313,7 +313,7 @@ int CGameClient::OnSnapInput(int *pData)
 
 void CGameClient::OnConnected()
 {
-	m_Layers.Init(Kernel());
+	m_Layers.Init(Kernel()->RequestInterface<IMap>());
 	m_Collision.Init(Layers());
 
 	RenderTools()->RenderTilemapGenerateSkip(Layers());
