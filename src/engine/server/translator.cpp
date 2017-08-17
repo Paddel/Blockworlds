@@ -10,7 +10,7 @@
 #include "server.h"
 #include "translator.h"
 
-#define THREADING 0
+#define THREADING 1
 
 typedef std::pair<long double, int> CSortItem;
 
@@ -60,7 +60,7 @@ void CTranslator::SortMap(void *pData)
 			else
 			{
 				vec2 DeltaPos = OwnPos - pTranslateItem->m_Pos;
-				Distance = distance(OwnPos, pTranslateItem->m_Pos);//length(DeltaPos);//DeltaPos.x*DeltaPos.x + DeltaPos.y*DeltaPos.y;//no sqrt = way better performance
+				Distance = DeltaPos.x*DeltaPos.x + DeltaPos.y*DeltaPos.y;//no sqrt = way better performance
 			}
 
 			aSortItems[i].first = Distance;
