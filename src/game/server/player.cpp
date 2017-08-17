@@ -119,13 +119,10 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, TranslatedID, sizeof(CNetObj_ClientInfo)));
-	if(!pClientInfo)
+	if (!pClientInfo)
 		return;
 
-	char aBuf[32];
-	str_format(aBuf, sizeof(aBuf), "%i %i", m_ClientID, TranslatedID);
-
-	StrToInts(&pClientInfo->m_Name0, 4, aBuf);// Server()->ClientName(m_ClientID));
+	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
 	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
