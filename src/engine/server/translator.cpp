@@ -38,7 +38,65 @@ void CTranslator::SortMap(void *pData)
 	}
 
 	//Check if we can do easy filling
+	if (pSortionData->m_NumTranslateItems < pSortionData->m_UsingMapItems)// <= if you dont need last id
+	{
+		short OldMap[MAX_CLIENTS];
+		mem_copy(OldMap, pSortionData->m_aIDMap, sizeof(OldMap));
+		short *aFillingList = new short[pSortionData->m_NumTranslateItems];
+		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+			aFillingList[i] = pSortionData->m_aTranslateItems[i].m_ClientID;
 
+		for (int i = 0; i < MAX_CLIENTS; i++)
+			pSortionData->m_aIDMap[i] = -1;
+
+		//fill in correct IDs
+		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+		{
+			if (aFillingList[i] >= pSortionData->m_UsingMapItems)
+				continue;
+
+			pSortionData->m_aIDMap[aFillingList[i]] = aFillingList[i];
+			aFillingList[i] = -1;//do not fill me anywhere else
+		}
+
+		//fill in already inserted IDs
+		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+		{
+			if (aFillingList[i] == -1)
+				continue;
+
+			for (int j = pSortionData->m_UsingMapItems - 2; j >= 0; j--)// -1 if you dont need last id
+			{
+				if (OldMap[j] == aFillingList[i] && pSortionData->m_aIDMap[j] == -1)
+				{
+					pSortionData->m_aIDMap[j] = aFillingList[i];
+					aFillingList[i] = -1;//do not fill me anywhere else
+					break;
+				}
+
+			}
+		}
+
+		//fill in rest
+		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+		{
+			if (aFillingList[i] == -1)
+				continue;
+
+			for (int j = pSortionData->m_UsingMapItems - 2; j >= 0; j--)// -1 if you dont need last id
+			{
+				if (pSortionData->m_aIDMap[j] == -1)
+				{
+					pSortionData->m_aIDMap[j] = aFillingList[i];
+					break;
+				}
+
+			}
+		}
+		delete aFillingList;
+
+	}
+	else
 	{
 		if (pOwnTranslateItem == 0x0)// cannot calculate distances if we are not in liste
 		{
@@ -48,7 +106,6 @@ void CTranslator::SortMap(void *pData)
 
 		CSortItem *aSortItems = new CSortItem[pSortionData->m_NumTranslateItems];
 		//GetDistances
-		vec2 OwnPos = pOwnTranslateItem->m_Pos;
 		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
 		{
 			long double Distance;
@@ -59,7 +116,7 @@ void CTranslator::SortMap(void *pData)
 				Distance = LDBL_MAX - 1;
 			else
 			{
-				vec2 DeltaPos = OwnPos - pTranslateItem->m_Pos;
+				vec2 DeltaPos = pOwnTranslateItem->m_Pos - pTranslateItem->m_Pos;
 				Distance = DeltaPos.x*DeltaPos.x + DeltaPos.y*DeltaPos.y;//no sqrt = way better performance
 			}
 
@@ -70,18 +127,18 @@ void CTranslator::SortMap(void *pData)
 		short OldMap[MAX_CLIENTS];
 		mem_copy(OldMap, pSortionData->m_aIDMap, sizeof(OldMap));
 
-		if (g_Config.m_Password[0] == '1')
+		/*if (g_Config.m_Password[0] == '1')
 			for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
-				dbg_msg(0, "b[%i]", aSortItems[i].second);
+				dbg_msg(0, "b[%i]", aSortItems[i].second);*/
 
 		//std::sort(aSortItems, aSortItems + pSortionData->m_NumTranslateItems);
 		bubblesort(aSortItems, pSortionData->m_NumTranslateItems);
 
-		if (g_Config.m_Password[0] == '1')
+		/*if (g_Config.m_Password[0] == '1')
 			for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
 				dbg_msg(0, "b[%i]", aSortItems[i].second);
 
-		g_Config.m_Password[0] = '\0';
+		g_Config.m_Password[0] = '\0';*/
 
 		for (int i = 0; i < MAX_CLIENTS; i++)
 			pSortionData->m_aIDMap[i] = -1;
