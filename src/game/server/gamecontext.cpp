@@ -571,10 +571,12 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
 	AbortVoteKickOnDisconnect(ClientID);
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
+
+	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+	pGameMap->PlayerLeave(ClientID);
+
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
-	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
-	pGameMap->PlayerJoin(ClientID);
 
 	m_VoteUpdate = true;
 
