@@ -791,7 +791,11 @@ void CCharacter::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
+	int TranslatedID = Server()->Translate(SnappingClient, m_pPlayer->GetCID());
+	if (TranslatedID == -1)
+		return;
+
+	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, TranslatedID, sizeof(CNetObj_Character)));
 	if(!pCharacter)
 		return;
 
@@ -827,8 +831,10 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_Direction = m_Input.m_Direction;
 
+
+	int SpectatingID = Server()->ReverseTranslate(SnappingClient, GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID);
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
-		(!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
+		(!g_Config.m_SvStrictSpectateMode && SpectatingID != -1 && m_pPlayer->GetCID() == SpectatingID))
 	{
 		pCharacter->m_Health = m_Health;
 		pCharacter->m_Armor = m_Armor;
@@ -843,4 +849,11 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+
+	//translate hook
+	if (pCharacter->m_HookedPlayer != -1)
+	{
+		int HookingID = Server()->Translate(SnappingClient, pCharacter->m_HookedPlayer);
+		pCharacter->m_HookedPlayer = HookingID;
+	}
 }

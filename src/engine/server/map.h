@@ -26,6 +26,7 @@ public:
 	~CMap();
 
 	bool Init(const char *pFileName);
+	bool HasFreePlayerSlot();
 
 	const char *GetFileName() const { return m_aFileName; };
 	unsigned GetMapCrc() const { return m_MapCrc; };

@@ -204,7 +204,7 @@ int CServerBan::BanExt(T *pBanPool, const typename T::CDataType *pData, int Seco
 			CNetHash NetHash(&Data);
 			char aBuf[256];
 			MakeBanInfo(pBanPool->Find(&Data, &NetHash), aBuf, sizeof(aBuf), MSGTYPE_PLAYER);
-			Server()->m_NetServer.Drop(i, aBuf);
+			Server()->DropClient(i, aBuf);
 		}
 	}
 
@@ -261,7 +261,7 @@ void CServer::CClient::Reset()
 	m_Score = 0;
 }
 
-CServer::CServer()
+CServer::CServer() : m_Translator(this)
 {
 	m_TickSpeed = SERVER_TICK_SPEED;
 
@@ -385,23 +385,18 @@ void CServer::Kick(int ClientID, const char *pReason)
  		return;
 	}
 
-	m_NetServer.Drop(ClientID, pReason);
+	DropClient(ClientID, pReason);
 }
 
-/*int CServer::Tick()
+void CServer::DropClient(int ClientID, const char *pReason)
 {
-	return m_CurrentGameTick;
-}*/
+	m_NetServer.Drop(ClientID, pReason);
+}
 
 int64 CServer::TickStartTime(int Tick)
 {
 	return m_GameStartTime + (time_freq()*Tick)/SERVER_TICK_SPEED;
 }
-
-/*int CServer::TickSpeed()
-{
-	return SERVER_TICK_SPEED;
-}*/
 
 int CServer::Init()
 {
@@ -706,8 +701,8 @@ CMap *CServer::FindMap(const char *pName)
 bool CServer::MovePlayer(int ClientID, CMap *pMap)
 {
 	CMap *pCurrentMap = CurrentMap(ClientID);
-	if (!pMap || pMap == pCurrentMap || m_aClients[ClientID].m_State != CClient::STATE_INGAME)
-		return false;//invalid map || already on the map || is already changing the map
+	if (!pMap || pMap == pCurrentMap || m_aClients[ClientID].m_State != CClient::STATE_INGAME || pMap->HasFreePlayerSlot())
+		return false;//invalid map || already on the map || is already changing the map || Map is full
 
 	m_aClients[ClientID].m_pMap = pMap;
 
@@ -818,7 +813,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					// wrong version
 					char aReason[256];
 					str_format(aReason, sizeof(aReason), "Wrong version. Server is running '%s' and client '%s'", GameServer()->NetVersion(), pVersion);
-					m_NetServer.Drop(ClientID, aReason);
+					DropClient(ClientID, aReason);
 					return;
 				}
 
@@ -826,7 +821,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				if(g_Config.m_Password[0] != 0 && str_comp(g_Config.m_Password, pPassword) != 0)
 				{
 					// wrong password
-					m_NetServer.Drop(ClientID, "Wrong password");
+					DropClient(ClientID, "Wrong password");
 					return;
 				}
 
@@ -1024,7 +1019,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					if(m_aClients[ClientID].m_AuthTries >= g_Config.m_SvRconMaxTries)
 					{
 						if(!g_Config.m_SvRconBantime)
-							m_NetServer.Drop(ClientID, "Too many remote console authentication tries");
+							DropClient(ClientID, "Too many remote console authentication tries");
 						else
 							m_ServerBan.BanAddr(m_NetServer.ClientAddr(ClientID), g_Config.m_SvRconBantime*60, "Too many remote console authentication tries");
 					}
@@ -1217,7 +1212,7 @@ bool CServer::RemoveMap(const char *pMapName)
 
 		if (pMap == m_aClients[i].m_pMap &&
 			MovePlayer(i, m_pDefaultMap) == false)
-			m_NetServer.Drop(i, "Map has been removed. Please reconnect");
+			DropClient(i, "Map has been removed. Please reconnect");
 	}
 
 	m_lpMaps.remove_index(Index);
@@ -1261,7 +1256,7 @@ bool CServer::ReloadMap(const char *pMapName)
 
 		if (pMap == m_aClients[i].m_pMap &&
 			MovePlayer(i, m_pDefaultMap) == false)
-			m_NetServer.Drop(i, "Map has been reloaded. Please reconnect");
+			DropClient(i, "Map has been reloaded. Please reconnect");
 	}
 
 	delete pMap;
@@ -1350,6 +1345,8 @@ int CServer::Run()
 			int64 t = time_get();
 			int NewTicks = 0;
 
+			m_Translator.Tick();
+
 			while(t > TickStartTime(m_CurrentGameTick+1))
 			{
 				m_CurrentGameTick++;
@@ -1421,7 +1418,7 @@ int CServer::Run()
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
-			m_NetServer.Drop(i, "Server shutdown");
+			DropClient(i, "Server shutdown");
 
 		m_Econ.Shutdown();
 	}
@@ -1686,12 +1683,29 @@ void CServer::SnapSetStaticsize(int ItemType, int Size)
 
 CMap *CServer::CurrentMap(int ClientID)
 {
-	return m_aClients[ClientID].m_pMap;
+	if (m_aClients[ClientID].m_State != CServer::CClient::STATE_EMPTY)
+		return m_aClients[ClientID].m_pMap;
+	return 0x0;
+}
+
+int CServer::CurrentMapIndex(int ClientID)
+{
+	for (int i = 0; i < m_lpMaps.size(); i++)
+		if (m_lpMaps[i] == CurrentMap(ClientID))
+			return i;
+	return -1;//should only happen if client is offline
+}
+
+int CServer::UsingMapItems(int ClientID)
+{
+	return 16;
 }
 
 CGameMap *CServer::CurrentGameMap(int ClientID)
 {
-	return m_aClients[ClientID].m_pMap->GameMap();
+	if (m_aClients[ClientID].m_State != CServer::CClient::STATE_EMPTY)
+		return m_aClients[ClientID].m_pMap->GameMap();
+	return 0x0;
 }
 
 int CServer::GetNumMaps()

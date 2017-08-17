@@ -65,10 +65,14 @@ public:
 	virtual void SetRconCID(int ClientID) = 0;
 	virtual bool IsAuthed(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
+	virtual void DropClient(int ClientID, const char *pReason) = 0;
 
 	virtual CGameMap *CurrentGameMap(int ClientID) = 0;
 	virtual int GetNumMaps() = 0;
 	virtual CGameMap *GetGameMap(int Index) = 0;
+
+	virtual int Translate(int For, int ClientID) = 0;
+	virtual int ReverseTranslate(int For, int ClientID) = 0;
 };
 
 class IGameServer : public IInterface

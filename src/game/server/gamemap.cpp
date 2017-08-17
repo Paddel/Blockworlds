@@ -1,4 +1,6 @@
 
+
+#include <engine/shared/config.h>
 #include <engine/server/map.h>
 #include <game/server/gamecontext.h>
 
@@ -11,11 +13,13 @@ CGameMap::CGameMap(CMap *pMap)
 	m_aNumSpawnPoints[0] = 0;
 	m_aNumSpawnPoints[1] = 0;
 	m_aNumSpawnPoints[2] = 0;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		m_apPlayers[i] = 0;
 }
 
 CGameMap::~CGameMap()
 {
-
 }
 
 bool CGameMap::Init(CGameContext *pGameServer)
@@ -48,4 +52,54 @@ bool CGameMap::Init(CGameContext *pGameServer)
 	}
 
 	return true;
+}
+
+int CGameMap::FreePlayerSlot()
+{
+	int Slot = -1;
+	for (int i = 0; i < g_Config.m_SvMaxClientsPerMap; i++)
+		if(m_apPlayers[i] == 0x0)
+		{ Slot = i; break; }
+
+	return Slot;
+}
+
+bool CGameMap::PlayerJoin(int ClientID)
+{
+	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
+	int Slot = FreePlayerSlot();
+	if (Slot == -1 || pPlayer == 0x0)
+		return false;
+
+	m_apPlayers[Slot] = pPlayer;
+	return true;
+}
+
+void CGameMap::PlayerLeave(int ClientID)
+{
+	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		if (m_apPlayers[i] == pPlayer)
+			m_apPlayers[i] = 0x0;
+}
+
+int CGameMap::NumTranslateItems()
+{
+	int Num = 0;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		if (m_apPlayers[i] != 0x0)
+			Num++;
+
+	// + npcs
+	return Num;
+}
+
+void CGameMap::FillTranslateItems(CTranslateItem *pTranslateItems)
+{
+	int Num = 0;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		if (m_apPlayers[i] != 0x0)
+			mem_copy(&pTranslateItems[Num++], m_apPlayers[i]->GetTranslateItem(), sizeof(CTranslateItem));
+
+	// npcs
 }

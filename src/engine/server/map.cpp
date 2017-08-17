@@ -60,3 +60,8 @@ bool CMap::Init(const char *pFileName)
 
 	return true;
 }
+
+bool CMap::HasFreePlayerSlot()
+{
+	return GameMap()->FreePlayerSlot() != -1;
+}

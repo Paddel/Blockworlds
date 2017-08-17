@@ -4,6 +4,8 @@
 #define GAME_SERVER_PLAYER_H
 
 // this include should perhaps be removed
+#include <engine/server/translator.h>
+
 #include "entities/character.h"
 #include "gamecontext.h"
 
@@ -34,6 +36,8 @@ public:
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
+
+	CTranslateItem *GetTranslateItem() { return &m_TranslateItem; };
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -103,6 +107,7 @@ private:
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const;
 	CGameMap *GameMap() const;
+	CTranslateItem m_TranslateItem;
 
 	//
 	bool m_Spawning;

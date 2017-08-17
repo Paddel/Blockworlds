@@ -99,6 +99,11 @@ void CPlayer::PostTick()
 	// update view pos for spectators
 	if(m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW && GameServer()->m_apPlayers[m_SpectatorID])
 		m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
+
+	//update translate item
+	m_TranslateItem.m_Pos = m_ViewPos;
+	m_TranslateItem.m_Team = m_Team;
+	m_TranslateItem.m_ClientID = m_ClientID;
 }
 
 void CPlayer::Snap(int SnappingClient)
@@ -109,7 +114,11 @@ void CPlayer::Snap(int SnappingClient)
 	if(!Server()->ClientIngame(m_ClientID))
 		return;
 
-	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, m_ClientID, sizeof(CNetObj_ClientInfo)));
+	int TranslatedID = Server()->Translate(SnappingClient, m_ClientID);
+	if (TranslatedID == -1)
+		return;
+
+	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, TranslatedID, sizeof(CNetObj_ClientInfo)));
 	if(!pClientInfo)
 		return;
 
@@ -121,22 +130,22 @@ void CPlayer::Snap(int SnappingClient)
 	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
 	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 
-	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
+	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, TranslatedID, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
 		return;
 
-	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
+	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[TranslatedID];
 	pPlayerInfo->m_Local = 0;
-	pPlayerInfo->m_ClientID = m_ClientID;
+	pPlayerInfo->m_ClientID = TranslatedID;
 	pPlayerInfo->m_Score = m_Score;
 	pPlayerInfo->m_Team = m_Team;
 
 	if(m_ClientID == SnappingClient)
 		pPlayerInfo->m_Local = 1;
 
-	if(m_ClientID == SnappingClient && m_Team == TEAM_SPECTATORS)
+	if(TranslatedID == SnappingClient && m_Team == TEAM_SPECTATORS)
 	{
-		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
+		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, TranslatedID, sizeof(CNetObj_SpectatorInfo)));
 		if(!pSpectatorInfo)
 			return;
 

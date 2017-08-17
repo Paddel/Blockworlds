@@ -542,8 +542,12 @@ void CGameContext::OnClientConnected(int ClientID)
 	const int StartTeam = g_Config.m_SvTournamentMode ? TEAM_SPECTATORS : 0;
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
-	//players[client_id].init(client_id);
-	//players[client_id].client_id = client_id;
+	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+	if (pGameMap->PlayerJoin(ClientID) == 0)
+	{
+		Server()->DropClient(ClientID, "Map is full");
+		return;
+	}
 
 #ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)
@@ -569,6 +573,8 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
+	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+	pGameMap->PlayerJoin(ClientID);
 
 	m_VoteUpdate = true;
 

@@ -13,6 +13,7 @@
 #include <engine/shared/network.h>
 #include <engine/shared/econ.h>
 
+#include "translator.h"
 #include "register.h"
 #include "map.h"
 
@@ -148,6 +149,7 @@ public:
 	CNetServer m_NetServer;
 	CEcon m_Econ;
 	CServerBan m_ServerBan;
+	CTranslator m_Translator;
 
 	int64 m_GameStartTime;
 	//int m_CurrentGameTick;
@@ -173,7 +175,8 @@ public:
 	virtual void SetClientCountry(int ClientID, int Country);
 	virtual void SetClientScore(int ClientID, int Score);
 
-	void Kick(int ClientID, const char *pReason);
+	virtual void Kick(int ClientID, const char *pReason);
+	virtual void DropClient(int ClientID, const char *pReason);
 
 	//int Tick()
 	int64 TickStartTime(int Tick);
@@ -246,10 +249,17 @@ public:
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
 
-	virtual CMap *CurrentMap(int ClientID);
+	CMap *CurrentMap(int ClientID);
+	int CurrentMapIndex(int ClientID);
+	int UsingMapItems(int ClientID);
+
 	virtual CGameMap *CurrentGameMap(int ClientID);
 	virtual int GetNumMaps();
 	virtual CGameMap *GetGameMap(int Index);
+
+
+	virtual int Translate(int For, int ClientID) { return m_Translator.Translate(For, ClientID); };
+	virtual int ReverseTranslate(int For, int ClientID) { return m_Translator.ReverseTranslate(For, ClientID); };
 };
 
 #endif
