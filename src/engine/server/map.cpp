@@ -19,8 +19,10 @@ CMap::CMap(CServer *pServer)
 
 CMap::~CMap()
 {
+	delete m_pGameMap;
+	//delete m_pMapData;
+	mem_free(m_pMapData);
 	m_EngineMap.Unload();
-	delete m_pMapData;
 }
 
 bool CMap::LoadMapFile()
@@ -43,9 +45,6 @@ bool CMap::LoadMapFile()
 	{
 		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
 		m_MapSize = (int)io_length(File);
-		if (m_pMapData)
-			mem_free(m_pMapData);
-
 		m_pMapData = (unsigned char *)mem_alloc(m_MapSize, 1);
 		io_read(File, m_pMapData, m_MapSize);
 		io_close(File);

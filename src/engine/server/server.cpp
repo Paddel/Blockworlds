@@ -665,7 +665,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMap = pThis->m_pMainMap;
+	pThis->m_aClients[ClientID].m_pMap = pThis->m_pDefaultMap;
 	pThis->m_aClients[ClientID].Reset();
 	return 0;
 }
@@ -698,7 +698,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 CMap *CServer::FindMap(const char *pName)
 {
 	for (int i = 0; i < m_lpMaps.size(); i++)
-		if (str_comp(m_lpMaps[i]->m_aFileName, pName) == 0)
+		if (str_comp(m_lpMaps[i]->GetFileName(), pName) == 0)
 			return m_lpMaps[i];
 	return false;
 }
@@ -723,9 +723,9 @@ void CServer::SendMap(int ClientID)
 	CMap *pCurrentMap = CurrentMap(ClientID);
 
 	CMsgPacker Msg(NETMSG_MAP_CHANGE);
-	Msg.AddString(pCurrentMap->m_aFileName, 0);
-	Msg.AddInt(pCurrentMap->m_MapCrc);
-	Msg.AddInt(pCurrentMap->m_MapSize);
+	Msg.AddString(pCurrentMap->GetFileName(), 0);
+	Msg.AddInt(pCurrentMap->GetMapCrc());
+	Msg.AddInt(pCurrentMap->GetMapSize());
 	SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID, true);
 }
 
@@ -846,12 +846,12 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			int Last = 0;
 
 			// drop faulty map data requests
-			if(Chunk < 0 || Offset > pMap->m_MapSize)
+			if(Chunk < 0 || Offset > pMap->GetMapSize())
 				return;
 
-			if(Offset+ChunkSize >= pMap->m_MapSize)
+			if(Offset+ChunkSize >= pMap->GetMapSize())
 			{
-				ChunkSize = pMap->m_MapSize-Offset;
+				ChunkSize = pMap->GetMapSize()-Offset;
 				if(ChunkSize < 0)
 					ChunkSize = 0;
 				Last = 1;
@@ -859,10 +859,10 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 			CMsgPacker Msg(NETMSG_MAP_DATA);
 			Msg.AddInt(Last);
-			Msg.AddInt(pMap->m_MapCrc);
+			Msg.AddInt(pMap->GetMapCrc());
 			Msg.AddInt(Chunk);
 			Msg.AddInt(ChunkSize);
-			Msg.AddRaw(&pMap->m_pMapData[Offset], ChunkSize);
+			Msg.AddRaw(&pMap->MapData()[Offset], ChunkSize);
 			SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID, true);
 
 			if(g_Config.m_Debug)
@@ -1097,7 +1097,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token)
 
 	p.AddString(GameServer()->Version(), 32);
 	p.AddString(g_Config.m_SvName, 64);
-	p.AddString(m_pMainMap->m_aFileName, 32);
+	p.AddString(m_pDefaultMap->GetFileName(), 32);
 
 	// gametype
 	p.AddString(GameServer()->GameType(), 16);
@@ -1173,7 +1173,7 @@ void CServer::PumpNetwork()
 	m_Econ.Update();
 }
 
-CMap *CServer::LoadMap(const char *pMapName)
+CMap *CServer::AddMap(const char *pMapName)
 {
 	CMap *pMap;
 	
@@ -1188,6 +1188,85 @@ CMap *CServer::LoadMap(const char *pMapName)
 
 	m_lpMaps.add(pMap);
 	return pMap;
+}
+
+bool CServer::RemoveMap(const char *pMapName)
+{
+	int Index = -1;
+	CMap *pMap = 0x0;
+	for (int i = 0; i < m_lpMaps.size(); i++)
+	{
+		if (str_comp(m_lpMaps[i]->GetFileName(), pMapName) != 0)
+			continue;
+
+		Index = i;
+		pMap = m_lpMaps[i];
+		break;
+	}
+
+	if (pMap == 0x0)
+		return false;
+
+	if (pMap == m_pDefaultMap)
+		return false;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_aClients[i].m_State <= CClient::STATE_EMPTY)
+			continue;
+
+		if (pMap == m_aClients[i].m_pMap &&
+			MovePlayer(i, m_pDefaultMap) == false)
+			m_NetServer.Drop(i, "Map has been removed. Please reconnect");
+	}
+
+	m_lpMaps.remove_index(Index);
+	delete pMap;
+	return true;
+}
+
+bool CServer::ReloadMap(const char *pMapName)
+{
+	int Index = -1;
+	CMap *pMap = 0x0;
+	for (int i = 0; i < m_lpMaps.size(); i++)
+	{
+		if (str_comp(m_lpMaps[i]->GetFileName(), pMapName) != 0)
+			continue;
+
+		Index = i;
+		pMap = m_lpMaps[i];
+		break;
+	}
+
+	if (pMap == 0x0)
+		return false;
+
+	m_lpMaps.remove_index(Index);
+
+	CMap *pNewMap = AddMap(pMapName);
+	if (pNewMap == 0x0)
+	{
+		m_lpMaps.add(pMap);
+		return false;
+	}
+
+	if (pMap == m_pDefaultMap)
+		m_pDefaultMap = pNewMap;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_aClients[i].m_State <= CClient::STATE_EMPTY)
+			continue;
+
+		if (pMap == m_aClients[i].m_pMap &&
+			MovePlayer(i, m_pDefaultMap) == false)
+			m_NetServer.Drop(i, "Map has been reloaded. Please reconnect");
+	}
+
+	delete pMap;
+
+	return true;
 }
 
 void CServer::InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole)
@@ -1237,13 +1316,13 @@ int CServer::Run()
 		CMap *pMap;
 		if (m_lpMaps.size() == 0)
 		{
-			pMap = LoadMap("dm1");
+			pMap = AddMap("dm1");
 			if (!pMap)
 				return -1;
 		}
 		else
 			pMap = m_lpMaps[0];
-		m_pMainMap = pMap;
+		m_pDefaultMap = pMap;
 	}
 
 	// reinit snapshot ids
@@ -1424,7 +1503,7 @@ void CServer::ConAddMap(IConsole::IResult *pResult, void *pUser)
 	const char *pMapName = pResult->GetString(0);
 	char aBuf[256];
 
-	if (pThis->LoadMap(pMapName) != 0x0)
+	if (pThis->AddMap(pMapName) != 0x0)
 		str_format(aBuf, sizeof(aBuf), "Map '%s' added", pMapName);
 	else
 		str_format(aBuf, sizeof(aBuf), "Could not load map '%s'", pMapName);
@@ -1432,11 +1511,55 @@ void CServer::ConAddMap(IConsole::IResult *pResult, void *pUser)
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
 
+void CServer::ConRemoveMap(IConsole::IResult *pResult, void *pUser)
+{
+	CServer* pThis = static_cast<CServer *>(pUser);
+	const char *pMapName = pResult->GetString(0);
+	char aBuf[256];
+
+	if (pThis->RemoveMap(pMapName) != false)
+		str_format(aBuf, sizeof(aBuf), "Map '%s' removed", pMapName);
+	else
+		str_format(aBuf, sizeof(aBuf), "Could remove map '%s'", pMapName);
+
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+}
+
+void CServer::ConReloadMap(IConsole::IResult *pResult, void *pUser)
+{
+	CServer* pThis = static_cast<CServer *>(pUser);
+	const char *pMapName = pResult->GetString(0);
+	char aBuf[256];
+
+	if (pThis->ReloadMap(pMapName) != false)
+		str_format(aBuf, sizeof(aBuf), "Map '%s' removed", pMapName);
+	else
+		str_format(aBuf, sizeof(aBuf), "Could reload map '%s'", pMapName);
+
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+}
+
+void CServer::ConListMaps(IConsole::IResult *pResult, void *pUser)
+{
+	CServer* pThis = static_cast<CServer *>(pUser);
+	char aBuf[256];
+
+	for (int i = 0; i < pThis->m_lpMaps.size(); i++)
+	{
+		CMap *pMap = pThis->m_lpMaps[i];
+		str_format(aBuf, sizeof(aBuf), "%s", pMap->GetFileName());
+		if (pMap == pThis->m_pDefaultMap)
+			str_fcat(aBuf, sizeof(aBuf), " (Default)");
+
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+	}
+}
+
 void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 {
 	char aBuf[256];
 	CServer* pThis = static_cast<CServer *>(pUser);
-	int ClientID = pResult->GetInteger(0);
+	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
 	const char *pMapName = pResult->GetString(1);
 	CMap *pMap = pThis->FindMap(pMapName);
 	if (pMap == 0x0)
@@ -1446,7 +1569,12 @@ void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 		return;
 	}
 
-	pThis->MovePlayer(ClientID, pMap);
+	if(pThis->MovePlayer(ClientID, pMap) == false)
+		str_format(aBuf, sizeof(aBuf), "Could not move player '%s% to map '%s'", pThis->ClientName(ClientID), pMapName);
+	else
+		str_format(aBuf, sizeof(aBuf), "Player'%s% has been moved to map '%s'", pThis->ClientName(ClientID), pMapName);
+
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
 
 void CServer::ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -1515,6 +1643,9 @@ void CServer::RegisterCommands()
 	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
 
 	Console()->Register("add_map", "s", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
+	Console()->Register("remove_map", "s", CFGFLAG_SERVER, ConRemoveMap, this, "Add a Map");
+	Console()->Register("reload_map", "s", CFGFLAG_SERVER, ConReloadMap, this, "Add a Map");
+	Console()->Register("list_maps", "", CFGFLAG_SERVER, ConListMaps, this, "List added Maps");
 	Console()->Register("move_player", "is", CFGFLAG_SERVER, ConMovePlayer, this, "Move a Player to a Map");
 
 	Console()->Chain("sv_name", ConchainSpecialInfoupdate, this);

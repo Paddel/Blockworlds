@@ -160,7 +160,7 @@ public:
 	//static NETADDR4 master_server;
 
 	array<CMap *> m_lpMaps;
-	CMap *m_pMainMap;
+	CMap *m_pDefaultMap;
 
 	CRegister m_Register;
 
@@ -217,7 +217,9 @@ public:
 
 	void PumpNetwork();
 
-	CMap *LoadMap(const char *pMapName);
+	CMap *AddMap(const char *pMapName);
+	bool RemoveMap(const char *pMapName);
+	bool ReloadMap(const char *pMapName);
 
 	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
 	int Run();
@@ -227,12 +229,15 @@ public:
 	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConAddMap(IConsole::IResult *pResult, void *pUser);
+	static void ConRemoveMap(IConsole::IResult *pResult, void *pUser);
+	static void ConReloadMap(IConsole::IResult *pResult, void *pUser);
+	static void ConListMaps(IConsole::IResult *pResult, void *pUser);
 	static void ConMovePlayer(IConsole::IResult *pResult, void *pUser);
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-
+	
 	void RegisterCommands();
 
 

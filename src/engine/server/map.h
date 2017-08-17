@@ -8,8 +8,6 @@ class CGameMap;
 
 class CMap
 {
-	friend class CServer;//TODO: remove this
-
 private:
 	CEngineMap m_EngineMap;
 	CMapChecker m_MapChecker;
@@ -28,6 +26,11 @@ public:
 	~CMap();
 
 	bool Init(const char *pFileName);
+
+	const char *GetFileName() const { return m_aFileName; };
+	unsigned GetMapCrc() const { return m_MapCrc; };
+	int GetMapSize() const { return m_MapSize; };
+	const unsigned char *MapData() const { return m_pMapData; };
 
 	CEngineMap *EngineMap() { return &m_EngineMap; };
 	CServer *Server() const { return m_pServer; };

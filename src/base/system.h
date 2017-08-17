@@ -778,6 +778,23 @@ int str_length(const char *str);
 void str_format(char *buffer, int buffer_size, const char *format, ...);
 
 /*
+Function: str_fcat
+Performs printf formating appending to a buffer.
+
+Parameters:
+buffer - Pointer to the buffer to recive the formated string.
+buffer_size - Size of the buffer.
+format - printf formating string.
+... - Parameters for the formating.
+
+Remarks:
+- See the C manual for syntax for the printf formating string.
+- The strings are treated as zero-termineted strings.
+- Garantees that dst string will contain zero-termination.
+*/
+void str_fcat(char *buffer, int buffer_size, const char *format, ...);
+
+/*
 	Function: str_sanitize_strong
 		Replaces all characters below 32 and above 127 with whitespace.
 
