@@ -2,14 +2,15 @@
 #include <float.h>
 #include <algorithm>
 
-#include <base/tl/algorithm.h>
+#include <engine/shared/config.h>//remove
 
+#include <base/tl/algorithm.h>
 #include <game/server/gamemap.h>
 
 #include "server.h"
 #include "translator.h"
 
-#define THREADING 1
+#define THREADING 0
 
 typedef std::pair<long double, int> CSortItem;
 
@@ -69,9 +70,18 @@ void CTranslator::SortMap(void *pData)
 		short OldMap[MAX_CLIENTS];
 		mem_copy(OldMap, pSortionData->m_aIDMap, sizeof(OldMap));
 
+		if (g_Config.m_Password[0] == '1')
+			for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+				dbg_msg(0, "b[%i]", aSortItems[i].second);
+
 		//std::sort(aSortItems, aSortItems + pSortionData->m_NumTranslateItems);
 		bubblesort(aSortItems, pSortionData->m_NumTranslateItems);
 
+		if (g_Config.m_Password[0] == '1')
+			for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+				dbg_msg(0, "b[%i]", aSortItems[i].second);
+
+		g_Config.m_Password[0] = '\0';
 
 		for (int i = 0; i < MAX_CLIENTS; i++)
 			pSortionData->m_aIDMap[i] = -1;
