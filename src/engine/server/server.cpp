@@ -293,9 +293,10 @@ int CServer::TrySetClientName(int ClientID, const char *pName)
 	if(m_aClients[ClientID].m_aName[0] && str_comp(m_aClients[ClientID].m_aName, aTrimmedName) == 0)
 		return 0;
 
-	char aBuf[256];
+	//Bottleneck vvvv !!
+	/*char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "'%s' -> '%s'", pName, aTrimmedName);
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
+	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);*/
 	pName = aTrimmedName;
 
 	// make sure that two clients doesn't have the same name
@@ -1069,6 +1070,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 void CServer::SendServerInfo(const NETADDR *pAddr, int Token)
 {
+	return;
 	CNetChunk Packet;
 	CPacker p;
 	char aBuf[128];

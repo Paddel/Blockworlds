@@ -2,12 +2,14 @@
 #include <float.h>
 #include <algorithm>
 
+#include <base/tl/algorithm.h>
+
 #include <game/server/gamemap.h>
 
 #include "server.h"
 #include "translator.h"
 
-#define THREADING 0
+#define THREADING 1
 
 typedef std::pair<long double, int> CSortItem;
 
@@ -45,6 +47,7 @@ void CTranslator::SortMap(void *pData)
 
 		CSortItem *aSortItems = new CSortItem[pSortionData->m_NumTranslateItems];
 		//GetDistances
+		vec2 OwnPos = pOwnTranslateItem->m_Pos;
 		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
 		{
 			long double Distance;
@@ -55,18 +58,20 @@ void CTranslator::SortMap(void *pData)
 				Distance = LDBL_MAX - 1;
 			else
 			{
-				vec2 DeltaPos = pOwnTranslateItem->m_Pos - pTranslateItem->m_Pos;
-				Distance = DeltaPos.x*DeltaPos.x + DeltaPos.y*DeltaPos.y;//no sqrt = way better performance
+				vec2 DeltaPos = OwnPos - pTranslateItem->m_Pos;
+				Distance = distance(OwnPos, pTranslateItem->m_Pos);//length(DeltaPos);//DeltaPos.x*DeltaPos.x + DeltaPos.y*DeltaPos.y;//no sqrt = way better performance
 			}
 
 			aSortItems[i].first = Distance;
-			aSortItems[i].second = i;
+			aSortItems[i].second = pTranslateItem->m_ClientID;
 		}
 
 		short OldMap[MAX_CLIENTS];
 		mem_copy(OldMap, pSortionData->m_aIDMap, sizeof(OldMap));
 
-		std::sort(aSortItems, aSortItems + pSortionData->m_NumTranslateItems);
+		//std::sort(aSortItems, aSortItems + pSortionData->m_NumTranslateItems);
+		bubblesort(aSortItems, pSortionData->m_NumTranslateItems);
+
 
 		for (int i = 0; i < MAX_CLIENTS; i++)
 			pSortionData->m_aIDMap[i] = -1;

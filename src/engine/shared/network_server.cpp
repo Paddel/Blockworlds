@@ -3,6 +3,7 @@
 #include <base/system.h>
 
 #include <engine/console.h>
+#include <engine/shared/packer.h>
 
 #include "config.h"
 #include "netban.h"
@@ -217,7 +218,7 @@ int CNetServer::Send(CNetChunk *pChunk)
 {
 	if(pChunk->m_DataSize >= NET_MAX_PAYLOAD)
 	{
-		dbg_msg("netserver", "packet payload too big. %d. dropping packet", pChunk->m_DataSize);
+		dbg_msg("netserver", "packet payload too big. %d. dropping packet %i", pChunk->m_DataSize, pChunk->m_Flags);
 		return -1;
 	}
 
