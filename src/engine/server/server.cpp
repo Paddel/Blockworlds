@@ -701,7 +701,7 @@ CMap *CServer::FindMap(const char *pName)
 bool CServer::MovePlayer(int ClientID, CMap *pMap)
 {
 	CMap *pCurrentMap = CurrentMap(ClientID);
-	if (!pMap || pMap == pCurrentMap || m_aClients[ClientID].m_State != CClient::STATE_INGAME || pMap->HasFreePlayerSlot())
+	if (!pMap || pMap == pCurrentMap || m_aClients[ClientID].m_State != CClient::STATE_INGAME || pMap->HasFreePlayerSlot() == false)
 		return false;//invalid map || already on the map || is already changing the map || Map is full
 
 	m_aClients[ClientID].m_pMap = pMap;
@@ -1555,6 +1555,7 @@ void CServer::ConListMaps(IConsole::IResult *pResult, void *pUser)
 void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 {
 	char aBuf[256];
+	char aName[64];
 	CServer* pThis = static_cast<CServer *>(pUser);
 	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
 	const char *pMapName = pResult->GetString(1);
@@ -1566,10 +1567,12 @@ void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 		return;
 	}
 
+	str_copy(aName, pThis->ClientName(ClientID), sizeof(aName));
+
 	if(pThis->MovePlayer(ClientID, pMap) == false)
-		str_format(aBuf, sizeof(aBuf), "Could not move player '%s% to map '%s'", pThis->ClientName(ClientID), pMapName);
+		str_format(aBuf, sizeof(aBuf), "Could not move player '%s to map '%s'", aName, pMapName);
 	else
-		str_format(aBuf, sizeof(aBuf), "Player'%s% has been moved to map '%s'", pThis->ClientName(ClientID), pMapName);
+		str_format(aBuf, sizeof(aBuf), "Player'%s has been moved to map '%s'", aName, pMapName);
 
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
