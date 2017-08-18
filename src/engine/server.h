@@ -2,6 +2,9 @@
 
 #ifndef ENGINE_SERVER_H
 #define ENGINE_SERVER_H
+
+#include <game/generated/protocol.h>
+
 #include "kernel.h"
 #include "message.h"
 
@@ -38,12 +41,67 @@ public:
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
 
 	template<class T>
-	int SendPackMsg(T *pMsg, int Flags, int ClientID)
+	void SendPackMsg(T *pMsg, int Flags, int ClientID)
+	{	
+		if (ClientID == -1)
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (ClientIngame(i) == false)
+					continue;
+
+				T Buff;
+				mem_copy(&Buff, pMsg, sizeof(T));
+				SendPackMsgTranslate(&Buff, Flags, i);
+			}
+		}
+		else
+			SendPackMsgTranslate(pMsg, Flags, ClientID);
+	}
+
+	template<class T>
+	void SendPackMsgTranslate(T *pMsg, int Flags, int ClientID)
+	{
+		SendMsgFinal(pMsg, Flags, ClientID);
+	}
+
+	void SendPackMsgTranslate(CNetMsg_Sv_Emoticon *pMsg, int Flags, int ClientID)
+	{
+		pMsg->m_ClientID = Translate(ClientID, pMsg->m_ClientID);
+		if(pMsg->m_ClientID != -1)
+			SendMsgFinal(pMsg, Flags, ClientID);
+	}
+
+	void SendPackMsgTranslate(CNetMsg_Sv_Chat *pMsg, int Flags, int ClientID)
+	{
+		if (pMsg->m_ClientID == -1)
+		{
+			SendMsgFinal(pMsg, Flags, ClientID);
+			return;
+		}
+
+		int TranslatedID = Translate(ClientID, pMsg->m_ClientID);
+		if (TranslatedID != -1)
+		{
+			pMsg->m_ClientID = TranslatedID;
+			SendMsgFinal(pMsg, Flags, ClientID);
+			return;
+		}
+
+		char aChatBuffer[1024];
+		str_format(aChatBuffer, sizeof(aChatBuffer), "%s: %s", ClientName(pMsg->m_ClientID), pMsg->m_pMessage);
+		pMsg->m_ClientID = UsingMapItems(ClientID)-1;
+		pMsg->m_pMessage = aChatBuffer;
+		SendMsgFinal(pMsg, Flags, ClientID);
+	}
+
+	template<class T>
+	void SendMsgFinal(T *pMsg, int Flags, int ClientID)
 	{
 		CMsgPacker Packer(pMsg->MsgID());
-		if(pMsg->Pack(&Packer))
-			return -1;
-		return SendMsg(&Packer, Flags, ClientID);
+		if (pMsg->Pack(&Packer))
+			return;
+		SendMsg(&Packer, Flags, ClientID);
 	}
 
 	virtual void SetClientName(int ClientID, char const *pName) = 0;
@@ -67,6 +125,7 @@ public:
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 	virtual void DropClient(int ClientID, const char *pReason) = 0;
 
+	virtual int UsingMapItems(int ClientID) = 0;
 	virtual CGameMap *CurrentGameMap(int ClientID) = 0;
 	virtual int GetNumMaps() = 0;
 	virtual CGameMap *GetGameMap(int Index) = 0;

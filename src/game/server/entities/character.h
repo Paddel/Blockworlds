@@ -7,7 +7,7 @@
 #include <game/generated/server_data.h>
 #include <game/generated/protocol.h>
 
-#include <game/gamecore.h>
+#include <game/server/srv_gamecore.h>
 
 enum
 {
@@ -32,6 +32,7 @@ public:
 	virtual void TickDefered();
 	virtual void TickPaused();
 	virtual void Snap(int SnappingClient);
+	virtual void Push(vec2 Force) { m_Core.m_Vel += Force; }
 
 	bool IsGrounded();
 
@@ -48,13 +49,9 @@ public:
 	void FireWeapon();
 
 	void Die(int Killer, int Weapon);
-	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
 	bool Remove();
-
-	bool IncreaseHealth(int Amount);
-	bool IncreaseArmor(int Amount);
 
 	bool GiveWeapon(int Weapon, int Ammo);
 	void GiveNinja();
@@ -74,14 +71,7 @@ private:
 	CEntity *m_apHitObjects[10];
 	int m_NumObjectsHit;
 
-	struct WeaponStat
-	{
-		int m_AmmoRegenStart;
-		int m_Ammo;
-		int m_Ammocost;
-		bool m_Got;
-
-	} m_aWeapons[NUM_WEAPONS];
+	bool m_GotWeapon[NUM_WEAPONS];
 
 	int m_ActiveWeapon;
 	int m_LastWeapon;
@@ -111,9 +101,6 @@ private:
 
 	int m_DamageTakenTick;
 
-	int m_Health;
-	int m_Armor;
-
 	// ninja
 	struct
 	{
@@ -124,12 +111,12 @@ private:
 	} m_Ninja;
 
 	// the player core for the physics
-	CCharacterCore m_Core;
+	CSrvCharacterCore m_Core;
 
 	// info for dead reckoning
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
-	CCharacterCore m_SendCore; // core that we should send
-	CCharacterCore m_ReckoningCore; // the dead reckoning core
+	CSrvCharacterCore m_SendCore; // core that we should send
+	CSrvCharacterCore m_ReckoningCore; // the dead reckoning core
 
 };
 

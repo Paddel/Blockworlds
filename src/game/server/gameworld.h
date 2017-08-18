@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_GAMEWORLD_H
 #define GAME_SERVER_GAMEWORLD_H
 
-#include <game/gamecore.h>
+#include <game/server/srv_gamecore.h>
 
 class CEntity;
 class CCharacter;
@@ -23,6 +23,7 @@ public:
 		ENTTYPE_PICKUP,
 		ENTTYPE_FLAG,
 		ENTTYPE_CHARACTER,
+		ENTTYPE_NPC,
 		NUM_ENTTYPES
 	};
 
@@ -43,7 +44,7 @@ public:
 	class CGameMap *GameMap() { return m_pGameMap; }
 
 	bool m_ResetRequested;
-	CWorldCore m_Core;
+	CSrvWorldCore m_Core;
 
 	CGameWorld();
 	~CGameWorld();
@@ -68,6 +69,7 @@ public:
 			Number of entities found and added to the ents array.
 	*/
 	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type);
+	int FindTees(vec2 Pos, float Radius, CEntity **ppEnts, int Max);
 
 	/*
 		Function: interserct_CCharacter
@@ -84,6 +86,7 @@ public:
 			Returns a pointer to the closest hit or NULL of there is no intersection.
 	*/
 	class CCharacter *IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
+	class CEntity *IntersectTee(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
 
 	/*
 		Function: closest_CCharacter
@@ -98,6 +101,7 @@ public:
 			Returns a pointer to the closest CCharacter or NULL if no CCharacter is close enough.
 	*/
 	class CCharacter *ClosestCharacter(vec2 Pos, float Radius, CEntity *ppNotThis);
+	class CEntity *ClosestTee(vec2 Pos, float Radius, CEntity *ppNotThis);
 
 	/*
 		Function: insert_entity

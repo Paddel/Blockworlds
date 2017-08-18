@@ -135,6 +135,7 @@ public:
 		int m_AuthTries;
 
 		CMap *m_pMap;
+		int m_MapitemUsage;
 
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 
@@ -251,8 +252,8 @@ public:
 
 	CMap *CurrentMap(int ClientID);
 	int CurrentMapIndex(int ClientID);
-	int UsingMapItems(int ClientID);
 
+	virtual int UsingMapItems(int ClientID);
 	virtual CGameMap *CurrentGameMap(int ClientID);
 	virtual int GetNumMaps();
 	virtual CGameMap *GetGameMap(int Index);

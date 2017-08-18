@@ -3,9 +3,9 @@
 #ifndef GAME_SERVER_PLAYER_H
 #define GAME_SERVER_PLAYER_H
 
-// this include should perhaps be removed
 #include <engine/server/translator.h>
 
+// this include should perhaps be removed
 #include "entities/character.h"
 #include "gamecontext.h"
 
@@ -76,7 +76,6 @@ public:
 		int m_ColorFeet;
 	} m_TeeInfos;
 
-	int m_RespawnTick;
 	int m_DieTick;
 	int m_Score;
 	int m_ScoreStartTick;

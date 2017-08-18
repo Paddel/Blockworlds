@@ -132,9 +132,6 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendBroadcast(const char *pText, int ClientID);
 
-
-	//
-	void CheckPureTuning();
 	void SendTuningParams(int ClientID);
 
 	// engine events

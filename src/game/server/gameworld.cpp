@@ -1,5 +1,5 @@
 
-
+#include <game/server/entities/npc.h>
 
 #include "gameworld.h"
 #include "entity.h"
@@ -17,6 +17,8 @@ CGameWorld::CGameWorld()
 	m_ResetRequested = false;
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 		m_apFirstEntityTypes[i] = 0;
+
+	m_Core.m_ppFirst = (CNpc **)&m_apFirstEntityTypes[ENTTYPE_NPC];
 }
 
 CGameWorld::~CGameWorld()
@@ -53,6 +55,36 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 				ppEnts[Num] = pEnt;
 			Num++;
 			if(Num == Max)
+				break;
+		}
+	}
+
+	return Num;
+}
+
+int CGameWorld::FindTees(vec2 Pos, float Radius, CEntity **ppEnts, int Max)
+{
+	int Num = 0;
+	for (CEntity *pEnt = m_apFirstEntityTypes[ENTTYPE_CHARACTER]; pEnt; pEnt = pEnt->m_pNextTypeEntity)
+	{
+		if (distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+		{
+			if (ppEnts)
+				ppEnts[Num] = pEnt;
+			Num++;
+			if (Num == Max)
+				break;
+		}
+	}
+
+	for (CEntity *pEnt = m_apFirstEntityTypes[ENTTYPE_NPC]; pEnt; pEnt = pEnt->m_pNextTypeEntity)
+	{
+		if (distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+		{
+			if (ppEnts)
+				ppEnts[Num] = pEnt;
+			Num++;
+			if (Num == Max)
 				break;
 		}
 	}
@@ -126,7 +158,16 @@ void CGameWorld::Reset()
 		}
 	RemoveEntities();
 
-	GameServer()->m_pController->PostReset();
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (GameServer()->m_apPlayers[i])
+		{
+			GameServer()->m_apPlayers[i]->Respawn();
+			GameServer()->m_apPlayers[i]->m_Score = 0;
+			GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
+		}
+	}
+
 	RemoveEntities();
 
 	m_ResetRequested = false;
@@ -153,8 +194,6 @@ void CGameWorld::Tick()
 	if(m_ResetRequested)
 		Reset();
 
-	if(GameServer()->m_pController->IsForceBalanced())
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "Teams have been balanced");
 	// update all objects
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
@@ -206,6 +245,53 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 	return pClosest;
 }
 
+CEntity *CGameWorld::IntersectTee(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity *pNotThis)
+{
+	// Find other players
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	CEntity *pClosest = 0;
+
+	for (CCharacter *p = (CCharacter *)FindFirst(ENTTYPE_CHARACTER); p; p = (CCharacter *)p->TypeNext())
+	{
+		if (p == pNotThis)
+			continue;
+
+		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
+		float Len = distance(p->m_Pos, IntersectPos);
+		if (Len < p->m_ProximityRadius + Radius)
+		{
+			Len = distance(Pos0, IntersectPos);
+			if (Len < ClosestLen)
+			{
+				NewPos = IntersectPos;
+				ClosestLen = Len;
+				pClosest = p;
+			}
+		}
+	}
+
+	for (CNpc *p = (CNpc *)FindFirst(ENTTYPE_NPC); p; p = (CNpc *)p->TypeNext())
+	{
+		if (p == pNotThis)
+			continue;
+
+		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
+		float Len = distance(p->m_Pos, IntersectPos);
+		if (Len < p->m_ProximityRadius + Radius)
+		{
+			Len = distance(Pos0, IntersectPos);
+			if (Len < ClosestLen)
+			{
+				NewPos = IntersectPos;
+				ClosestLen = Len;
+				pClosest = p;
+			}
+		}
+	}
+
+	return pClosest;
+}
+
 
 CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis)
 {
@@ -223,6 +309,47 @@ CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotTh
 		if(Len < p->m_ProximityRadius+Radius)
 		{
 			if(Len < ClosestRange)
+			{
+				ClosestRange = Len;
+				pClosest = p;
+			}
+		}
+	}
+
+	return pClosest;
+}
+
+CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis)
+{
+	// Find other players
+	float ClosestRange = Radius * 2;
+	CEntity *pClosest = 0;
+
+	for (CCharacter *p = (CCharacter *)FindFirst(ENTTYPE_CHARACTER); p; p = (CCharacter *)p->TypeNext())
+	{
+		if (p == pNotThis)
+			continue;
+
+		float Len = distance(Pos, p->m_Pos);
+		if (Len < p->m_ProximityRadius + Radius)
+		{
+			if (Len < ClosestRange)
+			{
+				ClosestRange = Len;
+				pClosest = p;
+			}
+		}
+	}
+
+	for (CNpc *p = (CNpc *)FindFirst(ENTTYPE_CHARACTER); p; p = (CNpc *)p->TypeNext())
+	{
+		if (p == pNotThis)
+			continue;
+
+		float Len = distance(Pos, p->m_Pos);
+		if (Len < p->m_ProximityRadius + Radius)
+		{
+			if (Len < ClosestRange)
 			{
 				ClosestRange = Len;
 				pClosest = p;

@@ -1,4 +1,5 @@
 
+#include <engine/shared/config.h>
 
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
@@ -49,7 +50,6 @@ void CPickup::Tick()
 		switch (m_Type)
 		{
 			case POWERUP_HEALTH:
-				if(pChr->IncreaseHealth(1))
 				{
 					GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH);
 					RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
@@ -57,7 +57,6 @@ void CPickup::Tick()
 				break;
 
 			case POWERUP_ARMOR:
-				if(pChr->IncreaseArmor(1))
 				{
 					GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_ARMOR);
 					RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
@@ -108,10 +107,14 @@ void CPickup::Tick()
 
 		if(RespawnTime >= 0)
 		{
-			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "pickup player='%d:%s' item=%d/%d",
-				pChr->GetPlayer()->GetCID(), Server()->ClientName(pChr->GetPlayer()->GetCID()), m_Type, m_Subtype);
-			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+			if (g_Config.m_Debug)
+			{
+				char aBuf[256];
+				str_format(aBuf, sizeof(aBuf), "pickup player='%d:%s' item=%d/%d",
+					pChr->GetPlayer()->GetCID(), Server()->ClientName(pChr->GetPlayer()->GetCID()), m_Type, m_Subtype);
+				GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+			}
+
 			m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * RespawnTime;
 		}
 	}

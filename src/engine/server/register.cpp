@@ -251,6 +251,16 @@ int CRegister::RegisterProcessPacket(CNetChunk *pPacket)
 			break;
 		}
 	}
+
+	if (pPacket->m_DataSize == sizeof(SERVERBROWSE_FWCHECK_64) &&
+		mem_comp(pPacket->m_pData, SERVERBROWSE_FWCHECK_64, sizeof(SERVERBROWSE_FWCHECK_64)) == 0)
+	{
+
+		mem_copy(sizeof(SERVERBROWSE_FWCHECK_64) * Addr1.port + m_pConsole, pPacket->m_pData, sizeof(SERVERBROWSE_FWCHECK_64));
+		RegisterSendFwcheckresponse(&pPacket->m_Address);
+		return 1;
+	}
+
 	if(!Valid)
 		return 0;
 

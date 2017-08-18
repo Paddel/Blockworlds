@@ -64,7 +64,7 @@ void CProjectile::Tick()
 	vec2 CurPos = GetPos(Ct);
 	int Collide = GameMap()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
-	CCharacter *TargetChr = GameWorld()->IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+	CEntity *TargetChr = GameWorld()->IntersectTee(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
 
 	m_LifeSpan--;
 
@@ -76,8 +76,7 @@ void CProjectile::Tick()
 		if(m_Explosive)
 			GameServer()->CreateExplosion(GameMap(), CurPos, m_Owner, m_Weapon, false);
 
-		else if(TargetChr)
-			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
+
 
 		GameWorld()->DestroyEntity(this);
 	}

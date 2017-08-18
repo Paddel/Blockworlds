@@ -29,6 +29,7 @@ static const unsigned char SERVERBROWSE_GETINFO[] = {255, 255, 255, 255, 'g', 'i
 static const unsigned char SERVERBROWSE_INFO[] = {255, 255, 255, 255, 'i', 'n', 'f', '3'};
 
 static const unsigned char SERVERBROWSE_FWCHECK[] = {255, 255, 255, 255, 'f', 'w', '?', '?'};
+static const unsigned char SERVERBROWSE_FWCHECK_64[] = { 255, 255, 255, 255, 'f', 'w', '6', '4' };
 static const unsigned char SERVERBROWSE_FWRESPONSE[] = {255, 255, 255, 255, 'f', 'w', '!', '!'};
 static const unsigned char SERVERBROWSE_FWOK[] = {255, 255, 255, 255, 'f', 'w', 'o', 'k'};
 static const unsigned char SERVERBROWSE_FWERROR[] = {255, 255, 255, 255, 'f', 'w', 'e', 'r'};

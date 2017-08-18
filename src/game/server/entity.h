@@ -79,6 +79,9 @@ public:
 
 	CEntity *TypeNext() { return m_pNextTypeEntity; }
 	CEntity *TypePrev() { return m_pPrevTypeEntity; }
+	int GetObjType() const { return m_ObjType; }
+
+	virtual void Push(vec2 Force) {}
 
 	/*
 		Function: destroy
