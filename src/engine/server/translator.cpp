@@ -44,7 +44,10 @@ void CTranslator::SortMap(void *pData)
 		mem_copy(OldMap, pSortionData->m_aIDMap, sizeof(OldMap));
 		short *aFillingList = new short[pSortionData->m_NumTranslateItems];
 		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+		{
 			aFillingList[i] = pSortionData->m_aTranslateItems[i].m_ClientID;
+			//dbg_msg(0, "%i %i", pSortionData->m_ClientID, aFillingList[i]);
+		}
 
 		for (int i = 0; i < MAX_CLIENTS; i++)
 			pSortionData->m_aIDMap[i] = -1;

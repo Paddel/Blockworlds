@@ -663,6 +663,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_pMap = pThis->m_pDefaultMap;
 	pThis->m_aClients[ClientID].m_MapitemUsage = 16;
+	pThis->m_aClients[ClientID].m_Online = false;
 	pThis->m_aClients[ClientID].Reset();
 	return 0;
 }
@@ -683,7 +684,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 
 	// notify the mod about the drop
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY)
-		pThis->GameServer()->OnClientDrop(ClientID, pReason);
+		pThis->GameServer()->OnClientDrop(ClientID, pReason, pThis->m_aClients[ClientID].m_pMap->GameMap());
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
@@ -706,16 +707,27 @@ CMap *CServer::FindMap(const char *pName)
 
 bool CServer::MovePlayer(int ClientID, CMap *pMap)
 {
+	char aName[64];
 	CMap *pCurrentMap = CurrentMap(ClientID);
 	if (!pMap || pMap == pCurrentMap || m_aClients[ClientID].m_State != CClient::STATE_INGAME || pMap->HasFreePlayerSlot() == false)
 		return false;//invalid map || already on the map || is already changing the map || Map is full
+
+	str_copy(aName, ClientName(ClientID), sizeof(aName));
 
 	m_aClients[ClientID].m_pMap = pMap;
 
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-	GameServer()->OnClientDrop(ClientID, "Changing map");
+	GameServer()->OnClientDrop(ClientID, "Changing map", pCurrentMap->GameMap());
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "'%s' has switched to %s", aName, pMap->GetFileName());
+	pCurrentMap->SendServerMsg(aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "Player'%s has been moved to map '%s'", aName, pMap->GetFileName());
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+
 	return true;
 }
 
@@ -813,6 +825,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_AUTH)
 			{
+				m_aClients[ClientID].m_pMap = m_lpMaps[rand() % m_lpMaps.size()];
 				const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
 				if(str_comp(pVersion, GameServer()->NetVersion()) != 0)
 				{
@@ -898,14 +911,16 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				char aAddrStr[NETADDR_MAXSTRSIZE];
 				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 
-				if (g_Config.m_Debug)
+				if (m_aClients[ClientID].m_Online == 0)
 				{
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%x addr=%s", ClientID, aAddrStr);
 					Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 				}
+
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
-				GameServer()->OnClientEnter(ClientID);
+				GameServer()->OnClientEnter(ClientID, m_aClients[ClientID].m_Online);
+				m_aClients[ClientID].m_Online = true;
 			}
 		}
 		else if(Msg == NETMSG_INPUT)
@@ -970,7 +985,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			//no ur sadistic!!
 			if (Unpacker.Error() == 0 && str_comp(pCmd, "crashmeplx") == 0)
 			{
-				//m_aClients[ClientID].m_MapitemUsage = max(64, m_aClients[ClientID].m_MapitemUsage);
+				m_aClients[ClientID].m_MapitemUsage = max(64, m_aClients[ClientID].m_MapitemUsage);
 				return;
 			}
 			else if (Unpacker.Error() == 0 && str_comp(pCmd, "suckmeplx") == 0)
@@ -1243,9 +1258,8 @@ bool CServer::RemoveMap(const char *pMapName)
 		if (m_aClients[i].m_State <= CClient::STATE_EMPTY)
 			continue;
 
-		if (pMap == m_aClients[i].m_pMap &&
-			MovePlayer(i, m_pDefaultMap) == false)
-			DropClient(i, "Map has been removed. Please reconnect");
+		if (pMap == m_aClients[i].m_pMap && MovePlayer(i, m_pDefaultMap) == false)
+				DropClient(i, "Map has been removed. Please reconnect");
 	}
 
 	m_lpMaps.remove_index(Index);
@@ -1287,9 +1301,8 @@ bool CServer::ReloadMap(const char *pMapName)
 		if (m_aClients[i].m_State <= CClient::STATE_EMPTY)
 			continue;
 
-		if (pMap == m_aClients[i].m_pMap &&
-			MovePlayer(i, m_pDefaultMap) == false)
-			DropClient(i, "Map has been reloaded. Please reconnect");
+		if (pMap == m_aClients[i].m_pMap && MovePlayer(i, m_pDefaultMap) == false)
+				DropClient(i, "Map has been reloaded. Please reconnect");
 	}
 
 	delete pMap;
@@ -1588,7 +1601,6 @@ void CServer::ConListMaps(IConsole::IResult *pResult, void *pUser)
 void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 {
 	char aBuf[256];
-	char aName[64];
 	CServer* pThis = static_cast<CServer *>(pUser);
 	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
 	const char *pMapName = pResult->GetString(1);
@@ -1600,14 +1612,8 @@ void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 		return;
 	}
 
-	str_copy(aName, pThis->ClientName(ClientID), sizeof(aName));
-
 	if(pThis->MovePlayer(ClientID, pMap) == false)
-		str_format(aBuf, sizeof(aBuf), "Could not move player '%s to map '%s'", aName, pMapName);
-	else
-		str_format(aBuf, sizeof(aBuf), "Player'%s has been moved to map '%s'", aName, pMapName);
-
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		str_format(aBuf, sizeof(aBuf), "Could not move player '%s to map '%s'", pThis->ClientName(ClientID), pMapName);
 }
 
 void CServer::ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

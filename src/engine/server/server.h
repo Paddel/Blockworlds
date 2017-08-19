@@ -134,6 +134,8 @@ public:
 		int m_Authed;
 		int m_AuthTries;
 
+		bool m_Online;
+
 		CMap *m_pMap;
 		int m_MapitemUsage;
 
@@ -178,6 +180,7 @@ public:
 
 	virtual void Kick(int ClientID, const char *pReason);
 	virtual void DropClient(int ClientID, const char *pReason);
+	virtual int RconClientID() { return m_RconClientID; }
 
 	//int Tick()
 	int64 TickStartTime(int Tick);

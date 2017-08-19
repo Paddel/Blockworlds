@@ -23,6 +23,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
+	m_Vote = 0;
+	m_VotePos = 0;
 }
 
 CPlayer::~CPlayer()
@@ -170,22 +172,6 @@ void CPlayer::Snap(int SnappingClient)
 void CPlayer::OnDisconnect(const char *pReason)
 {
 	KillCharacter();
-
-	if(Server()->ClientIngame(m_ClientID))
-	{
-		char aBuf[512];
-		if(pReason && *pReason)
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(m_ClientID), pReason);
-		else
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(m_ClientID));
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
-
-		if (g_Config.m_Debug)
-		{
-			str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", m_ClientID, Server()->ClientName(m_ClientID));
-			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
-		}
-	}
 }
 
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)

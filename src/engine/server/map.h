@@ -27,6 +27,7 @@ public:
 
 	bool Init(const char *pFileName);
 	bool HasFreePlayerSlot();
+	void SendServerMsg(const char *pMsg);
 
 	const char *GetFileName() const { return m_aFileName; };
 	unsigned GetMapCrc() const { return m_MapCrc; };

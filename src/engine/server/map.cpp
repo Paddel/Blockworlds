@@ -63,5 +63,10 @@ bool CMap::Init(const char *pFileName)
 
 bool CMap::HasFreePlayerSlot()
 {
-	return GameMap()->FreePlayerSlot() != -1;
+	return GameMap()->FreePlayerSlot();
+}
+
+void CMap::SendServerMsg(const char *pMsg)
+{
+	GameMap()->SendChat(-1, -2, pMsg);
 }

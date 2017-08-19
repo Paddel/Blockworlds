@@ -1,5 +1,5 @@
 
-
+#include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/server/map.h>
 #include <game/server/gamecontext.h>
@@ -17,7 +17,9 @@ CGameMap::CGameMap(CMap *pMap)
 	m_aNumSpawnPoints[2] = 0;
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
-		m_apPlayers[i] = 0;
+		m_apPlayers[i] = 0x0;
+
+	m_VoteCloseTime = 0;
 }
 
 CGameMap::~CGameMap()
@@ -123,10 +125,93 @@ bool CGameMap::OnEntity(int Index, vec2 Pos)
 	return false;
 }
 
+void CGameMap::UpdateVote()
+{
+	// update voting
+	if (m_VoteCloseTime)
+	{
+		// abort the kick-vote on player-leave
+		if (m_VoteCloseTime == -1)
+		{
+			SendChat(-1, CGameContext::CHAT_ALL, "Vote aborted");
+			EndVote();
+		}
+		else
+		{
+			int Total = 0, Yes = 0, No = 0;
+			if (m_VoteUpdate)
+			{
+				// count votes
+				char aaBuf[MAX_CLIENTS][NETADDR_MAXSTRSIZE] = { { 0 } };
+				for (int i = 0; i < MAX_CLIENTS; i++)
+					if (m_apPlayers[i])
+						Server()->GetClientAddr(i, aaBuf[i], NETADDR_MAXSTRSIZE);
+				bool aVoteChecked[MAX_CLIENTS] = { 0 };
+				for (int i = 0; i < MAX_CLIENTS; i++)
+				{
+					if (!m_apPlayers[i] || m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS || aVoteChecked[i])	// don't count in votes by spectators
+						continue;
+
+					int ActVote = m_apPlayers[i]->m_Vote;
+					int ActVotePos = m_apPlayers[i]->m_VotePos;
+
+					// check for more players with the same ip (only use the vote of the one who voted first)
+					/*for (int j = i + 1; j < MAX_CLIENTS; ++j)
+					{
+						if (!m_apPlayers[j] || aVoteChecked[j] || str_comp(aaBuf[j], aaBuf[i]))
+							continue;
+
+						aVoteChecked[j] = true;
+						if (m_apPlayers[j]->m_Vote && (!ActVote || ActVotePos > m_apPlayers[j]->m_VotePos))
+						{
+							ActVote = m_apPlayers[j]->m_Vote;
+							ActVotePos = m_apPlayers[j]->m_VotePos;
+						}
+					}*/
+
+					Total++;
+					if (ActVote > 0)
+						Yes++;
+					else if (ActVote < 0)
+						No++;
+				}
+
+				if (Yes >= Total / 2 + 1)
+					m_VoteEnforce = VOTE_ENFORCE_YES;
+				else if (No >= (Total + 1) / 2)
+					m_VoteEnforce = VOTE_ENFORCE_NO;
+			}
+
+			if (m_VoteEnforce == VOTE_ENFORCE_YES)
+			{
+				Server()->SetRconCID(IServer::RCON_CID_VOTE);
+				Console()->ExecuteLine(m_aVoteCommand);
+				Server()->SetRconCID(IServer::RCON_CID_SERV);
+				EndVote();
+				SendChat(-1, CGameContext::CHAT_ALL, "Vote passed");
+
+				if (m_apPlayers[m_VoteCreator])
+					m_apPlayers[m_VoteCreator]->m_LastVoteCall = 0;
+			}
+			else if (m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
+			{
+				EndVote();
+				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed");
+			}
+			else if (m_VoteUpdate)
+			{
+				m_VoteUpdate = false;
+				SendVoteStatus(-1, Total, Yes, No);
+			}
+		}
+	}
+}
+
 bool CGameMap::Init(CGameContext *pGameServer)
 {
 	m_pGameServer = pGameServer;
 	m_pServer = pGameServer->Server();
+	m_pConsole = pGameServer->Console();
 
 	m_Layers.Init(Map()->EngineMap());
 	m_Collision.Init(&m_Layers);
@@ -164,33 +249,35 @@ bool CGameMap::Init(CGameContext *pGameServer)
 	return true;
 }
 
-int CGameMap::FreePlayerSlot()
+bool CGameMap::FreePlayerSlot()
 {
-	int Slot = -1;
-	for (int i = 0; i < g_Config.m_SvMaxClientsPerMap; i++)
-		if(m_apPlayers[i] == 0x0)
-		{ Slot = i; break; }
+	int Num = 0;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		if (m_apPlayers[i] != 0x0)
+			Num++;
 
-	return Slot;
+	return Num < g_Config.m_SvMaxClientsPerMap;
 }
 
 bool CGameMap::PlayerJoin(int ClientID)
 {
-	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
-	int Slot = FreePlayerSlot();
-	if (Slot == -1 || pPlayer == 0x0)
+	if (FreePlayerSlot() == false)
 		return false;
 
-	m_apPlayers[Slot] = pPlayer;
+	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
+	m_apPlayers[ClientID] = pPlayer;
+
+	// send active vote
+	if (m_VoteCloseTime)
+		SendVoteSet(ClientID);
 	return true;
 }
 
 void CGameMap::PlayerLeave(int ClientID)
 {
-	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
-	for (int i = 0; i < MAX_CLIENTS; i++)
-		if (m_apPlayers[i] == pPlayer)
-			m_apPlayers[i] = 0x0;
+	m_apPlayers[ClientID] = 0x0;
+
+	m_VoteUpdate = true;
 }
 
 int CGameMap::FreeNpcSlot()
@@ -234,8 +321,12 @@ void CGameMap::FillTranslateItems(CTranslateItem *pTranslateItems)
 {
 	int Num = 0;
 	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (m_apPlayers[i] != 0x0)
+		{
 			mem_copy(&pTranslateItems[Num++], m_apPlayers[i]->GetTranslateItem(), sizeof(CTranslateItem));
+		}
+	}
 
 	for (CNpc *pNpc = (CNpc *)m_World.FindFirst(CGameWorld::ENTTYPE_NPC); pNpc; pNpc = (CNpc *)pNpc->TypeNext())
 		mem_copy(&pTranslateItems[Num++], pNpc->GetTranslateItem(), sizeof(CTranslateItem));
@@ -315,4 +406,159 @@ void CGameMap::Snap(int SnappingClient)
 	m_World.Snap(SnappingClient);
 	SnapGameInfo(SnappingClient);
 	m_Events.Snap(SnappingClient);
+}
+
+void CGameMap::StartVote(const char *pDesc, const char *pCommand, const char *pReason)
+{
+	// check if a vote is already running
+	if (m_VoteCloseTime)
+		return;
+
+	// reset votes
+	m_VoteEnforce = VOTE_ENFORCE_UNKNOWN;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_apPlayers[i])
+		{
+			m_apPlayers[i]->m_Vote = 0;
+			m_apPlayers[i]->m_VotePos = 0;
+		}
+	}
+
+	// start vote
+	m_VoteCloseTime = time_get() + time_freq() * 25;
+	str_copy(m_aVoteDescription, pDesc, sizeof(m_aVoteDescription));
+	str_copy(m_aVoteCommand, pCommand, sizeof(m_aVoteCommand));
+	str_copy(m_aVoteReason, pReason, sizeof(m_aVoteReason));
+	SendVoteSet(-1);
+	m_VoteUpdate = true;
+}
+
+
+void CGameMap::EndVote()
+{
+	m_VoteCloseTime = 0;
+	SendVoteSet(-1);
+}
+
+void CGameMap::SendVoteSet(int ClientID)
+{
+	if (ClientID == -1)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+			SendVoteSet(i);
+	}
+	else
+	{
+		if (m_apPlayers[ClientID] == 0x0)
+			return;
+
+		CNetMsg_Sv_VoteSet Msg;
+		if (m_VoteCloseTime)
+		{
+			Msg.m_Timeout = (m_VoteCloseTime - time_get()) / time_freq();
+			Msg.m_pDescription = m_aVoteDescription;
+			Msg.m_pReason = m_aVoteReason;
+		}
+		else
+		{
+			Msg.m_Timeout = 0;
+			Msg.m_pDescription = "";
+			Msg.m_pReason = "";
+		}
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+}
+
+void CGameMap::SendVoteStatus(int ClientID, int Total, int Yes, int No)
+{
+	if (ClientID == -1)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+			SendVoteStatus(i, Total, Yes, No);
+	}
+	else
+	{
+		if (m_apPlayers[ClientID] == 0x0)
+			return;
+
+		CNetMsg_Sv_VoteStatus Msg = { 0 };
+		Msg.m_Total = Total;
+		Msg.m_Yes = Yes;
+		Msg.m_No = No;
+		Msg.m_Pass = Total - (Yes + No);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+}
+
+void CGameMap::VoteEnforce(const char *pVote)
+{
+	// check if there is a vote running
+	if (!m_VoteCloseTime)
+		return;
+
+	if (str_comp_nocase(pVote, "yes") == 0)
+		m_VoteEnforce = CGameContext::VOTE_ENFORCE_YES;
+	else if (str_comp_nocase(pVote, "no") == 0)
+		m_VoteEnforce = CGameContext::VOTE_ENFORCE_NO;
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "admin forced vote %s", pVote);
+	SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	str_format(aBuf, sizeof(aBuf), "forcing vote %s", pVote);
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+}
+
+void CGameMap::Tick()
+{
+	mem_copy(&m_World.m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_World.m_Core.m_Tuning));
+	m_World.Tick();
+	UpdateVote();
+}
+
+void CGameMap::SendChat(int ChatterClientID, int Team, const char *pText)
+{
+	if (g_Config.m_Debug)
+	{
+		char aBuf[256];
+		if (ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
+			str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), pText);
+		else
+			str_format(aBuf, sizeof(aBuf), "*** %s", pText);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team != CGameContext::CHAT_ALL ? "teamchat" : "chat", aBuf);
+	}
+
+	if (Team == CGameContext::CHAT_ALL)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (m_apPlayers[i] == 0x0)
+				continue;
+
+			CNetMsg_Sv_Chat Msg;
+			Msg.m_Team = 0;
+			Msg.m_ClientID = ChatterClientID;
+			Msg.m_pMessage = pText;
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_apPlayers[i]->GetCID());
+		}
+	}
+	else
+	{
+		CNetMsg_Sv_Chat Msg;
+		Msg.m_Team = 1;
+		Msg.m_ClientID = ChatterClientID;
+		Msg.m_pMessage = pText;
+
+		// send to the clients
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() == Team)
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, m_apPlayers[i]->GetCID());
+		}
+	}
+}
+
+void CGameMap::OnClientEnter(int ClientID)
+{
+
+	m_VoteUpdate = true;
 }

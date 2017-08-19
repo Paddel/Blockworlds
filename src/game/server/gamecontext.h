@@ -81,22 +81,7 @@ public:
 
 	int m_LockTeams;
 
-	// voting
-	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
-	void EndVote();
-	void SendVoteSet(int ClientID);
-	void SendVoteStatus(int ClientID, int Total, int Yes, int No);
-	void AbortVoteKickOnDisconnect(int ClientID);
-
-	int m_VoteCreator;
-	int64 m_VoteCloseTime;
-	bool m_VoteUpdate;
-	int m_VotePos;
-	char m_aVoteDescription[VOTE_DESC_LENGTH];
-	char m_aVoteCommand[VOTE_CMD_LENGTH];
-	char m_aVoteReason[VOTE_REASON_LENGTH];
 	int m_NumVoteOptions;
-	int m_VoteEnforce;
 	enum
 	{
 		VOTE_ENFORCE_UNKNOWN=0,
@@ -147,8 +132,8 @@ public:
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID);
 
 	virtual void OnClientConnected(int ClientID);
-	virtual void OnClientEnter(int ClientID);
-	virtual void OnClientDrop(int ClientID, const char *pReason);
+	virtual void OnClientEnter(int ClientID, bool MapSwitching);
+	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap);
 	virtual void OnClientDirectInput(int ClientID, void *pInput);
 	virtual void OnClientPredictedInput(int ClientID, void *pInput);
 
