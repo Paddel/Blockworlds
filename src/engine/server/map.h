@@ -17,7 +17,7 @@ private:
 	CGameMap *m_pGameMap;
 	char m_aFileName[128];
 	unsigned m_MapCrc;
-	int m_MapSize;
+	unsigned int m_MapSize;
 	unsigned char *m_pMapData;
 
 	bool LoadMapFile();

@@ -702,7 +702,7 @@ CMap *CServer::FindMap(const char *pName)
 	for (int i = 0; i < m_lpMaps.size(); i++)
 		if (str_comp(m_lpMaps[i]->GetFileName(), pName) == 0)
 			return m_lpMaps[i];
-	return false;
+	return 0x0;
 }
 
 bool CServer::MovePlayer(int ClientID, CMap *pMap)

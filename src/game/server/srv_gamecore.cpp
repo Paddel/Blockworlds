@@ -1,5 +1,5 @@
 
-
+#include <base/math.h>
 #include <game/mapitems.h>
 #include <game/server/entities/npc.h>
 

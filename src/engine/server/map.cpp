@@ -44,7 +44,7 @@ bool CMap::LoadMapFile()
 	// load complete map into memory for download
 	{
 		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
-		m_MapSize = (int)io_length(File);
+		m_MapSize = (unsigned int)io_length(File);
 		m_pMapData = (unsigned char *)mem_alloc(m_MapSize, 1);
 		io_read(File, m_pMapData, m_MapSize);
 		io_close(File);
