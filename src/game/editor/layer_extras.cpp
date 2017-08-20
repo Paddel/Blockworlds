@@ -1,6 +1,7 @@
 
 #include <engine/textrender.h>
 #include <engine/client.h>
+#include <game/extras.h>
 
 #include "editor.h"
 

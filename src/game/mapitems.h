@@ -65,16 +65,6 @@ enum
 	ENTITY_OFFSET=255-16*4,
 };
 
-static const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA/2] = { { },
-{ "ID" }, //EXTRAS_TELEPORT_FROM
-{ "ID"}, //EXTRAS_TELEPORT_TO
-};
-
-static const int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA/2] = { { },
-{ 3 }, //EXTRAS_TELEPORT_FROM
-{ 3 }, //EXTRAS_TELEPORT_TO
-};
-
 struct CPoint
 {
 	int x, y; // 22.10 fixed point

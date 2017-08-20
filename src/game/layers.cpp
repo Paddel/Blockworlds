@@ -18,8 +18,6 @@ void CLayers::Init(IMap *pEngineMap)
 	m_pMap->GetType(MAPITEMTYPE_GROUP, &m_GroupsStart, &m_GroupsNum);
 	m_pMap->GetType(MAPITEMTYPE_LAYER, &m_LayersStart, &m_LayersNum);
 
-	dbg_msg(0, "%i %s", gs_ExtrasSizes[0][0], gs_ExtrasNames[0][0]);
-
 	for(int g = 0; g < NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = GetGroup(g);
