@@ -46,7 +46,7 @@ public:
 	{	
 		if (ClientID == -1)
 		{
-			/*for (int i = 0; i < MAX_CLIENTS; i++)
+			for (int i = 0; i < MAX_CLIENTS; i++)
 			{
 				if (ClientIngame(i) == false)
 					continue;
@@ -54,7 +54,7 @@ public:
 				T Buff;
 				mem_copy(&Buff, pMsg, sizeof(T));
 				SendPackMsgTranslate(&Buff, Flags, i);
-			}*/
+			}
 		}
 		else
 			SendPackMsgTranslate(pMsg, Flags, ClientID);
