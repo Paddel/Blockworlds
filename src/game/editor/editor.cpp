@@ -692,7 +692,7 @@ CLayer *CEditor::GetSelectedLayer(int Index)
 CLayer *CEditor::GetSelectedLayerType(int Index, int Type)
 {
 	CLayer *p = GetSelectedLayer(Index);
-	if(p && p->m_Type == Type)
+	if(p && (p->m_Type == Type || (Type == LAYERTYPE_TILES && p->m_Type == LAYERTYPE_EXTRAS)))
 		return p;
 	return 0x0;
 }
@@ -916,7 +916,7 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		bool TileLayer = false;
 		// check for tile layers in brush selection
 		for(int i = 0; i < m_Brush.m_lLayers.size(); i++)
-			if(m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_TILES)
+			if(m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_TILES || m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_EXTRAS)
 			{
 				TileLayer = true;
 				s_RotationAmount = max(90, (s_RotationAmount/90)*90);
@@ -976,6 +976,8 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		TB_Bottom.VSplitLeft(40.0f, &Button, &TB_Bottom);
 		static int s_BorderBut = 0;
 		CLayerTiles *pT = (CLayerTiles *)GetSelectedLayerType(0, LAYERTYPE_TILES);
+		if (pT != 0x0 && pT->m_Type == LAYERTYPE_EXTRAS)
+			pT = 0x0;
 
 		if(DoButton_Editor(&s_BorderBut, "Border", pT?0:-1, &Button, 0, "Adds border tiles"))
 		{
@@ -1660,8 +1662,32 @@ void CEditor::DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int PIndex)
 	Graphics()->QuadsDraw(&QuadItem, 1);
 }
 
-void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
+void CEditor::CheckExtras(float WorldX, float WorldY)
 {
+	if (GetSelectedLayer(0)->m_Type != LAYERTYPE_EXTRAS)
+		return;
+
+	CLayerExtras *pLayer = (CLayerExtras *)GetSelectedLayer(0);
+	m_EditingExtraX = -1;
+	m_EditingExtraY = -1;
+
+	int TileX = WorldX / 32, TileY = WorldY / 32;
+	if (WorldX < 0 || TileX >= pLayer->m_Width ||
+		WorldY < 0 || TileY >= pLayer->m_Height)//outa map
+		return;
+
+	int Index = TileY * pLayer->m_Width + TileX;
+	int Tile = pLayer->m_pTiles[Index].m_Index;
+	if (Tile <= 0 || Tile >= NUM_EXTRAS)
+		return;
+
+	m_EditingExtraX = TileX, m_EditingExtraY = TileY;
+	static int s_ExtrasPopupId = 0;
+	UiInvokePopupMenu(&s_ExtrasPopupId, 0, UI()->MouseX(), UI()->MouseY(), ms_ExtrasPopupSize[Tile][0], ms_ExtrasPopupSize[Tile][1], PopupExtras);
+}
+
+void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
+{ 
 	// render all good stuff
 	if(!m_ShowPicker)
 	{
@@ -1765,7 +1791,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 
 			for(int i = 0; i < NumEditLayers; i++)
 			{
-				if(pEditLayers[i]->m_Type != LAYERTYPE_TILES)
+				if(pEditLayers[i]->m_Type != LAYERTYPE_TILES && pEditLayers[i]->m_Type != LAYERTYPE_EXTRAS)
 					continue;
 
 				float w, h;
@@ -1838,7 +1864,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 						// draw with brush
 						for(int k = 0; k < NumEditLayers; k++)
 						{
-							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
+							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type || (pEditLayers[k]->m_Type == LAYERTYPE_EXTRAS && m_Brush.m_lLayers[0]->m_Type == LAYERTYPE_TILES))
 								pEditLayers[k]->BrushDraw(m_Brush.m_lLayers[0], wx, wy);
 						}
 					}
@@ -1885,8 +1911,13 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 			}
 			else
 			{
-				if(UI()->MouseButton(1))
-					m_Brush.Clear();
+				if (UI()->MouseButton(1))
+				{
+					if (!m_Brush.IsEmpty())
+						m_Brush.Clear();
+					else if (UI()->MouseButtonClicked(1))
+						CheckExtras(wx, wy);
+				}
 
 				if(UI()->MouseButton(0) && s_Operation == OP_NONE)
 				{
@@ -1916,7 +1947,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 					m_Brush.m_OffsetY = -(int)wy;
 					for(int i = 0; i < m_Brush.m_lLayers.size(); i++)
 					{
-						if(m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_TILES)
+						if(m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_TILES || m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_EXTRAS)
 						{
 							m_Brush.m_OffsetX = -(int)(wx/32.0f)*32;
 							m_Brush.m_OffsetY = -(int)(wy/32.0f)*32;

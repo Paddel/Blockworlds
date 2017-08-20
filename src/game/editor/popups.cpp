@@ -167,12 +167,33 @@ int CEditor::PopupGroup(CEditor *pEditor, CUIRect View)
 	static int s_NewTileLayerButton = 0;
 	if(pEditor->DoButton_Editor(&s_NewTileLayerButton, "Add tile layer", 0, &Button, 0, "Creates a new tile layer"))
 	{
-		CLayer *l = new CLayerTiles(50, 50);
+		int Width = pEditor->m_Map.m_pGameLayer != 0x0 ? pEditor->m_Map.m_pGameLayer->m_Width : 50;
+		int Height = pEditor->m_Map.m_pGameLayer != 0x0 ? pEditor->m_Map.m_pGameLayer->m_Height : 50;
+		CLayer *l = new CLayerTiles(Width, Height);
 		l->m_pEditor = pEditor;
 		pEditor->m_Map.m_lGroups[pEditor->m_SelectedGroup]->AddLayer(l);
 		pEditor->m_SelectedLayer = pEditor->m_Map.m_lGroups[pEditor->m_SelectedGroup]->m_lLayers.size()-1;
 		pEditor->m_Map.m_lGroups[pEditor->m_SelectedGroup]->m_Collapse = false;
 		return 1;
+	}
+
+	if (pEditor->GetSelectedGroup()->m_GameGroup)
+	{
+		View.HSplitBottom(5.0f, &View, &Button);
+		View.HSplitBottom(12.0f, &View, &Button);
+
+		static int s_NewExtrasLayerButton = 0;
+		if (pEditor->DoButton_Editor(&s_NewExtrasLayerButton, "Add extras layer", 0, &Button, 0, "Creates a new extras layer"))
+		{
+			int Width = pEditor->m_Map.m_pGameLayer != 0x0 ? pEditor->m_Map.m_pGameLayer->m_Width : 50;
+			int Height = pEditor->m_Map.m_pGameLayer != 0x0 ? pEditor->m_Map.m_pGameLayer->m_Height : 50;
+			CLayer *l = new CLayerExtras(Width, Height);
+			l->m_pEditor = pEditor;
+			pEditor->m_Map.m_lGroups[pEditor->m_SelectedGroup]->AddLayer(l);
+			pEditor->m_SelectedLayer = pEditor->m_Map.m_lGroups[pEditor->m_SelectedGroup]->m_lLayers.size() - 1;
+			pEditor->m_Map.m_lGroups[pEditor->m_SelectedGroup]->m_Collapse = false;
+			return 1;
+		}
 	}
 
 	// group name
@@ -248,6 +269,23 @@ int CEditor::PopupGroup(CEditor *pEditor, CUIRect View)
 	return 0;
 }
 
+int CEditor::PopupExtras(CEditor *pEditor, CUIRect View)
+{
+	if(pEditor->GetSelectedLayer(0)->m_Type != LAYERTYPE_EXTRAS)
+		return 1;
+
+	CLayerExtras *pLayer = (CLayerExtras *)pEditor->GetSelectedLayer(0);
+	if (pEditor->m_EditingExtraX < 0 || pEditor->m_EditingExtraX >= pLayer->m_Width ||
+		pEditor->m_EditingExtraY < 0 || pEditor->m_EditingExtraY >= pLayer->m_Height)//outa map
+		return 1;
+
+	int Index = pEditor->m_EditingExtraY * pLayer->m_Width + pEditor->m_EditingExtraX;
+	if (pLayer->m_pTiles[Index].m_Index <= 0 || pLayer->m_pTiles[Index].m_Index >= NUM_EXTRAS)
+		return  1;
+
+	return pLayer->RenderEditExtra(pEditor, View, Index);
+}
+
 int CEditor::PopupLayer(CEditor *pEditor, CUIRect View)
 {
 	// remove layer button
@@ -264,7 +302,7 @@ int CEditor::PopupLayer(CEditor *pEditor, CUIRect View)
 	}
 
 	// layer name
-	if(pEditor->m_Map.m_pGameLayer != pEditor->GetSelectedLayer(0))
+	if(pEditor->m_Map.m_pGameLayer != pEditor->GetSelectedLayer(0) && pEditor->GetSelectedLayer(0)->m_Type != LAYERTYPE_EXTRAS)
 	{
 		View.HSplitBottom(5.0f, &View, &Button);
 		View.HSplitBottom(12.0f, &View, &Button);
@@ -295,7 +333,7 @@ int CEditor::PopupLayer(CEditor *pEditor, CUIRect View)
 		{0},
 	};
 
-	if(pEditor->m_Map.m_pGameLayer == pEditor->GetSelectedLayer(0)) // dont use Group and Detail from the selection if this is the game layer
+	if(pEditor->m_Map.m_pGameLayer == pEditor->GetSelectedLayer(0) || pEditor->GetSelectedLayer(0)->m_Type == LAYERTYPE_EXTRAS) // dont use Group and Detail from the selection if this is the game layer
 	{
 		aProps[0].m_Type = PROPTYPE_NULL;
 		aProps[2].m_Type = PROPTYPE_NULL;
@@ -309,7 +347,7 @@ int CEditor::PopupLayer(CEditor *pEditor, CUIRect View)
 
 	if(Prop == PROP_ORDER)
 		pEditor->m_SelectedLayer = pCurrentGroup->SwapLayers(pEditor->m_SelectedLayer, NewVal);
-	else if(Prop == PROP_GROUP && pCurrentLayer->m_Type != LAYERTYPE_GAME)
+	else if(Prop == PROP_GROUP && pCurrentLayer->m_Type != LAYERTYPE_GAME && pCurrentLayer->m_Type != LAYERTYPE_EXTRAS)
 	{
 		if(NewVal >= 0 && NewVal < pEditor->m_Map.m_lGroups.size())
 		{

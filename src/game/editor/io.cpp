@@ -303,7 +303,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 			if(!pGroup->m_lLayers[l]->m_SaveToMap)
 				continue;
 
-			if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_TILES)
+			if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_TILES || pGroup->m_lLayers[l]->m_Type == LAYERTYPE_EXTRAS)
 			{
 				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving tiles layer");
 				CLayerTiles *pLayer = (CLayerTiles *)pGroup->m_lLayers[l];
@@ -324,6 +324,12 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 				Item.m_Flags = pLayer->m_Game ? TILESLAYERFLAG_GAME : 0;
 				Item.m_Image = pLayer->m_Image;
 				Item.m_Data = df.AddData(pLayer->m_Width*pLayer->m_Height*sizeof(CTile), pLayer->m_pTiles);
+
+				if (pLayer->m_Type == LAYERTYPE_EXTRAS)
+				{
+					Item.m_ExtraVersion = EXTRA_VERSION;
+					Item.m_ExtrasData = df.AddData(pLayer->m_Width*pLayer->m_Height*sizeof(EXTRATILE_DATA), ((CLayerExtras*)pLayer)->m_pExtrasData);
+				}
 
 				// save layer name
 				StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pLayer->m_aName);
@@ -601,6 +607,30 @@ int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int Storag
 						}
 
 						DataFile.UnloadData(pTilemapItem->m_Data);
+					}
+					else if (pLayerItem->m_Type == LAYERTYPE_EXTRAS)
+					{
+						CMapItemLayerTilemap *pTilemapItem = (CMapItemLayerTilemap *)pLayerItem;
+						CLayerExtras *pExtras = new CLayerExtras(pTilemapItem->m_Width, pTilemapItem->m_Height);
+						pExtras->m_pEditor = m_pEditor;
+
+						pLayer = pExtras;
+
+						pGroup->AddLayer(pExtras);
+						void *pData = DataFile.GetData(pTilemapItem->m_Data);
+						void *pDataExtras = DataFile.GetData(pTilemapItem->m_ExtrasData);
+						pExtras->m_Image = pTilemapItem->m_Image;
+						pExtras->m_Game = 0;
+
+						// load layer name
+						if (pTilemapItem->m_Version >= 3)
+							IntsToStr(pTilemapItem->m_aName, sizeof(pExtras->m_aName) / sizeof(int), pExtras->m_aName);
+
+						mem_copy(pExtras->m_pTiles, pData, pExtras->m_Width*pExtras->m_Height * sizeof(CTile));
+						mem_copy(pExtras->m_pExtrasData, pDataExtras, pExtras->m_Width*pExtras->m_Height * sizeof(CTile));
+
+						DataFile.UnloadData(pTilemapItem->m_Data);
+						DataFile.UnloadData(pTilemapItem->m_ExtrasData);
 					}
 					else if(pLayerItem->m_Type == LAYERTYPE_QUADS)
 					{

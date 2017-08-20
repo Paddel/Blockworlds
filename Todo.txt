@@ -1,5 +1,7 @@
-vote system per map
 map editor
-accountsystem
 
 ddnet combtilitibily
+
+extras
+accountsystem
+clan

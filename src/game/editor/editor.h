@@ -400,8 +400,8 @@ public:
 	CLayerTiles(int w, int h);
 	~CLayerTiles();
 
-	void Resize(int NewW, int NewH);
-	void Shift(int Direction);
+	virtual void Resize(int NewW, int NewH);
+	virtual void Shift(int Direction);
 
 	void MakePalette();
 	virtual void Render();
@@ -474,6 +474,31 @@ public:
 	CLayerGame(int w, int h);
 	~CLayerGame();
 
+	virtual int RenderProperties(CUIRect *pToolbox);
+};
+
+class CLayerExtras : public CLayerTiles
+{
+public:
+	CLayerExtras(int w, int h);
+	~CLayerExtras();
+	CExtrasData *m_pExtrasData;
+
+	void RenderColumn(CEditor *pEditor, CUIRect View, int Index);
+
+	int RenderEditExtra(CEditor *pEditor, CUIRect View, int Index);
+
+	virtual int BrushGrab(CLayerGroup *pBrush, CUIRect Rect);
+	virtual void FillSelection(bool Empty, CLayer *pBrush, CUIRect Rect);
+	virtual void BrushDraw(CLayer *pBrush, float wx, float wy);
+	virtual void BrushFlipX();
+	virtual void BrushFlipY();
+	virtual void BrushRotate(float Amount);
+
+	virtual void Resize(int NewW, int NewH);
+	virtual void Shift(int Direction);
+
+	virtual void ShowInfo();
 	virtual int RenderProperties(CUIRect *pToolbox);
 };
 
@@ -568,6 +593,9 @@ public:
 		ms_BackgroundTexture = 0;
 		ms_CursorTexture = 0;
 		ms_EntitiesTexture = 0;
+
+		m_EditingExtraX = -1;
+		m_EditingExtraY = -1;
 
 		ms_pUiGotContext = 0;
 	}
@@ -704,6 +732,10 @@ public:
 
 	static const void *ms_pUiGotContext;
 
+	int m_EditingExtraX;
+	int m_EditingExtraY;
+	static int ms_ExtrasPopupSize[NUM_EXTRAS][2];
+
 	CEditorMap m_Map;
 
 	static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
@@ -733,6 +765,7 @@ public:
 
 	int UiDoValueSelector(void *pID, CUIRect *pRect, const char *pLabel, int Current, int Min, int Max, int Step, float Scale, const char *pToolTip);
 
+	static int PopupExtras(CEditor *pEditor, CUIRect View);
 	static int PopupGroup(CEditor *pEditor, CUIRect View);
 	static int PopupLayer(CEditor *pEditor, CUIRect View);
 	static int PopupQuad(CEditor *pEditor, CUIRect View);
@@ -765,6 +798,7 @@ public:
 	void DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int pIndex);
 	void DoQuadPoint(CQuad *pQuad, int QuadIndex, int v);
 
+	void CheckExtras(float WorldX, float WorldY);
 	void DoMapEditor(CUIRect View, CUIRect Toolbar);
 	void DoToolbar(CUIRect Toolbar);
 	void DoQuad(CQuad *pQuad, int Index);
