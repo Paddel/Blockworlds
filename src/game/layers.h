@@ -15,9 +15,16 @@ class CLayers
 	CMapItemGroup *m_pGameGroup;
 	CMapItemLayerTilemap *m_pGameLayer;
 	class IMap *m_pMap;
+	int m_NumExtrasLayer;
+	CExtrasData **m_apExtrasData;
+	CTile **m_apExtrasTiles;
+
+	void InitGameLayer();
+	void InitExtraLayers();
 
 public:
 	CLayers();
+	~CLayers();
 	void Init(IMap *pEngineMap);
 	int NumGroups() const { return m_GroupsNum; };
 	class IMap *Map() const { return m_pMap; };
@@ -25,6 +32,9 @@ public:
 	CMapItemLayerTilemap *GameLayer() const { return m_pGameLayer; };
 	CMapItemGroup *GetGroup(int Index) const;
 	CMapItemLayer *GetLayer(int Index) const;
+	int GetNumExtrasLayer() const { return m_NumExtrasLayer; };
+	CExtrasData *GetExtrasData(int Index) const { return m_apExtrasData[Index]; };
+	CTile *GetExtrasTile(int Index) const { return m_apExtrasTiles[Index]; };
 };
 
 #endif

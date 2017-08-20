@@ -611,6 +611,12 @@ int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int Storag
 					else if (pLayerItem->m_Type == LAYERTYPE_EXTRAS)
 					{
 						CMapItemLayerTilemap *pTilemapItem = (CMapItemLayerTilemap *)pLayerItem;
+						if (pTilemapItem->m_ExtraVersion != EXTRA_VERSION)
+						{
+							m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "editor", "Extras layer could not be loaded due to the incorrect version");
+							continue;
+						}
+
 						CLayerExtras *pExtras = new CLayerExtras(pTilemapItem->m_Width, pTilemapItem->m_Height);
 						pExtras->m_pEditor = m_pEditor;
 
