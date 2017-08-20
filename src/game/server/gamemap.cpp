@@ -156,7 +156,7 @@ void CGameMap::UpdateVote()
 					int ActVotePos = m_apPlayers[i]->m_VotePos;
 
 					// check for more players with the same ip (only use the vote of the one who voted first)
-					/*for (int j = i + 1; j < MAX_CLIENTS; ++j)
+					for (int j = i + 1; j < MAX_CLIENTS; ++j)
 					{
 						if (!m_apPlayers[j] || aVoteChecked[j] || str_comp(aaBuf[j], aaBuf[i]))
 							continue;
@@ -167,7 +167,7 @@ void CGameMap::UpdateVote()
 							ActVote = m_apPlayers[j]->m_Vote;
 							ActVotePos = m_apPlayers[j]->m_VotePos;
 						}
-					}*/
+					}
 
 					Total++;
 					if (ActVote > 0)
