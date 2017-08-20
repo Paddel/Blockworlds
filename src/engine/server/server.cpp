@@ -825,7 +825,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_AUTH)
 			{
-				m_aClients[ClientID].m_pMap = m_lpMaps[rand() % m_lpMaps.size()];
+				//m_aClients[ClientID].m_pMap = m_lpMaps[rand() % m_lpMaps.size()];
 				const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
 				if(str_comp(pVersion, GameServer()->NetVersion()) != 0)
 				{
