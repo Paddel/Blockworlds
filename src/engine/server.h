@@ -3,6 +3,7 @@
 #ifndef ENGINE_SERVER_H
 #define ENGINE_SERVER_H
 
+#include <engine/shared/protocol.h>
 #include <game/generated/protocol.h>
 
 #include "kernel.h"
