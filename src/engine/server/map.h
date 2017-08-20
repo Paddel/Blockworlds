@@ -31,7 +31,7 @@ public:
 
 	const char *GetFileName() const { return m_aFileName; };
 	unsigned GetMapCrc() const { return m_MapCrc; };
-	int GetMapSize() const { return m_MapSize; };
+	unsigned int GetMapSize() const { return m_MapSize; };
 	const unsigned char *MapData() const { return m_pMapData; };
 
 	CEngineMap *EngineMap() { return &m_EngineMap; };
