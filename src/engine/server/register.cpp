@@ -4,11 +4,10 @@
 #include <engine/shared/network.h>
 #include <engine/shared/config.h>
 #include <engine/console.h>
-#include <engine/masterserver.h>
-
 #include <mastersrv/mastersrv.h>
 
 #include "register.h"
+#include "map.h"
 
 CRegister::CRegister()
 {
@@ -23,6 +22,8 @@ CRegister::CRegister()
 
 	mem_zero(m_aMasterserverInfo, sizeof(m_aMasterserverInfo));
 	m_RegisterRegisteredServer = -1;
+
+	m_Port = 0;
 }
 
 void CRegister::RegisterNewState(int State)
@@ -39,13 +40,13 @@ void CRegister::RegisterSendFwcheckresponse(NETADDR *pAddr)
 	Packet.m_Flags = NETSENDFLAG_CONNLESS;
 	Packet.m_DataSize = sizeof(SERVERBROWSE_FWRESPONSE);
 	Packet.m_pData = SERVERBROWSE_FWRESPONSE;
-	m_pNetServer->Send(&Packet);
+	m_pNetServer->SendConnless(&Packet, m_pMap->GetSocket());
 }
 
 void CRegister::RegisterSendHeartbeat(NETADDR Addr)
 {
 	static unsigned char aData[sizeof(SERVERBROWSE_HEARTBEAT) + 2];
-	unsigned short Port = g_Config.m_SvPort;
+	unsigned short Port = m_Port;
 	CNetChunk Packet;
 
 	mem_copy(aData, SERVERBROWSE_HEARTBEAT, sizeof(SERVERBROWSE_HEARTBEAT));
@@ -61,7 +62,7 @@ void CRegister::RegisterSendHeartbeat(NETADDR Addr)
 		Port = g_Config.m_SvExternalPort;
 	aData[sizeof(SERVERBROWSE_HEARTBEAT)] = Port >> 8;
 	aData[sizeof(SERVERBROWSE_HEARTBEAT)+1] = Port&0xff;
-	m_pNetServer->Send(&Packet);
+	m_pNetServer->SendConnless(&Packet, m_pMap->GetSocket());
 }
 
 void CRegister::RegisterSendCountRequest(NETADDR Addr)
@@ -72,7 +73,7 @@ void CRegister::RegisterSendCountRequest(NETADDR Addr)
 	Packet.m_Flags = NETSENDFLAG_CONNLESS;
 	Packet.m_DataSize = sizeof(SERVERBROWSE_GETCOUNT);
 	Packet.m_pData = SERVERBROWSE_GETCOUNT;
-	m_pNetServer->Send(&Packet);
+	m_pNetServer->SendConnless(&Packet, m_pMap->GetSocket());
 }
 
 void CRegister::RegisterGotCount(CNetChunk *pChunk)
@@ -90,11 +91,13 @@ void CRegister::RegisterGotCount(CNetChunk *pChunk)
 	}
 }
 
-void CRegister::Init(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole)
+void CRegister::Init(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole, CMap *pMap)
 {
 	m_pNetServer = pNetServer;
 	m_pMasterServer = pMasterServer;
 	m_pConsole = pConsole;
+	m_pMap = pMap;
+	m_Port = pMap->GetPort();
 }
 
 void CRegister::RegisterUpdate(int Nettype)
@@ -283,7 +286,7 @@ int CRegister::RegisterProcessPacket(CNetChunk *pPacket)
 	{
 		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "register", "ERROR: the master server reports that clients can not connect to this server.");
 		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "ERROR: configure your firewall/nat to let through udp on port %d.", g_Config.m_SvPort);
+		str_format(aBuf, sizeof(aBuf), "ERROR: configure your firewall/nat to let through udp on port %d.", m_Port);
 		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "register", aBuf);
 		RegisterNewState(REGISTERSTATE_ERROR);
 		return 1;

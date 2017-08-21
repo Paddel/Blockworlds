@@ -74,6 +74,7 @@ public:
 	bool FreePlayerSlot();
 	bool PlayerJoin(int ClientID);
 	void PlayerLeave(int ClientID);
+	bool PlayerOnMap(int ClientID);
 	int FreeNpcSlot();
 	CNpc *GetNpc(int ClientID);
 

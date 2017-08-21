@@ -513,6 +513,9 @@ void CCharacter::Tick()
 {
 	HandleExtras();
 
+	if (m_Alive == false)
+		return;
+
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
@@ -537,6 +540,9 @@ void CCharacter::Tick()
 
 void CCharacter::TickDefered()
 {
+	if (m_Alive == false)
+		return;
+
 	// advance the dummy
 	{
 		CSrvWorldCore TempWorld;

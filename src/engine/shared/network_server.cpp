@@ -10,15 +10,10 @@
 #include "network.h"
 
 
-bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int MaxClientsPerIP, int Flags)
+void CNetServer::Open(NETSOCKET Socket, CNetBan *pNetBan, int MaxClients, int MaxClientsPerIP, int Flags)
 {
 	// zero out the whole structure
-	mem_zero(this, sizeof(*this));
-
-	// open socket
-	m_Socket = net_udp_create(BindAddr, 0);
-	if(!m_Socket.type)
-		return false;
+	mem_zero(this, sizeof(*this)); // this not well done tho.. what are constructors for?
 
 	m_pNetBan = pNetBan;
 
@@ -32,9 +27,7 @@ bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int Ma
 	m_MaxClientsPerIP = MaxClientsPerIP;
 
 	for(int i = 0; i < NET_MAX_CLIENTS; i++)
-		m_aSlots[i].m_Connection.Init(m_Socket, true);
-
-	return true;
+		m_aSlots[i].m_Connection.Init(Socket, true);
 }
 
 int CNetServer::SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_DELCLIENT pfnDelClient, void *pUser)
@@ -93,7 +86,7 @@ int CNetServer::Update()
 /*
 	TODO: chopp up this function into smaller working parts
 */
-int CNetServer::Recv(CNetChunk *pChunk)
+int CNetServer::Recv(CNetChunk *pChunk, NETSOCKET Socket)
 {
 	while(1)
 	{
@@ -104,7 +97,7 @@ int CNetServer::Recv(CNetChunk *pChunk)
 			return 1;
 
 		// TODO: empty the recvinfo
-		int Bytes = net_udp_recv(m_Socket, &Addr, m_RecvUnpacker.m_aBuffer, NET_MAX_PACKETSIZE);
+		int Bytes = net_udp_recv(Socket, &Addr, m_RecvUnpacker.m_aBuffer, NET_MAX_PACKETSIZE);
 
 		// no more packets for now
 		if(Bytes <= 0)
@@ -117,7 +110,7 @@ int CNetServer::Recv(CNetChunk *pChunk)
 			if(NetBan() && NetBan()->IsBanned(&Addr, aBuf, sizeof(aBuf)))
 			{
 				// banned, reply with a message
-				CNetBase::SendControlMsg(m_Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aBuf, str_length(aBuf)+1);
+				CNetBase::SendControlMsg(Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aBuf, str_length(aBuf)+1);
 				continue;
 			}
 
@@ -168,7 +161,7 @@ int CNetServer::Recv(CNetChunk *pChunk)
 								{
 									char aBuf[128];
 									str_format(aBuf, sizeof(aBuf), "Only %d players with the same IP are allowed", m_MaxClientsPerIP);
-									CNetBase::SendControlMsg(m_Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aBuf, str_length(aBuf) + 1);
+									CNetBase::SendControlMsg(Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aBuf, str_length(aBuf) + 1);
 									return 0;
 								}
 							}
@@ -179,6 +172,7 @@ int CNetServer::Recv(CNetChunk *pChunk)
 							if(m_aSlots[i].m_Connection.State() == NET_CONNSTATE_OFFLINE)
 							{
 								Found = true;
+								m_aSlots[i].m_Connection.SetSocket(Socket);
 								m_aSlots[i].m_Connection.Feed(&m_RecvUnpacker.m_Data, &Addr);
 								if(m_pfnNewClient)
 									m_pfnNewClient(i, m_UserPtr);
@@ -189,7 +183,7 @@ int CNetServer::Recv(CNetChunk *pChunk)
 						if(!Found)
 						{
 							const char FullMsg[] = "This server is full";
-							CNetBase::SendControlMsg(m_Socket, &Addr, 0, NET_CTRLMSG_CLOSE, FullMsg, sizeof(FullMsg));
+							CNetBase::SendControlMsg(Socket, &Addr, 0, NET_CTRLMSG_CLOSE, FullMsg, sizeof(FullMsg));
 						}
 					}
 				}
@@ -222,12 +216,8 @@ int CNetServer::Send(CNetChunk *pChunk)
 		return -1;
 	}
 
-	if(pChunk->m_Flags&NETSENDFLAG_CONNLESS)
-	{
-		// send connectionless packet
-		CNetBase::SendPacketConnless(m_Socket, &pChunk->m_Address, pChunk->m_pData, pChunk->m_DataSize);
-	}
-	else
+	
+	if ((pChunk->m_Flags&NETSENDFLAG_CONNLESS) == 0)
 	{
 		int Flags = 0;
 		dbg_assert(pChunk->m_ClientID >= 0, "errornous client id");
@@ -246,6 +236,27 @@ int CNetServer::Send(CNetChunk *pChunk)
 			Drop(pChunk->m_ClientID, "Error sending data");
 		}
 	}
+	else
+		dbg_msg("NetServer", "Error sending Packet connless packet");
+	
+	return 0;
+}
+
+int CNetServer::SendConnless(CNetChunk *pChunk, NETSOCKET Socket)
+{
+	if (pChunk->m_DataSize >= NET_MAX_PAYLOAD)
+	{
+		dbg_msg("netserver", "packet payload too big. %d. dropping packet %i", pChunk->m_DataSize, pChunk->m_Flags);
+		return -1;
+	}
+
+	if (pChunk->m_Flags&NETSENDFLAG_CONNLESS)
+	{
+		// send connectionless packet
+		CNetBase::SendPacketConnless(Socket, &pChunk->m_Address, pChunk->m_pData, pChunk->m_DataSize);
+	}
+	else
+		dbg_msg("NetServer", "Error sending Packet packet. Packet is not connless");
 	return 0;
 }
 

@@ -125,6 +125,7 @@ public:
 
 	virtual const char *GameType();
 	virtual const char *Version();
+	virtual const char *FakeVersion();
 	virtual const char *NetVersion();
 };
 

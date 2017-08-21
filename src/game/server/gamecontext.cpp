@@ -1240,8 +1240,9 @@ bool CGameContext::IsClientPlayer(int ClientID)
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
 
-const char *CGameContext::GameType() { return g_Config.m_SvFakeGametype ? "DDRaceNetwork" : "BW"; }
+const char *CGameContext::GameType() { return g_Config.m_SvFakeGametype ? "DDRaceNetwork" : "BW564"; }
 const char *CGameContext::Version() { return GAME_VERSION; }
+const char *CGameContext::FakeVersion() { return GAME_FAKEVERSION; }
 const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }

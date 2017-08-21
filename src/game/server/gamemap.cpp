@@ -280,6 +280,11 @@ void CGameMap::PlayerLeave(int ClientID)
 	m_VoteUpdate = true;
 }
 
+bool CGameMap::PlayerOnMap(int ClientID)
+{
+	return m_apPlayers[ClientID] != 0x0;
+}
+
 int CGameMap::FreeNpcSlot()
 {
 	int ClientID = MAX_CLIENTS;

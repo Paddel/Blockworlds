@@ -14,7 +14,6 @@
 #include <engine/shared/econ.h>
 
 #include "translator.h"
-#include "register.h"
 #include "map.h"
 
 
@@ -76,10 +75,12 @@ class CServer : public IServer
 	class IGameServer *m_pGameServer;
 	class IConsole *m_pConsole;
 	class IStorage *m_pStorage;
+	class IEngineMasterServer *m_pMasterServer;
 public:
 	class IGameServer *GameServer() { return m_pGameServer; }
 	class IConsole *Console() { return m_pConsole; }
 	class IStorage *Storage() { return m_pStorage; }
+	class IEngineMasterServer *MasterServer() { return m_pMasterServer; }
 
 	enum
 	{
@@ -167,8 +168,6 @@ public:
 	array<CMap *> m_lpMaps;
 	CMap *m_pDefaultMap;
 
-	CRegister m_Register;
-
 	CServer();
 
 	int TrySetClientName(int ClientID, const char *pName);
@@ -203,6 +202,8 @@ public:
 
 	void DoSnapshot();
 
+	void SetMapOnConnect(int ClientID);
+
 	static int NewClientCallback(int ClientID, void *pUser);
 	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
@@ -219,16 +220,15 @@ public:
 
 	void ProcessClientPacket(CNetChunk *pPacket);
 
-	void SendServerInfo(const NETADDR *pAddr, int Token);
+	void SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offset = 0);
 	void UpdateServerInfo();
 
 	void PumpNetwork();
 
-	CMap *AddMap(const char *pMapName);
+	CMap *AddMap(const char *pMapName, int Port);
 	bool RemoveMap(const char *pMapName);
 	bool ReloadMap(const char *pMapName);
 
-	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
 	int Run();
 
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
@@ -255,6 +255,7 @@ public:
 
 	CMap *CurrentMap(int ClientID);
 	int CurrentMapIndex(int ClientID);
+	CMap *GetMap(int Index);
 
 	virtual int UsingMapItems(int ClientID);
 	virtual CGameMap *CurrentGameMap(int ClientID);

@@ -650,6 +650,36 @@ void CServer::DoSnapshot()
 	GameServer()->OnPostSnap();
 }
 
+void CServer::SetMapOnConnect(int ClientID)
+{
+	CMap *pMap = 0x0;
+	//dummy connect
+	for (int i = 0; i < m_NetServer.MaxClients(); ++i)
+	{
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY == i == ClientID)
+			continue;
+
+		NETADDR OtherAddr = *m_NetServer.ClientAddr(i);
+		NETADDR OwnAddr = *m_NetServer.ClientAddr(ClientID);
+		OtherAddr.port = 0;
+		OwnAddr.port = 0;
+		if (!net_addr_comp(&OwnAddr, &OtherAddr))
+		{
+			m_aClients[ClientID].m_pMap = m_aClients[i].m_pMap;
+			return;
+		}
+	}
+
+	//connect via serverbrowser
+	for (int i = 0; i < m_lpMaps.size() && pMap == 0x0; i++)
+		if (mem_comp(&m_lpMaps[i]->GetSocket(), &m_NetServer.ClientSocket(ClientID), sizeof(NETSOCKET)) == 0)
+			pMap = m_lpMaps[i];
+
+	if (pMap == 0x0 || pMap->HasFreePlayerSlot() == false)
+		pMap = m_pDefaultMap;
+
+	m_aClients[ClientID].m_pMap = pMap;
+}
 
 int CServer::NewClientCallback(int ClientID, void *pUser)
 {
@@ -661,10 +691,11 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_pMap = pThis->m_pDefaultMap;
 	pThis->m_aClients[ClientID].m_MapitemUsage = 16;
 	pThis->m_aClients[ClientID].m_Online = false;
 	pThis->m_aClients[ClientID].Reset();
+
+	pThis->SetMapOnConnect(ClientID);
 	return 0;
 }
 
@@ -827,11 +858,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			{
 				//m_aClients[ClientID].m_pMap = m_lpMaps[rand() % m_lpMaps.size()];
 				const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
-				if(str_comp(pVersion, GameServer()->NetVersion()) != 0)
+				if(str_comp(pVersion, GameServer()->FakeVersion()) != 0)
 				{
 					// wrong version
 					char aReason[256];
-					str_format(aReason, sizeof(aReason), "Wrong version. Server is running '%s' and client '%s'", GameServer()->NetVersion(), pVersion);
+					str_format(aReason, sizeof(aReason), "Wrong version. Server version='%s' supporting='%s'. Client version='%s'", GameServer()->NetVersion(), GameServer()->FakeVersion(), pVersion);
 					DropClient(ClientID, aReason);
 					return;
 				}
@@ -1112,35 +1143,53 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	}
 }
 
-void CServer::SendServerInfo(const NETADDR *pAddr, int Token)
+void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offset)
 {
-	return;
 	CNetChunk Packet;
 	CPacker p;
 	char aBuf[128];
 
+	int WantingMaxClients = Info64 ? 64 : 16;
+	int MaxClientsOnMap = pMap == m_pDefaultMap ? MAX_CLIENTS : g_Config.m_SvMaxClientsPerMap;
+	int MaxClients = min(WantingMaxClients, MaxClientsOnMap);
+
 	// count the players
-	int PlayerCount = 0, ClientCount = 0;
+	int ClientCount = 0;
+	int TotalClients = 0;
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
-		{
-			if(GameServer()->IsClientPlayer(i))
-				PlayerCount++;
-
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY)
+			TotalClients++;
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY && (pMap == m_pDefaultMap || pMap->ClientOnMap(i)))
 			ClientCount++;
-		}
 	}
+	bool ServerFull = (TotalClients == m_NetServer.MaxClients());
+	bool MapFull = (pMap == m_pDefaultMap ? ServerFull : ClientCount >= MaxClientsOnMap);
+
+	if(ClientCount >= MaxClients)
+		ClientCount = MaxClients - (int)(!MapFull);
+
+	if (ServerFull)
+		MaxClients = ClientCount;
 
 	p.Reset();
 
-	p.AddRaw(SERVERBROWSE_INFO, sizeof(SERVERBROWSE_INFO));
+	if(Info64)
+		p.AddRaw(SERVERBROWSE_INFO64, sizeof(SERVERBROWSE_INFO64));
+	else
+		p.AddRaw(SERVERBROWSE_INFO, sizeof(SERVERBROWSE_INFO));
+
 	str_format(aBuf, sizeof(aBuf), "%d", Token);
 	p.AddString(aBuf, 6);
 
 	p.AddString(GameServer()->Version(), 32);
-	p.AddString(g_Config.m_SvName, 64);
-	p.AddString(m_pDefaultMap->GetFileName(), 32);
+
+	str_format(aBuf, sizeof(aBuf), "%s %s", g_Config.m_SvName, pMap->GetFileName());
+	//if (m_NetServer.MaxClients() > WantingMaxClients)
+		//str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", TotalClients, m_NetServer.MaxClients());
+	p.AddString(aBuf, 64);
+
+	p.AddString(pMap->GetFileName(), 32);
 
 	// gametype
 	p.AddString(GameServer()->GameType(), 16);
@@ -1152,20 +1201,35 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token)
 	str_format(aBuf, sizeof(aBuf), "%d", i);
 	p.AddString(aBuf, 2);
 
-	str_format(aBuf, sizeof(aBuf), "%d", PlayerCount); p.AddString(aBuf, 3); // num players
-	str_format(aBuf, sizeof(aBuf), "%d", m_NetServer.MaxClients()-g_Config.m_SvSpectatorSlots); p.AddString(aBuf, 3); // max players
+	str_format(aBuf, sizeof(aBuf), "%d", ClientCount); p.AddString(aBuf, 3); // num players
+	str_format(aBuf, sizeof(aBuf), "%d", MaxClients); p.AddString(aBuf, 3); // max players
 	str_format(aBuf, sizeof(aBuf), "%d", ClientCount); p.AddString(aBuf, 3); // num clients
-	str_format(aBuf, sizeof(aBuf), "%d", m_NetServer.MaxClients()); p.AddString(aBuf, 3); // max clients
+	str_format(aBuf, sizeof(aBuf), "%d", MaxClients); p.AddString(aBuf, 3); // max clients
 
-	for(i = 0; i < MAX_CLIENTS; i++)
+	if (Info64)
+		p.AddInt(Offset);
+
+	int ClientsPerPacket = Info64 ? 24 : 16;
+	int Skip = Offset;
+	int Take = ClientsPerPacket;
+
+	for (int i = 0, Clients = 0; i < MAX_CLIENTS && Clients < ClientCount; i++)
 	{
-		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY && (pMap == m_pDefaultMap || pMap->ClientOnMap(i)))
 		{
+			if (Skip-- > 0)
+				continue;
+			if (--Take < 0)
+				break;
+
 			p.AddString(ClientName(i), MAX_NAME_LENGTH); // client name
 			p.AddString(ClientClan(i), MAX_CLAN_LENGTH); // client clan
+
 			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Country); p.AddString(aBuf, 6); // client country
 			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Score); p.AddString(aBuf, 6); // client score
-			str_format(aBuf, sizeof(aBuf), "%d", GameServer()->IsClientPlayer(i)?1:0); p.AddString(aBuf, 2); // is player?
+			str_format(aBuf, sizeof(aBuf), "%d", 1); p.AddString(aBuf, 2); // is player?
+
+			Clients++;
 		}
 	}
 
@@ -1174,15 +1238,23 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token)
 	Packet.m_Flags = NETSENDFLAG_CONNLESS;
 	Packet.m_DataSize = p.Size();
 	Packet.m_pData = p.Data();
-	m_NetServer.Send(&Packet);
+	m_NetServer.SendConnless(&Packet, Socket);
+
+	if (Info64 && Take < 0)
+		SendServerInfo(pAddr, Token, pMap, Socket, true, Offset + ClientsPerPacket);
 }
 
 void CServer::UpdateServerInfo()
 {
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
-			SendServerInfo(m_NetServer.ClientAddr(i), -1);
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY)
+		{
+			CMap *pMap = m_aClients[i].m_pMap;
+			NETSOCKET Socket = m_NetServer.ClientSocket(i);
+			bool Info64 = m_aClients[i].m_MapitemUsage >= 64;
+			SendServerInfo(m_NetServer.ClientAddr(i), -1, pMap, Socket, Info64);
+		}
 	}
 }
 
@@ -1194,29 +1266,39 @@ void CServer::PumpNetwork()
 	m_NetServer.Update();
 
 	// process packets
-	while(m_NetServer.Recv(&Packet))
+
+	for (int i = 0; i < m_lpMaps.size(); i++)
 	{
-		if(Packet.m_ClientID == -1)
+		while (m_NetServer.Recv(&Packet, m_lpMaps[i]->GetSocket()))
 		{
-			// stateless
-			if(!m_Register.RegisterProcessPacket(&Packet))
+			if (Packet.m_ClientID == -1)
 			{
-				if(Packet.m_DataSize == sizeof(SERVERBROWSE_GETINFO)+1 &&
-					mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
+				// stateless
+				if (!m_lpMaps[i]->Register()->RegisterProcessPacket(&Packet))
 				{
-					SendServerInfo(&Packet.m_Address, ((unsigned char *)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
+					if (Packet.m_DataSize == sizeof(SERVERBROWSE_GETINFO) + 1 &&
+						mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
+					{
+						SendServerInfo(&Packet.m_Address, ((unsigned char *)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO)], m_lpMaps[i], m_lpMaps[i]->GetSocket(), false);
+						
+					}
+					else if (Packet.m_DataSize == sizeof(SERVERBROWSE_GETINFO64) + 1 &&
+						mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO64, sizeof(SERVERBROWSE_GETINFO64)) == 0)
+					{
+						SendServerInfo(&Packet.m_Address, ((unsigned char *)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO64)], m_lpMaps[i], m_lpMaps[i]->GetSocket(), true);
+					}
 				}
 			}
+			else
+				ProcessClientPacket(&Packet);
 		}
-		else
-			ProcessClientPacket(&Packet);
 	}
 
 	m_ServerBan.Update();
 	m_Econ.Update();
 }
 
-CMap *CServer::AddMap(const char *pMapName)
+CMap *CServer::AddMap(const char *pMapName, int Port)
 {
 	CMap *pMap;
 	
@@ -1224,10 +1306,16 @@ CMap *CServer::AddMap(const char *pMapName)
 		return 0x0;
 
 	pMap = new CMap(this);
-	if (pMap->Init(pMapName) == false)
+	if (pMap->Init(pMapName, Port) == false)
+	{
+		delete pMap;
 		return 0x0;
+	}
 	if (GameServer()->GameMapInit(pMap->GameMap()) == false)
+	{
+		delete pMap;
 		return 0x0;
+	}
 
 	m_lpMaps.add(pMap);
 	return pMap;
@@ -1286,13 +1374,15 @@ bool CServer::ReloadMap(const char *pMapName)
 
 	m_lpMaps.remove_index(Index);
 
-	CMap *pNewMap = AddMap(pMapName);
+	CMap *pNewMap = AddMap(pMapName, 0);
 	if (pNewMap == 0x0)
 	{
+		delete pNewMap;
 		m_lpMaps.add(pMap);
 		return false;
 	}
 
+	pNewMap->UnblockNet(pMap->GetSocket(), pNewMap->GetPort());
 	if (pMap == m_pDefaultMap)
 		m_pDefaultMap = pNewMap;
 
@@ -1305,14 +1395,10 @@ bool CServer::ReloadMap(const char *pMapName)
 				DropClient(i, "Map has been reloaded. Please reconnect");
 	}
 
+	pMap->BlockNet();
 	delete pMap;
 
 	return true;
-}
-
-void CServer::InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole)
-{
-	m_Register.Init(pNetServer, pMasterServer, pConsole);
 }
 
 int CServer::Run()
@@ -1320,25 +1406,39 @@ int CServer::Run()
 	//
 	m_PrintCBIndex = Console()->RegisterPrintCallback(g_Config.m_ConsoleOutputLevel, SendRconLineAuthed, this);
 
-	// start server
-	NETADDR BindAddr;
-	if(g_Config.m_Bindaddr[0] && net_host_lookup(g_Config.m_Bindaddr, &BindAddr, NETTYPE_ALL) == 0)
+	// load map default map
 	{
-		// sweet!
-		BindAddr.type = NETTYPE_ALL;
-		BindAddr.port = g_Config.m_SvPort;
-	}
-	else
-	{
-		mem_zero(&BindAddr, sizeof(BindAddr));
-		BindAddr.type = NETTYPE_ALL;
-		BindAddr.port = g_Config.m_SvPort;
+		CMap *pMap;
+		if (m_lpMaps.size() == 0)
+		{
+			dbg_msg("server", "No maps found. Use \'add_map name port\' in config.");
+			pMap = AddMap("dm1", 8303);
+			if (!pMap)
+				return -1;
+		}
+		else
+			pMap = m_lpMaps[0];
+		m_pDefaultMap = pMap;
 	}
 
-	if(!m_NetServer.Open(BindAddr, &m_ServerBan, g_Config.m_SvMaxClients, g_Config.m_SvMaxClientsPerIP, 0))
 	{
-		dbg_msg("server", "couldn't open socket. port %d might already be in use", g_Config.m_SvPort);
-		return -1;
+		NETSOCKET *pFirstSocket = 0x0;
+		for (int i = 0; i < m_lpMaps.size(); i++)
+		{
+			if (m_lpMaps[i]->HasNetSocket() == false)
+				continue;
+
+			pFirstSocket = &m_lpMaps[i]->GetSocket();
+			break;
+		}
+
+		if(pFirstSocket == 0x0)
+		{
+			dbg_msg("server", "No opened socket found. Server closing");
+			return -1;
+		}
+
+		m_NetServer.Open(*pFirstSocket, &m_ServerBan, g_Config.m_SvMaxClients, g_Config.m_SvMaxClientsPerIP, 0);
 	}
 
 	m_NetServer.SetCallbacks(NewClientCallback, DelClientCallback, this);
@@ -1351,20 +1451,6 @@ int CServer::Run()
 
 	str_format(aBuf, sizeof(aBuf), "version %s", GameServer()->NetVersion());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-
-	// load map default map
-	{
-		CMap *pMap;
-		if (m_lpMaps.size() == 0)
-		{
-			pMap = AddMap("dm1");
-			if (!pMap)
-				return -1;
-		}
-		else
-			pMap = m_lpMaps[0];
-		m_pDefaultMap = pMap;
-	}
 
 	// reinit snapshot ids
 	m_IDPool.TimeoutIDs();
@@ -1426,8 +1512,8 @@ int CServer::Run()
 				UpdateClientRconCommands();
 			}
 
-			// master server stuff
-			m_Register.RegisterUpdate(m_NetServer.NetType());
+			for (int i = 0; i < m_lpMaps.size(); i++)
+				m_lpMaps[i]->Tick();
 
 			PumpNetwork();
 
@@ -1435,8 +1521,8 @@ int CServer::Run()
 			{
 				if(g_Config.m_Debug)
 				{
-					/*
-					static NETSTATS prev_stats;
+					
+					/*static NETSTATS prev_stats;
 					NETSTATS stats;
 					netserver_stats(net, &stats);
 
@@ -1449,15 +1535,15 @@ int CServer::Run()
 						(stats.send_bytes - prev_stats.send_bytes)/reportinterval,
 						(stats.recv_bytes - prev_stats.recv_bytes)/reportinterval);
 
-					prev_stats = stats;
-					*/
+					prev_stats = stats;*/
 				}
 
 				ReportTime += time_freq()*ReportInterval;
 			}
 
 			// wait for incomming data
-			net_socket_read_wait(m_NetServer.Socket(), 5);
+			for(int i = 0; i < m_lpMaps.size(); i++)
+				net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));
 		}
 	}
 	// disconnect all clients on shutdown
@@ -1544,9 +1630,10 @@ void CServer::ConAddMap(IConsole::IResult *pResult, void *pUser)
 {
 	CServer* pThis = static_cast<CServer *>(pUser);
 	const char *pMapName = pResult->GetString(0);
+	int Port = pResult->GetInteger(1);
 	char aBuf[256];
 
-	if (pThis->AddMap(pMapName) != 0x0)
+	if (pThis->AddMap(pMapName, Port) != 0x0)
 		str_format(aBuf, sizeof(aBuf), "Map '%s' added", pMapName);
 	else
 		str_format(aBuf, sizeof(aBuf), "Could not load map '%s'", pMapName);
@@ -1575,7 +1662,7 @@ void CServer::ConReloadMap(IConsole::IResult *pResult, void *pUser)
 	char aBuf[256];
 
 	if (pThis->ReloadMap(pMapName) != false)
-		str_format(aBuf, sizeof(aBuf), "Map '%s' removed", pMapName);
+		str_format(aBuf, sizeof(aBuf), "Map '%s' reloaded", pMapName);
 	else
 		str_format(aBuf, sizeof(aBuf), "Could reload map '%s'", pMapName);
 
@@ -1674,6 +1761,7 @@ void CServer::RegisterCommands()
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pGameServer = Kernel()->RequestInterface<IGameServer>();
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
+	m_pMasterServer = Kernel()->RequestInterface<IEngineMasterServer>();
 
 	// register console commands
 	Console()->Register("kick", "i?r", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");
@@ -1681,7 +1769,7 @@ void CServer::RegisterCommands()
 	Console()->Register("shutdown", "", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
 	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
 
-	Console()->Register("add_map", "s", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
+	Console()->Register("add_map", "si", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
 	Console()->Register("remove_map", "s", CFGFLAG_SERVER, ConRemoveMap, this, "Add a Map");
 	Console()->Register("reload_map", "s", CFGFLAG_SERVER, ConReloadMap, this, "Add a Map");
 	Console()->Register("list_maps", "", CFGFLAG_SERVER, ConListMaps, this, "List added Maps");
@@ -1738,6 +1826,11 @@ int CServer::CurrentMapIndex(int ClientID)
 	return -1;//should only happen if client is offline
 }
 
+CMap *CServer::GetMap(int Index)
+{
+	return m_lpMaps[Index];
+}
+
 int CServer::UsingMapItems(int ClientID)
 {
 	return m_aClients[ClientID].m_MapitemUsage;
@@ -1786,8 +1879,6 @@ int main(int argc, const char **argv) // ignore_convention
 	IEngineMasterServer *pEngineMasterServer = CreateEngineMasterServer();
 	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_SERVER, argc, argv); // ignore_convention
 	IConfig *pConfig = CreateConfig();
-
-	pServer->InitRegister(&pServer->m_NetServer, pEngineMasterServer, pConsole);
 
 	{
 		bool RegisterFail = false;

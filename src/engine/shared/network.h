@@ -194,6 +194,9 @@ public:
 	int64 ConnectTime() const { return m_LastUpdateTime; }
 
 	int AckSequence() const { return m_Ack; }
+
+	NETSOCKET GetSocket() { return m_Socket; }
+	void SetSocket(NETSOCKET Socket) { m_Socket = Socket; }
 };
 
 class CConsoleNetConnection
@@ -253,7 +256,6 @@ class CNetServer
 		CNetConnection m_Connection;
 	};
 
-	NETSOCKET m_Socket;
 	class CNetBan *m_pNetBan;
 	CSlot m_aSlots[NET_MAX_CLIENTS];
 	int m_MaxClients;
@@ -269,12 +271,13 @@ public:
 	int SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_DELCLIENT pfnDelClient, void *pUser);
 
 	//
-	bool Open(NETADDR BindAddr, class CNetBan *pNetBan, int MaxClients, int MaxClientsPerIP, int Flags);
+	void Open(NETSOCKET Socket, class CNetBan *pNetBan, int MaxClients, int MaxClientsPerIP, int Flags);
 	int Close();
 
 	//
-	int Recv(CNetChunk *pChunk);
+	int Recv(CNetChunk *pChunk, NETSOCKET Socket);
 	int Send(CNetChunk *pChunk);
+	int SendConnless(CNetChunk *pChunk, NETSOCKET Socket);
 	int Update();
 
 	//
@@ -282,9 +285,8 @@ public:
 
 	// status requests
 	const NETADDR *ClientAddr(int ClientID) const { return m_aSlots[ClientID].m_Connection.PeerAddress(); }
-	NETSOCKET Socket() const { return m_Socket; }
+	NETSOCKET ClientSocket(int ClientID) { return m_aSlots[ClientID].m_Connection.GetSocket(); }
 	class CNetBan *NetBan() const { return m_pNetBan; }
-	int NetType() const { return m_Socket.type; }
 	int MaxClients() const { return m_MaxClients; }
 
 	//
