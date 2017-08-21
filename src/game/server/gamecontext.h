@@ -12,30 +12,8 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
-#include "gamecontroller.h"
 #include "player.h"
 
-/*
-	Tick
-		Game Context (CGameContext::tick)
-			Game World (GAMEWORLD::tick)
-				Reset world if requested (GAMEWORLD::reset)
-				All entities in the world (ENTITY::tick)
-				All entities in the world (ENTITY::tick_defered)
-				Remove entities marked for deletion (GAMEWORLD::remove_entities)
-			Game Controller (GAMECONTROLLER::tick)
-			All players (CPlayer::tick)
-
-
-	Snap
-		Game Context (CGameContext::snap)
-			Game World (GAMEWORLD::snap)
-				All entities in the world (ENTITY::snap)
-			Game Controller (GAMECONTROLLER::snap)
-			Events handler (EVENT_HANDLER::snap)
-			All players (CPlayer::snap)
-
-*/
 class CGameContext : public IGameServer
 {
 	IServer *m_pServer;
@@ -74,10 +52,10 @@ public:
 
 	CPlayer *m_apPlayers[MAX_CLIENTS];
 
-	CGameController *m_pController;
-
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);
+	bool CanJoinTeam(int Team, int NotThisID);
+	const char *GetTeamName(int Team);
 
 	int m_LockTeams;
 
@@ -119,6 +97,9 @@ public:
 
 	void SendTuningParams(int ClientID);
 
+	//handles
+	void HandleInactive();
+
 	// engine events
 	virtual void OnInit();
 	virtual void OnConsoleInit();
@@ -133,7 +114,7 @@ public:
 
 	virtual void OnClientConnected(int ClientID);
 	virtual void OnClientEnter(int ClientID, bool MapSwitching);
-	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap);
+	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching);
 	virtual void OnClientDirectInput(int ClientID, void *pInput);
 	virtual void OnClientPredictedInput(int ClientID, void *pInput);
 

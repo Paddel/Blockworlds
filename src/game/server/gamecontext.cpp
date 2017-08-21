@@ -10,7 +10,6 @@
 #include <game/gamecore.h>
 
 #include "gamemap.h"
-#include "gamecontroller.h"
 #include "gamecontext.h"
 
 enum
@@ -27,7 +26,6 @@ void CGameContext::Construct(int Resetting)
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		m_apPlayers[i] = 0;
 
-	m_pController = 0;
 	m_pVoteOptionFirst = 0;
 	m_pVoteOptionLast = 0;
 	m_NumVoteOptions = 0;
@@ -81,6 +79,31 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return 0;
 	return m_apPlayers[ClientID]->GetCharacter();
+}
+
+bool CGameContext::CanJoinTeam(int Team, int NotThisID)
+{
+	if (Team == TEAM_SPECTATORS || (m_apPlayers[NotThisID] && m_apPlayers[NotThisID]->GetTeam() != TEAM_SPECTATORS))
+		return true;
+
+	int aNumplayers[2] = { 0,0 };
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_apPlayers[i] && i != NotThisID)
+		{
+			if (m_apPlayers[i]->GetTeam() >= TEAM_RED && m_apPlayers[i]->GetTeam() <= TEAM_BLUE)
+				aNumplayers[m_apPlayers[i]->GetTeam()]++;
+		}
+	}
+
+	return (aNumplayers[0] + aNumplayers[1]) < Server()->MaxClients() - g_Config.m_SvSpectatorSlots;
+}
+
+const char *CGameContext::GetTeamName(int Team)
+{
+	if (Team == 0)
+		return "game";
+	return "spectators";
 }
 
 void CGameContext::CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float Angle, int Amount)
@@ -296,14 +319,65 @@ void CGameContext::SendTuningParams(int ClientID)
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
+void CGameContext::HandleInactive()
+{
+	// check for inactive players
+	if (g_Config.m_SvInactiveKickTime > 0)
+	{
+		for (int i = 0; i < MAX_CLIENTS; ++i)
+		{
+#ifdef CONF_DEBUG
+			if (g_Config.m_DbgDummies)
+			{
+				if (i >= MAX_CLIENTS - g_Config.m_DbgDummies)
+					break;
+			}
+#endif
+			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
+			{
+				if (Server()->Tick() > m_apPlayers[i]->m_LastActionTick + g_Config.m_SvInactiveKickTime*Server()->TickSpeed() * 60)
+				{
+					switch (g_Config.m_SvInactiveKick)
+					{
+					case 0:
+					{
+						// move player to spectator
+						m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
+					}
+					break;
+					case 1:
+					{
+						// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
+						int Spectators = 0;
+						for (int j = 0; j < MAX_CLIENTS; ++j)
+							if (m_apPlayers[j] && m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS)
+								++Spectators;
+						if (Spectators >= g_Config.m_SvSpectatorSlots)
+							Server()->Kick(i, "Kicked for inactivity");
+						else
+							m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
+					}
+					break;
+					case 2:
+					{
+						// kick the player
+						Server()->Kick(i, "Kicked for inactivity");
+					}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void CGameContext::OnTick()
 {
 	// copy tuning
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
 		Server()->GetGameMap(i)->Tick();
 
-	//if(world.paused) // make sure that the game object always updates
-	m_pController->Tick();
+	HandleInactive();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -352,9 +426,9 @@ void CGameContext::OnClientEnter(int ClientID, bool MapSwitching)
 	m_apPlayers[ClientID]->Respawn();
 	char aBuf[512];
 	if (MapSwitching == false)
-		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), GetTeamName(m_apPlayers[ClientID]->GetTeam()));
 	else
-		str_format(aBuf, sizeof(aBuf), "'%s' entered the map and joined the %s", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+		str_format(aBuf, sizeof(aBuf), "'%s' entered the map and joined the %s", Server()->ClientName(ClientID), GetTeamName(m_apPlayers[ClientID]->GetTeam()));
 	
 	pGameMap->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
@@ -394,9 +468,9 @@ void CGameContext::OnClientConnected(int ClientID)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap)
+void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching)
 {
-	if (Server()->ClientIngame(ClientID))//this is not true on map switching
+	if (Server()->ClientIngame(ClientID) && MapSwitching == false)
 	{
 		char aBuf[512];
 		if (pReason && *pReason)
@@ -606,7 +680,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 
 			// Switch team on given client and kill/respawn him
-			if(m_pController->CanJoinTeam(pMsg->m_Team, ClientID))
+			if(CanJoinTeam(pMsg->m_Team, ClientID))
 			{
 				pPlayer->m_LastSetTeam = Server()->Tick();
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
@@ -859,7 +933,7 @@ void CGameContext::ConSetTeamAll(IConsole::IResult *pResult, void *pUserData)
 	int Team = clamp(pResult->GetInteger(0), -1, 1);
 
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "All players were moved to the %s", pSelf->m_pController->GetTeamName(Team));
+	str_format(aBuf, sizeof(aBuf), "All players were moved to the %s", pSelf->GetTeamName(Team));
 	pSelf->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -1122,9 +1196,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
-	m_pController = new CGameController(this);
-
-
 #ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)
 	{
@@ -1138,8 +1209,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 void CGameContext::OnShutdown()
 {
-	delete m_pController;
-	m_pController = 0;
 	Clear();
 }
 

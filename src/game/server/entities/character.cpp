@@ -496,7 +496,7 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_TELEPORT_FROM)
 	{
-		GameServer()->SendChatTarget(m_pPlayer->GetCID(), ExtrasData.m_aData);
+		//GameServer()->SendChatTarget(m_pPlayer->GetCID(), ExtrasData.m_aData);
 	}
 
 	return false;
@@ -511,15 +511,6 @@ void CCharacter::HandleExtras()
 
 void CCharacter::Tick()
 {
-	if(m_pPlayer->m_ForceBalanced)
-	{
-		char Buf[128];
-		str_format(Buf, sizeof(Buf), "You were moved to %s due to team balancing", GameServer()->m_pController->GetTeamName(m_pPlayer->GetTeam()));
-		GameServer()->SendBroadcast(Buf, m_pPlayer->GetCID());
-
-		m_pPlayer->m_ForceBalanced = false;
-	}
-
 	HandleExtras();
 
 	m_Core.m_Input = m_Input;
@@ -533,6 +524,7 @@ void CCharacter::Tick()
 		GameLayerClipped(m_Pos))
 	{
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
+		return;
 	}
 
 	// handle Weapons

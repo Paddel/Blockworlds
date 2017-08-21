@@ -328,7 +328,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 				if (pLayer->m_Type == LAYERTYPE_EXTRAS)
 				{
 					Item.m_ExtraVersion = EXTRA_VERSION;
-					Item.m_ExtrasData = df.AddData(pLayer->m_Width*pLayer->m_Height*sizeof(EXTRATILE_DATA), ((CLayerExtras*)pLayer)->m_pExtrasData);
+					Item.m_ExtrasData = df.AddData(pLayer->m_Width*pLayer->m_Height*sizeof(CExtrasData), ((CLayerExtras*)pLayer)->m_pExtrasData);
 				}
 
 				// save layer name
@@ -633,7 +633,7 @@ int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int Storag
 							IntsToStr(pTilemapItem->m_aName, sizeof(pExtras->m_aName) / sizeof(int), pExtras->m_aName);
 
 						mem_copy(pExtras->m_pTiles, pData, pExtras->m_Width*pExtras->m_Height * sizeof(CTile));
-						mem_copy(pExtras->m_pExtrasData, pDataExtras, pExtras->m_Width*pExtras->m_Height * sizeof(CTile));
+						mem_copy(pExtras->m_pExtrasData, pDataExtras, pExtras->m_Width*pExtras->m_Height * sizeof(CExtrasData));
 
 						DataFile.UnloadData(pTilemapItem->m_Data);
 						DataFile.UnloadData(pTilemapItem->m_ExtrasData);

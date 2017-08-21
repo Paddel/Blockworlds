@@ -684,7 +684,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 
 	// notify the mod about the drop
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY)
-		pThis->GameServer()->OnClientDrop(ClientID, pReason, pThis->m_aClients[ClientID].m_pMap->GameMap());
+		pThis->GameServer()->OnClientDrop(ClientID, pReason, pThis->m_aClients[ClientID].m_pMap->GameMap(), false);
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
@@ -716,10 +716,10 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 
 	m_aClients[ClientID].m_pMap = pMap;
 
+	GameServer()->OnClientDrop(ClientID, "Changing map", pCurrentMap->GameMap(), true);
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-	GameServer()->OnClientDrop(ClientID, "Changing map", pCurrentMap->GameMap());
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "'%s' has switched to %s", aName, pMap->GetFileName());

@@ -59,6 +59,12 @@ void CLayerExtras::RenderColumn(CEditor *pEditor, CUIRect View, int Index)
 		Button.VSplitLeft(w + 2.0f, 0x0, &Button);
 		static float s_aValueBoxIDs[EXTRATILE_DATA / 2] = { };
 		pEditor->DoEditBox(&s_aValueBoxIDs[i], &Button, m_pExtrasData[Index].m_aData + CurSize, gs_ExtrasSizes[Tile][i], 8.0f, &s_aValueBoxIDs[i]);
+		if (gs_ExtrasColumntypes[Tile][i] == 1)//only integer input
+		{
+			int Val = str_toint(m_pExtrasData[Index].m_aData + CurSize);
+			str_format(m_pExtrasData[Index].m_aData + CurSize, gs_ExtrasSizes[Tile][i], "%d", Val);
+		}
+
 		CurSize += gs_ExtrasSizes[Tile][i];
 	}
 }
@@ -329,9 +335,6 @@ void CLayerExtras::ShowInfo()
 				m_pEditor->Graphics()->QuadsText(x * 32, y * 32, 16.0f, aBuf);
 
 				m_pEditor->Graphics()->QuadsText(x * 32, y * 32 + 16, 8.0f, m_pExtrasData[c].m_aData);
-
-				for (int i = 0; i < EXTRATILE_DATA; i++)
-					dbg_msg(0, "%i %c", i, m_pExtrasData[c].m_aData[i]);
 			}
 			x += m_pTiles[c].m_Skip;
 		}
