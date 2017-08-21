@@ -656,7 +656,7 @@ void CServer::SetMapOnConnect(int ClientID)
 	//dummy connect
 	for (int i = 0; i < m_NetServer.MaxClients(); ++i)
 	{
-		if (m_aClients[i].m_State != CClient::STATE_EMPTY == i == ClientID)
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY || i == ClientID)
 			continue;
 
 		NETADDR OtherAddr = *m_NetServer.ClientAddr(i);
@@ -672,8 +672,12 @@ void CServer::SetMapOnConnect(int ClientID)
 
 	//connect via serverbrowser
 	for (int i = 0; i < m_lpMaps.size() && pMap == 0x0; i++)
-		if (mem_comp(&m_lpMaps[i]->GetSocket(), &m_NetServer.ClientSocket(ClientID), sizeof(NETSOCKET)) == 0)
+	{
+		NETSOCKET MapSocket = m_lpMaps[i]->GetSocket();
+		NETSOCKET ClientSocket = m_NetServer.ClientSocket(ClientID);
+		if (mem_comp(&ClientSocket, &MapSocket, sizeof(NETSOCKET)) == 0)
 			pMap = m_lpMaps[i];
+	}
 
 	if (pMap == 0x0 || pMap->HasFreePlayerSlot() == false)
 		pMap = m_pDefaultMap;
@@ -1425,23 +1429,24 @@ int CServer::Run()
 	}
 
 	{
-		NETSOCKET *pFirstSocket = 0x0;
+		NETSOCKET FirstSocket;
+		mem_zero(&FirstSocket, sizeof(FirstSocket));
 		for (int i = 0; i < m_lpMaps.size(); i++)
 		{
 			if (m_lpMaps[i]->HasNetSocket() == false)
 				continue;
 
-			pFirstSocket = &m_lpMaps[i]->GetSocket();
+			FirstSocket = m_lpMaps[i]->GetSocket();
 			break;
 		}
 
-		if(pFirstSocket == 0x0)
+		if(FirstSocket.type == 0)
 		{
 			dbg_msg("server", "No opened socket found. Server closing");
 			return -1;
 		}
 
-		m_NetServer.Open(*pFirstSocket, &m_ServerBan, g_Config.m_SvMaxClients, g_Config.m_SvMaxClientsPerIP, 0);
+		m_NetServer.Open(FirstSocket, &m_ServerBan, g_Config.m_SvMaxClients, g_Config.m_SvMaxClientsPerIP, 0);
 	}
 
 	m_NetServer.SetCallbacks(NewClientCallback, DelClientCallback, this);
