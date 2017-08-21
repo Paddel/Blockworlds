@@ -1,4 +1,6 @@
 
+#include <base/math.h>
+
 #include "layers.h"
 
 CLayers::CLayers()
@@ -130,4 +132,11 @@ CMapItemGroup *CLayers::GetGroup(int Index) const
 CMapItemLayer *CLayers::GetLayer(int Index) const
 {
 	return static_cast<CMapItemLayer *>(m_pMap->GetItem(m_LayersStart+Index, 0, 0));
+}
+
+int CLayers::ExtrasIndex(int Index, float x, float y)
+{
+	int Nx = clamp(round_to_int(x) / 32, 0, m_aExtrasWidth[Index] - 1),
+		Ny = clamp(round_to_int(y) / 32, 0, m_aExtrasHeight[Index] - 1);
+	return Ny * m_aExtrasWidth[Index] + Nx;
 }

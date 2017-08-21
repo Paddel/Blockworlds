@@ -51,6 +51,8 @@ public:
 	bool HandleExtrasLayer(int Layer);
 	void HandleExtras();
 
+	void HandleTiles();
+
 	void Die(int Killer, int Weapon);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
@@ -69,6 +71,8 @@ private:
 	class CPlayer *m_pPlayer;
 
 	bool m_Alive;
+
+	vec2 m_LastPos;
 
 	// weapon info
 	CEntity *m_apHitObjects[10];

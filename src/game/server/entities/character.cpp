@@ -482,21 +482,24 @@ void CCharacter::ResetInput()
 	m_LatestPrevInput = m_LatestInput = m_Input;
 }
 
+
+
 bool CCharacter::HandleExtrasLayer(int Layer)
 {
 	CLayers *pLayers = GameMap()->Layers();
-	int Nx = clamp(round_to_int(m_Pos.x) / 32, 0, pLayers->GetExtrasWidth(Layer) - 1);
-	int Ny = clamp(round_to_int(m_Pos.y) / 32, 0, pLayers->GetExtrasHeight(Layer) - 1);
-	int Index = Ny * pLayers->GetExtrasWidth(Layer) + Nx;
+	int Index = pLayers->ExtrasIndex(Layer, m_Pos.x, m_Pos.y);
+	int LastIndex = pLayers->ExtrasIndex(Layer, m_LastPos.x, m_LastPos.y);
 	int Tile = pLayers->GetExtrasTile(Layer)[Index].m_Index;
+	int LastTile = pLayers->GetExtrasTile(Layer)[LastIndex].m_Index;
+	int NewTile = Tile != LastTile ? Tile : 0;
 	CExtrasData ExtrasData = pLayers->GetExtrasData(Layer)[Index];
 
 	if (Tile <= 0 || Tile >= NUM_EXTRAS)
 		return false;
 
-	if (Tile == EXTRAS_TELEPORT_FROM)
+	if (NewTile == EXTRAS_TELEPORT_FROM)
 	{
-		//GameServer()->SendChatTarget(m_pPlayer->GetCID(), ExtrasData.m_aData);
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), ExtrasData.m_aData);
 	}
 
 	return false;
@@ -509,8 +512,18 @@ void CCharacter::HandleExtras()
 			break;
 }
 
+void CCharacter::HandleTiles()
+{
+	int Tile = GameMap()->Collision()->GetTileAt(m_Pos);
+	int LastTile = GameMap()->Collision()->GetTileAt(m_LastPos);
+	int NewTile = Tile != LastTile ? Tile : TILE_AIR;
+
+
+}
+
 void CCharacter::Tick()
 {
+	HandleTiles();
 	HandleExtras();
 
 	if (m_Alive == false)
@@ -520,10 +533,10 @@ void CCharacter::Tick()
 	m_Core.Tick(true);
 
 	// handle death-tiles and leaving gamelayer
-	if(GameMap()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||
-		GameMap()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f) == TILE_DEATH ||
-		GameMap()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||
-		GameMap()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f) == TILE_DEATH ||
+	if(GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||
+		GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f) == TILE_DEATH ||
+		GameMap()->Collision()->GetTileAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||
+		GameMap()->Collision()->GetTileAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f) == TILE_DEATH ||
 		GameLayerClipped(m_Pos))
 	{
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
@@ -561,6 +574,7 @@ void CCharacter::TickDefered()
 	bool StuckAfterMove = GameMap()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
 	m_Core.Quantize();
 	bool StuckAfterQuant = GameMap()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
+	m_LastPos = m_Pos;
 	m_Pos = m_Core.m_Pos;
 
 	if(!StuckBefore && (StuckAfterMove || StuckAfterQuant))

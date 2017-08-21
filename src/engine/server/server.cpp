@@ -1165,6 +1165,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 	}
 	bool ServerFull = (TotalClients == m_NetServer.MaxClients());
 	bool MapFull = (pMap == m_pDefaultMap ? ServerFull : ClientCount >= MaxClientsOnMap);
+	int ClientsOnMap = ClientCount;
 
 	if(ClientCount >= MaxClients)
 		ClientCount = MaxClients - (int)(!MapFull);
@@ -1184,9 +1185,11 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 
 	p.AddString(GameServer()->Version(), 32);
 
-	str_format(aBuf, sizeof(aBuf), "%s %s", g_Config.m_SvName, pMap->GetFileName());
-	//if (m_NetServer.MaxClients() > WantingMaxClients)
-		//str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", TotalClients, m_NetServer.MaxClients());
+	str_copy(aBuf, g_Config.m_SvName, sizeof(aBuf));
+	if(pMap != m_pDefaultMap)
+		str_fcat(aBuf, sizeof(aBuf), " %s", pMap->GetFileName());
+	if (MaxClientsOnMap > WantingMaxClients)
+		str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", ClientsOnMap, MaxClientsOnMap);
 	p.AddString(aBuf, 64);
 
 	p.AddString(pMap->GetFileName(), 32);
