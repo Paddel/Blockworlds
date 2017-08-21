@@ -48,6 +48,9 @@ public:
 	void ResetInput();
 	void FireWeapon();
 
+	bool HandleExtrasLayer(int Layer);
+	void HandleExtras();
+
 	void Die(int Killer, int Weapon);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);

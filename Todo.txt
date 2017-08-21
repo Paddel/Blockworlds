@@ -1,5 +1,6 @@
-map editor
+serverinfo
 
+extras
 ddnet combtilitibily
 
 extras

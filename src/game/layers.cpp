@@ -13,12 +13,16 @@ CLayers::CLayers()
 	m_NumExtrasLayer = 0;
 	m_apExtrasData = 0x0;
 	m_apExtrasTiles = 0x0;
+	m_aExtrasWidth = 0x0;
+	m_aExtrasHeight = 0x0;
 }
 
 CLayers::~CLayers()
 {
 	delete[] m_apExtrasData;
 	delete[] m_apExtrasTiles;
+	delete m_aExtrasWidth;
+	delete m_aExtrasHeight;
 }
 
 void CLayers::InitGameLayer()
@@ -82,6 +86,8 @@ void CLayers::InitExtraLayers()
 
 	m_apExtrasData = new CExtrasData*[m_NumExtrasLayer];
 	m_apExtrasTiles = new CTile*[m_NumExtrasLayer];
+	m_aExtrasWidth = new int[m_NumExtrasLayer];
+	m_aExtrasHeight = new int[m_NumExtrasLayer];
 
 	int Counter = 0;
 	for (int g = 0; g < NumGroups(); g++)
@@ -97,7 +103,10 @@ void CLayers::InitExtraLayers()
 					continue;
 
 				m_apExtrasData[Counter] = static_cast<CExtrasData *>(m_pMap->GetData(pTilemap->m_ExtrasData));
-				m_apExtrasTiles[Counter++] = static_cast<CTile *>(m_pMap->GetData(pTilemap->m_Data));
+				m_apExtrasTiles[Counter] = static_cast<CTile *>(m_pMap->GetData(pTilemap->m_Data));
+				m_aExtrasWidth[Counter] = pTilemap->m_Width;
+				m_aExtrasHeight[Counter] = pTilemap->m_Height;
+				Counter++;
 			}
 		}
 	}

@@ -482,6 +482,33 @@ void CCharacter::ResetInput()
 	m_LatestPrevInput = m_LatestInput = m_Input;
 }
 
+bool CCharacter::HandleExtrasLayer(int Layer)
+{
+	CLayers *pLayers = GameMap()->Layers();
+	int Nx = clamp(round_to_int(m_Pos.x) / 32, 0, pLayers->GetExtrasWidth(Layer) - 1);
+	int Ny = clamp(round_to_int(m_Pos.y) / 32, 0, pLayers->GetExtrasHeight(Layer) - 1);
+	int Index = Ny * pLayers->GetExtrasWidth(Layer) + Nx;
+	int Tile = pLayers->GetExtrasTile(Layer)[Index].m_Index;
+	CExtrasData ExtrasData = pLayers->GetExtrasData(Layer)[Index];
+
+	if (Tile <= 0 || Tile >= NUM_EXTRAS)
+		return false;
+
+	if (Tile == EXTRAS_TELEPORT_FROM)
+	{
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), ExtrasData.m_aData);
+	}
+
+	return false;
+}
+
+void CCharacter::HandleExtras()
+{
+	for (int i = 0; i < GameMap()->Layers()->GetNumExtrasLayer(); i++)
+		if (HandleExtrasLayer(i))
+			break;
+}
+
 void CCharacter::Tick()
 {
 	if(m_pPlayer->m_ForceBalanced)
@@ -492,6 +519,8 @@ void CCharacter::Tick()
 
 		m_pPlayer->m_ForceBalanced = false;
 	}
+
+	HandleExtras();
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
