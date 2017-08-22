@@ -6,13 +6,13 @@
 #include "editor.h"
 
 
-int CEditor::ms_ExtrasPopupSize[NUM_EXTRAS][2] = { {0,0}, { 145, 50},{ 145, 50 },{ 145, 100 } };
-static const char *gs_ExtrasHeader[NUM_EXTRAS] = { 0x0, "Teleport From", "Teleport To", "Speedup" };
+int CEditor::ms_ExtrasPopupSize[NUM_EXTRAS][2] = { {0,0}, { 145, 50},{ 145, 50 },{ 145, 100 }, {0, 0},{ 0, 0 }, {145, 100}, {145, 100} };
+static const char *gs_ExtrasHeader[NUM_EXTRAS] = { 0x0, "Teleport From", "Teleport To", "Speedup", "Freeze", "Unfreeze", "Door", "Door Handle" };
 
 CLayerExtras::CLayerExtras(int w, int h)
 : CLayerTiles(w, h)
 {
-	str_copy(m_aName, "Extas", sizeof(m_aName));
+	str_copy(m_aName, "Extras", sizeof(m_aName));
 	m_Game = 0;
 	m_Type = LAYERTYPE_EXTRAS;
 	m_TexID = m_pEditor->ms_ExtrasTexture;

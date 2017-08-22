@@ -38,6 +38,8 @@ public:
 	int GetNumExtrasLayer() const { return m_NumExtrasLayer; };
 	CExtrasData *GetExtrasData(int Index) const { return m_apExtrasData[Index]; };
 	CTile *GetExtrasTile(int Index) const { return m_apExtrasTiles[Index]; };
+	int GetExtrasWidth(int Index) const { return m_aExtrasWidth[Index]; };
+	int GetExtrasHeight(int Index) const { return m_aExtrasHeight[Index]; };
 };
 
 #endif

@@ -616,9 +616,15 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (NewTile == EXTRAS_TELEPORT_FROM)
 	{
+		vec2 Pos;
 		int ID = str_toint(ExtrasData.m_aData);
-		
+		if (GameMap()->GetRandomTelePos(ID, &Pos) == true)
+		{
+			m_Core.m_Pos = Pos;
+			m_Core.m_HookState = HOOK_RETRACTED;
+		}
 	}
+
 	if (Tile == EXTRAS_SPEEDUP)
 	{
 		const char *pData = ExtrasData.m_aData;
@@ -628,9 +634,25 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		pData += +gs_ExtrasSizes[Tile][1];
 		int Angle = str_toint(pData);
 		pData += +gs_ExtrasSizes[Tile][2];
-		
 		SpeedUp(Force, MaxSpeed, Angle);
 	}
+
+	if (Tile == EXTRAS_DOOR_HANDLE)
+	{
+		const char *pData = ExtrasData.m_aData;
+		int ID = str_toint(pData);
+		pData += +gs_ExtrasSizes[Tile][0];
+		int Delay = str_toint(pData);
+		pData += +gs_ExtrasSizes[Tile][1];
+		bool Activate = (bool)str_toint(pData);
+		pData += +gs_ExtrasSizes[Tile][2];
+		GameMap()->OnDoorHandle(ID, Delay, Activate);
+	}
+
+	if (Tile == EXTRAS_FREEZE)
+		Freeze(3.0f);
+	if (Tile == EXTRAS_UNFREEZE)
+		Unfreeze();
 
 	return false;
 }
@@ -640,6 +662,51 @@ void CCharacter::HandleExtras()
 	for (int i = 0; i < GameMap()->Layers()->GetNumExtrasLayer(); i++)
 		if (HandleExtrasLayer(i))
 			break;
+}
+
+void CCharacter::HandleDoors()
+{
+	for (int i = 0; i < GameMap()->Layers()->GetNumExtrasLayer(); i++)
+	{
+		CLayers *pLayers = GameMap()->Layers();
+		int Index = -1;
+		for (int j = 0; j < 5; j++)
+		{
+			vec2 Pos;
+			switch (j)
+			{
+			case 0: Pos = m_Pos; break;
+			case 1: Pos = vec2(m_Pos.x + m_ProximityRadius / 2.125f, m_Pos.y - m_ProximityRadius / 2.125f); break;
+			case 2: Pos = vec2(m_Pos.x + m_ProximityRadius / 2.125f, m_Pos.y + m_ProximityRadius / 2.125f); break;
+			case 3: Pos = vec2(m_Pos.x - m_ProximityRadius / 2.125f, m_Pos.y - m_ProximityRadius / 2.125f); break;
+			case 4: Pos = vec2(m_Pos.x - m_ProximityRadius / 2.125f, m_Pos.y + m_ProximityRadius / 2.125f); break;
+			}
+
+			int TempIndex = pLayers->ExtrasIndex(i, Pos.x, Pos.y);
+			if (pLayers->GetExtrasTile(i)[TempIndex].m_Index == EXTRAS_DOOR)
+			{
+				Index = TempIndex;
+				break;
+			}
+		}
+
+		if (Index < 0)
+			continue;
+
+		CGameMap::CDoorTile *pDoorTile = GameMap()->GetDoorTile(Index);
+		if (pDoorTile && GameMap()->DoorTileActive(pDoorTile))
+		{
+			m_Core.m_Pos = m_LastPos;
+
+			if (pDoorTile->m_Type == 2 && m_Pos.y > m_LastPos.y)
+				m_Core.m_Jumped = 0;
+
+			if (pDoorTile->m_Type == 1)
+				m_Core.m_Vel.x = 0.0f;
+			else if (pDoorTile->m_Type == 2)
+				m_Core.m_Vel.y = 0.0f;
+		}
+	}
 }
 
 void CCharacter::HandleTiles()
@@ -666,6 +733,15 @@ void CCharacter::HandleTiles()
 		m_RaceStart = Server()->Tick();
 	if (Tile == TILE_RACE_FINISH)
 		RaceFinish();
+	if (Tile == TILE_RESTART)
+	{
+		vec2 Pos;
+		if (GameMap()->CanSpawn(0, &Pos))
+		{
+			m_Core.m_Pos = Pos;
+			m_Core.m_HookState = HOOK_RETRACTED;
+		}
+	}
 }
 
 void CCharacter::HandleRace()
@@ -703,6 +779,8 @@ void CCharacter::Tick()
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
+
+	HandleDoors();
 
 	// handle death-tiles and leaving gamelayer
 	if(GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||

@@ -862,7 +862,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			{
 				//m_aClients[ClientID].m_pMap = m_lpMaps[rand() % m_lpMaps.size()];
 				const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
-				if(str_comp(pVersion, GameServer()->FakeVersion()) != 0)
+				if(str_comp(pVersion, GameServer()->FakeVersion()) != 0 && str_comp(pVersion, GameServer()->NetVersion()) != 0)
 				{
 					// wrong version
 					char aReason[256];

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <base/tl/array.h>
 #include <game/voting.h>
 #include <game/layers.h>
 #include <game/collision.h>
@@ -16,6 +17,7 @@ class IConsole;
 
 class CGameMap
 {
+public:
 	struct CSpawnEval
 	{
 		CSpawnEval()
@@ -31,6 +33,27 @@ class CGameMap
 		float m_Score;
 	};
 
+	struct CDoorTile
+	{
+		int m_Index;
+		vec2 m_Pos;
+		int m_ID;
+		bool m_Default;
+		char m_LaserDir[2];
+
+		int m_Delay;
+		float m_Length;
+		vec2 m_Direction;
+		int m_SnapID;
+		int m_Type;
+	};
+
+	struct CTeleTo
+	{
+		int m_ID;
+		vec2 m_Pos;
+	};
+
 private:
 	CMap *m_pMap;
 	IServer *m_pServer;
@@ -41,6 +64,8 @@ private:
 	CGameWorld m_World;
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
+	array<CDoorTile *> m_lDoorTiles;
+	array<CTeleTo *> m_lTeleTo;
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 	int m_RoundStartTick;
@@ -66,6 +91,9 @@ private:
 	bool OnEntity(int Index, vec2 Pos);
 
 	void UpdateVote();
+	void InitEntities();
+	void InitDoorTile(CDoorTile *pTile);
+	void InitExtras();
 public:
 	CGameMap(CMap *pMap);
 	~CGameMap();
@@ -82,7 +110,12 @@ public:
 	void FillTranslateItems(CTranslateItem *pTranslateItems);
 
 	bool CanSpawn(int Team, vec2 *pOutPos);
+	CDoorTile *GetDoorTile(int Index);
+	bool DoorTileActive(CDoorTile *pDoorTile) const;
+	void OnDoorHandle(int ID, int Delay, bool Activate);
+	bool GetRandomTelePos(int ID, vec2 *Pos);
 
+	void SnapDoors(int SnappingClient);
 	void SnapFakePlayer(int SnappingClient);
 	void SnapGameInfo(int SnappingClient);
 	void Snap(int SnappingClient);

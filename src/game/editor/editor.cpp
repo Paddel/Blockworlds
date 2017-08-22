@@ -1707,8 +1707,11 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 
 			for (int i = 0; i < m_Map.m_lGroups[g]->m_lLayers.size(); i++)
 			{
+				if (m_Map.m_lGroups[g]->m_Visible == false)
+					continue;
+
 				CLayer *pLayer = m_Map.m_lGroups[g]->m_lLayers[i];
-				if (pLayer->m_Type == LAYERTYPE_EXTRAS)
+				if (pLayer->m_Visible && pLayer->m_Type == LAYERTYPE_EXTRAS)
 					pLayer->Render();
 			}
 		}

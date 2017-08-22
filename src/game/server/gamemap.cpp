@@ -5,6 +5,7 @@
 #include <game/server/gamecontext.h>
 #include <game/server/entities/npc.h>
 #include <game/server/entities/pickup.h>
+#include <game/extras.h>
 
 #include "gamemap.h"
 
@@ -24,6 +25,14 @@ CGameMap::CGameMap(CMap *pMap)
 
 CGameMap::~CGameMap()
 {
+	for (int i = 0; i < m_lDoorTiles.size(); i++)
+	{
+		if (m_lDoorTiles[i]->m_Length > 0.0f)
+			Server()->SnapFreeID(m_lDoorTiles[i]->m_SnapID);
+	}
+
+	m_lDoorTiles.delete_all();
+	m_lTeleTo.delete_all();
 }
 
 float CGameMap::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos)
@@ -207,20 +216,8 @@ void CGameMap::UpdateVote()
 	}
 }
 
-bool CGameMap::Init(CGameContext *pGameServer)
+void CGameMap::InitEntities()
 {
-	m_pGameServer = pGameServer;
-	m_pServer = pGameServer->Server();
-	m_pConsole = pGameServer->Console();
-
-	m_Layers.Init(Map()->EngineMap());
-	m_Collision.Init(&m_Layers);
-
-	m_Events.SetGameServer(pGameServer);
-	m_World.SetGameMap(this);
-
-	m_RoundStartTick = Server()->Tick();
-
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
 	CTile *pTiles = (CTile *)Map()->EngineMap()->GetData(pTileMap->m_Data);
@@ -239,6 +236,101 @@ bool CGameMap::Init(CGameContext *pGameServer)
 			}
 		}
 	}
+}
+
+void CGameMap::InitDoorTile(CDoorTile *pTile)
+{
+	pTile->m_Delay = 0;
+	pTile->m_Length = 0.0f;
+
+	if (pTile->m_LaserDir[0] == '^' || pTile->m_LaserDir[0] == 'v' || pTile->m_LaserDir[0] == '|')
+		pTile->m_Type = 1;
+	else if (pTile->m_LaserDir[0] == '<' || pTile->m_LaserDir[0] == '>' || pTile->m_LaserDir[0] == '-')
+		pTile->m_Type = 2;
+	else
+		pTile->m_Type = 0;
+
+	if (pTile->m_LaserDir[0] == '^' || pTile->m_LaserDir[0] == 'v' ||
+		pTile->m_LaserDir[0] == '<' || pTile->m_LaserDir[0] == '>')
+	{
+		vec2 Dir;
+		switch (pTile->m_LaserDir[0])
+		{
+		case '^': Dir = vec2(0, -1); break;
+		case 'v': Dir = vec2(0, 1); break;
+		case '<': Dir = vec2(-1, 0); break;
+		case '>': Dir = vec2(1, 0); break;
+		}
+
+		pTile->m_Direction = Dir;
+		pTile->m_SnapID = Server()->SnapNewID();
+
+		pTile->m_Length = 16.0f;
+		for (int i = 1; i < 16; i++)
+		{
+			if (Collision()->CheckPoint(pTile->m_Pos + Dir * 32.0f * i) == false)
+				pTile->m_Length += 32;
+			else
+				break;
+		}
+	}
+}
+
+void CGameMap::InitExtras()
+{
+	for (int l = 0; l < Layers()->GetNumExtrasLayer(); l++)
+	{
+		for (int x = 0; x < Layers()->GetExtrasWidth(l); x++)
+		{
+			for (int y = 0; y < Layers()->GetExtrasHeight(l); y++)
+			{
+				int Index = y * Layers()->GetExtrasWidth(l) + x;
+				int Tile = Layers()->GetExtrasTile(l)[Index].m_Index;
+				CExtrasData ExtrasData = Layers()->GetExtrasData(l)[Index];
+
+				if (Tile == EXTRAS_DOOR)
+				{
+					CDoorTile *pDoorTile = new CDoorTile();
+					pDoorTile->m_Index = Index;
+					pDoorTile->m_Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+					const char *pData = ExtrasData.m_aData;
+					pDoorTile->m_ID = str_toint(pData);
+					pData += +gs_ExtrasSizes[Tile][0];
+					str_copy(pDoorTile->m_LaserDir, pData, sizeof(pDoorTile->m_LaserDir));
+					pData += +gs_ExtrasSizes[Tile][1];
+					pDoorTile->m_Default = (bool)str_toint(pData);
+					pData += +gs_ExtrasSizes[Tile][2];
+					InitDoorTile(pDoorTile);
+					m_lDoorTiles.add(pDoorTile);
+				}
+				else if (Tile == EXTRAS_TELEPORT_TO)
+				{
+					CTeleTo *pTeleTo = new CTeleTo();
+					pTeleTo->m_Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+					pTeleTo->m_ID = str_toint(ExtrasData.m_aData);
+					m_lTeleTo.add(pTeleTo);
+				}
+			}
+		}
+	}
+}
+
+bool CGameMap::Init(CGameContext *pGameServer)
+{
+	m_pGameServer = pGameServer;
+	m_pServer = pGameServer->Server();
+	m_pConsole = pGameServer->Console();
+
+	m_Layers.Init(Map()->EngineMap());
+	m_Collision.Init(&m_Layers);
+
+	m_Events.SetGameServer(pGameServer);
+	m_World.SetGameMap(this);
+
+	m_RoundStartTick = Server()->Tick();
+
+	InitEntities();
+	InitExtras();
 
 	CNpc *pNpc = new CNpc(&m_World, FreeNpcSlot());
 	pNpc->Spawn(vec2(300, 300));
@@ -353,6 +445,91 @@ bool CGameMap::CanSpawn(int Team, vec2 *pOutPos)
 	return Eval.m_Got;
 }
 
+CGameMap::CDoorTile *CGameMap::GetDoorTile(int Index)
+{
+	for (int i = 0; i < m_lDoorTiles.size(); i++)
+		if (m_lDoorTiles[i]->m_Index == Index)
+			return m_lDoorTiles[i];
+	return 0x0;
+}
+
+bool CGameMap::DoorTileActive(CDoorTile *pDoorTile) const
+{
+	if (pDoorTile->m_Delay > Server()->Tick())
+		return !pDoorTile->m_Default;
+	return pDoorTile->m_Default;
+}
+
+void CGameMap::OnDoorHandle(int ID, int Delay, bool Activate)
+{
+	for (int i = 0; i < m_lDoorTiles.size(); i++)
+	{
+		if (m_lDoorTiles[i]->m_ID != ID)
+			continue;
+
+		if (m_lDoorTiles[i]->m_Default == Activate)
+			m_lDoorTiles[i]->m_Delay = 0;
+		else
+			m_lDoorTiles[i]->m_Delay = Server()->Tick() + Delay * Server()->TickSpeed() + 1;
+	}
+}
+
+bool CGameMap::GetRandomTelePos(int ID, vec2 *Pos)
+{
+	int Num = 0;
+	for (int i = 0; i < m_lTeleTo.size(); i++)
+		if (m_lTeleTo[i]->m_ID == ID)
+			Num++;
+	if (Num == 0)
+		return false;
+	int Chosen = rand() % Num;
+	for (int i = 0; i < m_lTeleTo.size(); i++)
+	{
+		if (m_lTeleTo[i]->m_ID != ID)
+			continue;
+
+		if (Chosen <= 0)
+		{
+			*Pos = m_lTeleTo[i]->m_Pos;
+			return true;
+		}
+		Chosen--;
+	}
+
+	return false;
+}
+
+void CGameMap::SnapDoors(int SnappingClient)
+{
+	CPlayer *pPlayer = m_apPlayers[SnappingClient];
+	if (pPlayer == 0x0)
+		return;
+
+	for (int i = 0; i < m_lDoorTiles.size(); i++)
+	{
+		if (DoorTileActive(m_lDoorTiles[i]) == false || m_lDoorTiles[i]->m_Length <= 0.0f)
+			continue;
+
+		float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - m_lDoorTiles[i]->m_Pos.x;
+		float dy = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - m_lDoorTiles[i]->m_Pos.y;
+
+		if (absolute(dx) > 1000.0f || absolute(dy) > 800.0f)
+			continue;
+
+		CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_lDoorTiles[i]->m_SnapID, sizeof(CNetObj_Laser)));
+		if (!pObj)
+			return;
+
+		vec2 From = m_lDoorTiles[i]->m_Pos + m_lDoorTiles[i]->m_Direction * m_lDoorTiles[i]->m_Length;
+
+		pObj->m_X = (int)m_lDoorTiles[i]->m_Pos.x;
+		pObj->m_Y = (int)m_lDoorTiles[i]->m_Pos.y;
+		pObj->m_FromX = (int)From.x;
+		pObj->m_FromY = (int)From.y;
+		pObj->m_StartTick = Server()->Tick() - 1;
+	}
+}
+
 void CGameMap::SnapFakePlayer(int SnappingClient)
 {
 	int ClientID = Server()->UsingMapItems(SnappingClient) - 1;
@@ -409,6 +586,7 @@ void CGameMap::SnapGameInfo(int SnappingClient)
 void CGameMap::Snap(int SnappingClient)
 {
 	m_World.Snap(SnappingClient);
+	SnapDoors(SnappingClient);
 	SnapGameInfo(SnappingClient);
 	m_Events.Snap(SnappingClient);
 }

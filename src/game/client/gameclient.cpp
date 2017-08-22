@@ -88,7 +88,7 @@ CGameClient::CStack::CStack() { m_Num = 0; }
 void CGameClient::CStack::Add(class CComponent *pComponent) { m_paComponents[m_Num++] = pComponent; }
 
 const char *CGameClient::Version() { return GAME_VERSION; }
-const char *CGameClient::NetVersion() { return GAME_NETVERSION; }
+const char *CGameClient::NetVersion() { return GAME_FAKEVERSION; }
 const char *CGameClient::GetItemName(int Type) { return m_NetObjHandler.GetObjName(Type); }
 
 void CGameClient::OnConsoleInit()

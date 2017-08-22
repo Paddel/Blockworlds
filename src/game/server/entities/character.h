@@ -50,6 +50,7 @@ public:
 
 	bool HandleExtrasLayer(int Layer);
 	void HandleExtras();
+	void HandleDoors();
 
 	void HandleTiles();
 

@@ -1,5 +1,6 @@
 ddnet combtilitibily
 
+rcon stuff (me all global)
 chatcommands
 scoresystem
 accountsystem
