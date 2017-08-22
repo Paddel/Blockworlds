@@ -17,30 +17,8 @@ CPickup::CPickup(CGameWorld *pGameWorld, int Type, int SubType)
 	GameWorld()->InsertEntity(this);
 }
 
-void CPickup::Reset()
-{
-	if (g_pData->m_aPickups[m_Type].m_Spawndelay > 0)
-		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_pData->m_aPickups[m_Type].m_Spawndelay;
-	else
-		m_SpawnTick = -1;
-}
-
 void CPickup::Tick()
 {
-	// wait for respawn
-	if(m_SpawnTick > 0)
-	{
-		if(Server()->Tick() > m_SpawnTick)
-		{
-			// respawn
-			m_SpawnTick = -1;
-
-			if(m_Type == POWERUP_WEAPON)
-				GameServer()->CreateSound(GameMap(), m_Pos, SOUND_WEAPON_SPAWN);
-		}
-		else
-			return;
-	}
 	// Check if a player intersected us
 	CCharacter *pChr = GameWorld()->ClosestCharacter(m_Pos, 20.0f, 0);
 	if(pChr && pChr->IsAlive())
@@ -51,25 +29,24 @@ void CPickup::Tick()
 		{
 			case POWERUP_HEALTH:
 				{
-					GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH);
-					RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
+					if(m_pLastEntity != pChr)
+						GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH);
+					pChr->Freeze(3.0f);
 				}
 				break;
 
 			case POWERUP_ARMOR:
 				{
-					GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_ARMOR);
-					RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
+					if(pChr->TakeWeapons())
+						GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_ARMOR);
 				}
 				break;
 
 			case POWERUP_WEAPON:
 				if(m_Subtype >= 0 && m_Subtype < NUM_WEAPONS)
 				{
-					if(pChr->GiveWeapon(m_Subtype, 10))
+					if(pChr->GiveWeapon(m_Subtype))
 					{
-						RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
-
 						if(m_Subtype == WEAPON_GRENADE)
 							GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_GRENADE);
 						else if(m_Subtype == WEAPON_SHOTGUN)
@@ -86,49 +63,21 @@ void CPickup::Tick()
 			case POWERUP_NINJA:
 				{
 					// activate ninja on target player
-					pChr->GiveNinja();
-					RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
-
-					// loop through all players, setting their emotes
-					CCharacter *pC = static_cast<CCharacter *>(GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER));
-					for(; pC; pC = (CCharacter *)pC->TypeNext())
-					{
-						if (pC != pChr)
-							pC->SetEmote(EMOTE_SURPRISE, Server()->Tick() + Server()->TickSpeed());
-					}
-
-					pChr->SetEmote(EMOTE_ANGRY, Server()->Tick() + 1200 * Server()->TickSpeed() / 1000);
+					pChr->GiveNinja(m_pLastEntity != pChr);
 					break;
 				}
 
 			default:
 				break;
 		};
-
-		if(RespawnTime >= 0)
-		{
-			if (g_Config.m_Debug)
-			{
-				char aBuf[256];
-				str_format(aBuf, sizeof(aBuf), "pickup player='%d:%s' item=%d/%d",
-					pChr->GetPlayer()->GetCID(), Server()->ClientName(pChr->GetPlayer()->GetCID()), m_Type, m_Subtype);
-				GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-			}
-
-			m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * RespawnTime;
-		}
 	}
-}
 
-void CPickup::TickPaused()
-{
-	if(m_SpawnTick != -1)
-		++m_SpawnTick;
+	m_pLastEntity = pChr;
 }
 
 void CPickup::Snap(int SnappingClient)
 {
-	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient))
+	if(NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, m_ID, sizeof(CNetObj_Pickup)));

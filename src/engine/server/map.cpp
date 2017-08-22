@@ -1,7 +1,7 @@
 
 #include <engine/storage.h>
 
-#include <game/server/gamemap.h>// Interface ??
+#include <game/server/gamemap.h>//TODO: Create an interface to remove this include
 
 #include "server.h"
 

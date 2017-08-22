@@ -76,7 +76,8 @@ void CProjectile::Tick()
 		if(m_Explosive)
 			GameServer()->CreateExplosion(GameMap(), CurPos, m_Owner, m_Weapon, false);
 
-
+		if(m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN)
+			GameServer()->CreateDamageInd(GameMap(), CurPos, -atan2(m_Direction.x, m_Direction.y), 10);
 
 		GameWorld()->DestroyEntity(this);
 	}

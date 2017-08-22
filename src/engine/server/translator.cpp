@@ -2,10 +2,8 @@
 #include <float.h>
 #include <algorithm>
 
-#include <engine/shared/config.h>//remove
-
 #include <base/tl/algorithm.h>
-#include <game/server/gamemap.h>
+#include <game/server/gamemap.h>//TODO: Create an interface to remove this include
 
 #include "server.h"
 #include "translator.h"

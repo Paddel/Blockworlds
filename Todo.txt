@@ -1,5 +1,7 @@
 ddnet combtilitibily
 
-extras
+chatcommands
+scoresystem
 accountsystem
 clan
+vpncheck fix

@@ -60,6 +60,11 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_LastWeapon = WEAPON_GUN;
 	m_QueuedWeapon = -1;
 
+	m_FreezeTime = 0;
+	m_DeepFreeze = false;
+
+	m_RaceStart = 0;
+
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
 
@@ -76,8 +81,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Alive = true;
 
 	mem_zero(&m_GotWeapon, sizeof(m_GotWeapon));
-	GiveWeapon(WEAPON_HAMMER, -1);
-	GiveWeapon(WEAPON_GUN, 10);
+	GiveWeapon(WEAPON_HAMMER);
+	GiveWeapon(WEAPON_GUN);
 
 	return true;
 }
@@ -111,7 +116,6 @@ bool CCharacter::IsGrounded()
 	return false;
 }
 
-
 void CCharacter::HandleNinja()
 {
 	if(m_ActiveWeapon != WEAPON_NINJA)
@@ -126,6 +130,10 @@ void CCharacter::HandleNinja()
 		SetWeapon(m_ActiveWeapon);
 		return;
 	}
+
+	int NinjaTime = m_Ninja.m_ActivationTick + (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000) - Server()->Tick();
+	if (NinjaTime % Server()->TickSpeed() == 0 && NinjaTime / Server()->TickSpeed() <= 5)
+		GameServer()->CreateDamageInd(GameMap(), m_Pos, 0, NinjaTime / Server()->TickSpeed());
 
 	// force ninja Weapon
 	SetWeapon(WEAPON_NINJA);
@@ -255,6 +263,16 @@ void CCharacter::FireWeapon()
 	if(m_ActiveWeapon == WEAPON_GRENADE || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_RIFLE)
 		FullAuto = true;
 
+	if (IsFreezed())
+	{
+		if (CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
+		{
+			m_ReloadTimer = Server()->TickSpeed();
+			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PLAYER_PAIN_LONG);
+		}
+
+		return;
+	}
 
 	// check if we gonna fire
 	bool WillFire = false;
@@ -266,17 +284,6 @@ void CCharacter::FireWeapon()
 
 	if(!WillFire)
 		return;
-
-	// check for ammo
-	/*{
-		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
-		if(m_LastNoAmmoSound+Server()->TickSpeed() <= Server()->Tick())
-		{
-			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_WEAPON_NOAMMO);
-			m_LastNoAmmoSound = Server()->Tick();
-		}
-		return;
-	}*/
 
 	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
 
@@ -312,6 +319,7 @@ void CCharacter::FireWeapon()
 					Dir = vec2(0.f, -1.f);
 
 				pTarget->Push(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f);
+				pTarget->Unfreeze();
 				Hits++;
 			}
 
@@ -335,22 +343,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_SHOTGUN:
 		{
-			int ShotSpread = 2;
-
-			for(int i = -ShotSpread; i <= ShotSpread; ++i)
-			{
-				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-				float a = GetAngle(Direction);
-				a += Spreading[i+2];
-				float v = 1-(absolute(i)/(float)ShotSpread);
-				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-				new CProjectile(GameWorld(), WEAPON_SHOTGUN,
-					m_pPlayer->GetCID(),
-					ProjStartPos,
-					vec2(cosf(a), sinf(a))*Speed,
-					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, 0, 0, -1, WEAPON_SHOTGUN);
-			}
+			new CLaser(GameWorld(), m_Pos, Direction, 800.0f, m_pPlayer->GetCID(), WEAPON_SHOTGUN);
 
 			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_SHOTGUN_FIRE);
 		} break;
@@ -369,7 +362,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_RIFLE:
 		{
-			new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+			new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), WEAPON_RIFLE);
 			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_RIFLE_FIRE);
 		} break;
 
@@ -410,7 +403,7 @@ void CCharacter::HandleWeapons()
 	return;
 }
 
-bool CCharacter::GiveWeapon(int Weapon, int Ammo)
+bool CCharacter::GiveWeapon(int Weapon)
 {
 	if(!m_GotWeapon[Weapon])
 	{
@@ -420,7 +413,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 	return false;
 }
 
-void CCharacter::GiveNinja()
+void CCharacter::GiveNinja(bool PlaySound)
 {
 	m_Ninja.m_ActivationTick = Server()->Tick();
 	m_GotWeapon[WEAPON_NINJA] = true;
@@ -428,13 +421,78 @@ void CCharacter::GiveNinja()
 		m_LastWeapon = m_ActiveWeapon;
 	m_ActiveWeapon = WEAPON_NINJA;
 
-	GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_NINJA);
+	if(PlaySound)
+		GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_NINJA);
 }
 
 void CCharacter::SetEmote(int Emote, int Tick)
 {
 	m_EmoteType = Emote;
 	m_EmoteStop = Tick;
+}
+
+void CCharacter::Unfreeze()
+{
+	m_FreezeTime = 0;
+}
+
+void CCharacter::Freeze(float Seconds)
+{
+	if(m_FreezeTime <= 0)
+		m_FreezeIndicator = 0;
+
+	int NewTime = Server()->TickSpeed() * Seconds;
+	if (NewTime > m_FreezeTime)
+		m_FreezeTime = NewTime;
+}
+
+bool CCharacter::IsFreezed()
+{
+	if (m_FreezeTime > 0)
+		return true;
+	if (m_DeepFreeze == true)
+		return true;
+	return false;
+}
+
+bool CCharacter::TakeWeapons()
+{
+	bool Found = false;
+	for (int i = 0; i < NUM_WEAPONS; i++)
+	{
+		if (i == WEAPON_GUN || i == WEAPON_HAMMER)
+			continue;
+
+		if (m_GotWeapon[i] == true)
+		{
+			m_GotWeapon[i] = false;
+			Found = true;
+		}
+	}
+
+	if (Found)
+		m_ActiveWeapon = WEAPON_HAMMER;
+
+	return Found;
+}
+
+void CCharacter::RaceFinish()
+{
+	if (m_RaceStart == 0)
+		return;
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "%s finished in: ", Server()->ClientName(m_pPlayer->GetCID()));
+	int64 DeltaTime = Server()->Tick() - m_RaceStart;
+	int Minutes = DeltaTime / Server()->TickSpeed() / 60;
+	float Seconds = DeltaTime / (float)Server()->TickSpeed() - Minutes * 60;
+	if (Minutes > 0)
+		str_fcat(aBuf, sizeof(aBuf), "%i Minute%s and ", Minutes, Minutes > 1 ? "s" : "");
+	str_fcat(aBuf, sizeof(aBuf), "%.2f Seconds", Seconds);
+
+	//TODO: Save time
+	GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
+	m_RaceStart = 0;
 }
 
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
@@ -518,13 +576,55 @@ void CCharacter::HandleTiles()
 	int LastTile = GameMap()->Collision()->GetTileAt(m_LastPos);
 	int NewTile = Tile != LastTile ? Tile : TILE_AIR;
 
+	if (Tile == TILE_FREEZE)
+		Freeze(3.0f);
+	if (Tile == TILE_UNFREEZE)
+		Unfreeze();
+	if (Tile == TILE_FREEZE_DEEP)
+	{
+		m_DeepFreeze = true;
+		m_FreezeIndicator = 0;
+	}
+	if (Tile == TILE_UNFREEZE_DEEP && m_DeepFreeze == true)
+	{
+		m_DeepFreeze = false;
+		Freeze(3.0f);
+	}
+	if (Tile == TILE_RACE_START && m_RaceStart == 0)
+		m_RaceStart = Server()->Tick();
+	if (Tile == TILE_RACE_FINISH)
+		RaceFinish();
+}
 
+void CCharacter::HandleRace()
+{
+	//Freeze
+	if (m_FreezeTime > 0)
+		m_FreezeTime--;
+
+	if (IsFreezed())
+	{
+		m_Input.m_Jump = 0;
+		m_Input.m_Direction = 0;
+		m_Input.m_Hook = 0;
+
+		m_FreezeIndicator++;
+		if (m_FreezeIndicator % Server()->TickSpeed() == 1)
+		{
+			int NumStars = (m_FreezeTime + 1) / Server()->TickSpeed();
+			if (m_DeepFreeze)
+				NumStars = 3;
+
+			GameServer()->CreateDamageInd(GameMap(), m_Pos, 0, NumStars);
+		}
+	}
 }
 
 void CCharacter::Tick()
 {
 	HandleTiles();
 	HandleExtras();
+	HandleRace();
 
 	if (m_Alive == false)
 		return;
@@ -742,6 +842,9 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+
+	if (IsFreezed())
+		pCharacter->m_Weapon = WEAPON_NINJA;
 
 	//translate hook
 	if (pCharacter->m_HookedPlayer != -1)

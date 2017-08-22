@@ -5,13 +5,14 @@
 #include <game/server/gamemap.h>
 #include "laser.h"
 
-CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
+CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner, int Weapon)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
 {
 	m_Pos = Pos;
 	m_Owner = Owner;
 	m_Energy = StartEnergy;
 	m_Dir = Direction;
+	m_Weapon = Weapon;
 	m_Bounces = 0;
 	m_EvalTick = 0;
 	GameWorld()->InsertEntity(this);
@@ -23,9 +24,14 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
 	vec2 At;
 	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
-	CEntity *pHit = GameWorld()->IntersectTee(m_Pos, To, 0.f, At, pOwnerChar);
+	CEntity *pHit = GameWorld()->IntersectTee(m_Pos, To, 0.f, At, m_Bounces == 0 ? pOwnerChar : 0x0);
 	if(!pHit)
 		return false;
+
+	if (m_Weapon == WEAPON_SHOTGUN)
+		pHit->Push(m_Dir * -10.0f);
+	else if(m_Weapon == WEAPON_RIFLE)
+		pHit->Unfreeze();
 
 	m_From = From;
 	m_Pos = At;
@@ -65,8 +71,8 @@ void CLaser::DoBounce()
 			m_Energy -= distance(m_From, m_Pos) + GameServer()->Tuning()->m_LaserBounceCost;
 			m_Bounces++;
 
-			if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
-				m_Energy = -1;
+			/*if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
+				m_Energy = -1;*/
 
 			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_RIFLE_BOUNCE);
 		}

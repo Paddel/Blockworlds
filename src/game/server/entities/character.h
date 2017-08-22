@@ -53,15 +53,23 @@ public:
 
 	void HandleTiles();
 
+	void HandleRace();
+
 	void Die(int Killer, int Weapon);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
 	bool Remove();
 
-	bool GiveWeapon(int Weapon, int Ammo);
-	void GiveNinja();
+	bool GiveWeapon(int Weapon);
+	void GiveNinja(bool PlaySound);
 
 	void SetEmote(int Emote, int Tick);
+
+	virtual void Freeze(float Seconds);
+	virtual void Unfreeze();
+	bool IsFreezed();
+	bool TakeWeapons();
+	void RaceFinish();
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
@@ -71,6 +79,10 @@ private:
 	class CPlayer *m_pPlayer;
 
 	bool m_Alive;
+	int m_FreezeTime;
+	int m_FreezeIndicator;
+	bool m_DeepFreeze;
+	int64 m_RaceStart;
 
 	vec2 m_LastPos;
 

@@ -82,6 +82,8 @@ public:
 	int GetObjType() const { return m_ObjType; }
 
 	virtual void Push(vec2 Force) {}
+	virtual void Freeze(float Seconds) {}
+	virtual void Unfreeze() {}
 
 	/*
 		Function: destroy
