@@ -654,15 +654,19 @@ void CServer::SetMapOnConnect(int ClientID)
 {
 	CMap *pMap = 0x0;
 	//dummy connect
-	for (int i = 0; i < m_NetServer.MaxClients(); ++i)
+	dbg_msg(0, "on func");
+	for (int i = 0; i < m_NetServer.MaxClients(); i++)
 	{
-		if (m_aClients[i].m_State != CClient::STATE_EMPTY || i == ClientID)
+		if (m_aClients[i].m_State == CClient::STATE_EMPTY || i == ClientID)
 			continue;
 
 		NETADDR OtherAddr = *m_NetServer.ClientAddr(i);
 		NETADDR OwnAddr = *m_NetServer.ClientAddr(ClientID);
 		OtherAddr.port = 0;
 		OwnAddr.port = 0;
+		dbg_msg(0, "%i", i),
+		dbg_msg(0, "%i.%i.%i.%i %i.%i.%i.%i", OwnAddr.ip[0], OwnAddr.ip[1], OwnAddr.ip[2], OwnAddr.ip[3],
+			OtherAddr.ip[0], OtherAddr.ip[1], OtherAddr.ip[2], OtherAddr.ip[3]);
 		if (!net_addr_comp(&OwnAddr, &OtherAddr))
 		{
 			m_aClients[ClientID].m_pMap = m_aClients[i].m_pMap;

@@ -253,7 +253,7 @@ void CGameMap::InitDoorTile(CDoorTile *pTile)
 	if (pTile->m_LaserDir[0] == '^' || pTile->m_LaserDir[0] == 'v' ||
 		pTile->m_LaserDir[0] == '<' || pTile->m_LaserDir[0] == '>')
 	{
-		vec2 Dir;
+		vec2 Dir = vec2(0.0f, 0.0f);
 		switch (pTile->m_LaserDir[0])
 		{
 		case '^': Dir = vec2(0, -1); break;

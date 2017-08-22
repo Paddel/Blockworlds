@@ -399,6 +399,9 @@ void CCharacter::HandleWeapons()
 		return;
 	}
 
+	if (m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS || m_GotWeapon[m_ActiveWeapon] == false)
+		m_ActiveWeapon = WEAPON_HAMMER;
+
 	// fire Weapon, if wanted
 	FireWeapon();
 	return;
