@@ -6,8 +6,8 @@
 #include "editor.h"
 
 
-int CEditor::ms_ExtrasPopupSize[NUM_EXTRAS][2] = { {0,0}, { 145, 50},{ 145, 50 } };
-static const char *gs_ExtrasHeader[NUM_EXTRAS] = { 0x0, "Teleport From", "Teleport To" };
+int CEditor::ms_ExtrasPopupSize[NUM_EXTRAS][2] = { {0,0}, { 145, 50},{ 145, 50 },{ 145, 100 } };
+static const char *gs_ExtrasHeader[NUM_EXTRAS] = { 0x0, "Teleport From", "Teleport To", "Speedup" };
 
 CLayerExtras::CLayerExtras(int w, int h)
 : CLayerTiles(w, h)
@@ -15,6 +15,8 @@ CLayerExtras::CLayerExtras(int w, int h)
 	str_copy(m_aName, "Extas", sizeof(m_aName));
 	m_Game = 0;
 	m_Type = LAYERTYPE_EXTRAS;
+	m_TexID = m_pEditor->ms_ExtrasTexture;
+	m_Image = -1;
 
 	m_pExtrasData = new CExtrasData[m_Width*m_Height];
 	mem_zero(m_pExtrasData, m_Width*m_Height * sizeof(CTile));

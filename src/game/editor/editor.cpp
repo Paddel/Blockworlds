@@ -27,6 +27,7 @@ int CEditor::ms_CheckerTexture;
 int CEditor::ms_BackgroundTexture;
 int CEditor::ms_CursorTexture;
 int CEditor::ms_EntitiesTexture;
+int CEditor::ms_ExtrasTexture;
 const void* CEditor::ms_pUiGotContext;
 
 enum
@@ -1696,6 +1697,20 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 			if(m_Map.m_lGroups[g]->m_Visible)
 				m_Map.m_lGroups[g]->Render();
 			//UI()->ClipEnable(&view);
+		}
+
+		//and the extras too
+		for (int g = 0; g < m_Map.m_lGroups.size(); g++)
+		{
+			if (m_Map.m_lGroups[g]->m_Visible == false)
+				continue;
+
+			for (int i = 0; i < m_Map.m_lGroups[g]->m_lLayers.size(); i++)
+			{
+				CLayer *pLayer = m_Map.m_lGroups[g]->m_lLayers[i];
+				if (pLayer->m_Type == LAYERTYPE_EXTRAS)
+					pLayer->Render();
+			}
 		}
 
 		// render the game above everything else
@@ -3971,8 +3986,6 @@ void CEditorMap::MakeGameGroup(CLayerGroup *pGroup)
 	str_copy(m_pGameGroup->m_aName, "Game", sizeof(m_pGameGroup->m_aName));
 }
 
-
-
 void CEditorMap::Clean()
 {
 	m_lGroups.delete_all();
@@ -4033,6 +4046,7 @@ void CEditor::Init()
 	ms_BackgroundTexture = Graphics()->LoadTexture("editor/background.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	ms_CursorTexture = Graphics()->LoadTexture("editor/cursor.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	ms_EntitiesTexture = Graphics()->LoadTexture("editor/entities.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+	ms_ExtrasTexture = Graphics()->LoadTexture("editor/extras.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 
 	m_TilesetPicker.m_pEditor = this;
 	m_TilesetPicker.MakePalette();

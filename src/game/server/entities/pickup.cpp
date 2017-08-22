@@ -23,8 +23,6 @@ void CPickup::Tick()
 	CCharacter *pChr = GameWorld()->ClosestCharacter(m_Pos, 20.0f, 0);
 	if(pChr && pChr->IsAlive())
 	{
-		// player picked us up, is someone was hooking us, let them go
-		int RespawnTime = -1;
 		switch (m_Type)
 		{
 			case POWERUP_HEALTH:

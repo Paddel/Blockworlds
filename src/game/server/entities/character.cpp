@@ -2,9 +2,10 @@
 
 #include <new>
 #include <engine/shared/config.h>
+#include <game/mapitems.h>
+#include <game/extras.h>
 #include <game/server/gamecontext.h>
 #include <game/server/gamemap.h>
-#include <game/mapitems.h>
 
 #include "character.h"
 #include "laser.h"
@@ -495,6 +496,66 @@ void CCharacter::RaceFinish()
 	m_RaceStart = 0;
 }
 
+void CCharacter::SpeedUp(int Force, int MaxSpeed, int Angle)
+{
+	//Copied from DDNet Source: https://ddnet.tw/
+	float AngleRad = Angle * (pi / 180.0f);
+	vec2 Direction = vec2(cos(AngleRad), sin(AngleRad)), MaxVel, TempVel = m_Core.m_Vel;
+	float TeeAngle, SpeederAngle, DiffAngle, SpeedLeft, TeeSpeed;
+
+	if (Force == 255 && MaxSpeed)
+	{
+		m_Core.m_Vel = Direction * (MaxSpeed / 5);
+	}
+	else
+	{
+		if (MaxSpeed > 0 && MaxSpeed < 5)
+			MaxSpeed = 5;
+
+		if (MaxSpeed > 0)
+		{
+			if (Direction.x > 0.0000001f)
+				SpeederAngle = -atan(Direction.y / Direction.x);
+			else if (Direction.x < 0.0000001f)
+				SpeederAngle = atan(Direction.y / Direction.x) + 2.0f * asin(1.0f);
+			else if (Direction.y > 0.0000001f)
+				SpeederAngle = asin(1.0f);
+			else
+				SpeederAngle = asin(-1.0f);
+
+			if (SpeederAngle < 0)
+				SpeederAngle = 4.0f * asin(1.0f) + SpeederAngle;
+
+			if (TempVel.x > 0.0000001f)
+				TeeAngle = -atan(TempVel.y / TempVel.x);
+			else if (TempVel.x < 0.0000001f)
+				TeeAngle = atan(TempVel.y / TempVel.x) + 2.0f * asin(1.0f);
+			else if (TempVel.y > 0.0000001f)
+				TeeAngle = asin(1.0f);
+			else
+				TeeAngle = asin(-1.0f);
+
+			if (TeeAngle < 0)
+				TeeAngle = 4.0f * asin(1.0f) + TeeAngle;
+
+			TeeSpeed = sqrt(pow(TempVel.x, 2) + pow(TempVel.y, 2));
+
+			DiffAngle = SpeederAngle - TeeAngle;
+			SpeedLeft = MaxSpeed / 5.0f - cos(DiffAngle) * TeeSpeed;
+			if (abs((int)SpeedLeft) > Force && SpeedLeft > 0.0000001f)
+				TempVel += Direction * Force;
+			else if (abs((int)SpeedLeft) > Force)
+				TempVel += Direction * -Force;
+			else
+				TempVel += Direction * SpeedLeft;
+		}
+		else
+			TempVel += Direction * Force;
+
+		m_Core.m_Vel = TempVel;
+	}
+}
+
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
 	// check for changes
@@ -540,8 +601,6 @@ void CCharacter::ResetInput()
 	m_LatestPrevInput = m_LatestInput = m_Input;
 }
 
-
-
 bool CCharacter::HandleExtrasLayer(int Layer)
 {
 	CLayers *pLayers = GameMap()->Layers();
@@ -557,7 +616,20 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (NewTile == EXTRAS_TELEPORT_FROM)
 	{
-		GameServer()->SendChatTarget(m_pPlayer->GetCID(), ExtrasData.m_aData);
+		int ID = str_toint(ExtrasData.m_aData);
+		
+	}
+	if (Tile == EXTRAS_SPEEDUP)
+	{
+		const char *pData = ExtrasData.m_aData;
+		int Force = str_toint(pData);
+		pData += +gs_ExtrasSizes[Tile][0];
+		int MaxSpeed = str_toint(pData);
+		pData += +gs_ExtrasSizes[Tile][1];
+		int Angle = str_toint(pData);
+		pData += +gs_ExtrasSizes[Tile][2];
+		
+		SpeedUp(Force, MaxSpeed, Angle);
 	}
 
 	return false;
@@ -573,8 +645,8 @@ void CCharacter::HandleExtras()
 void CCharacter::HandleTiles()
 {
 	int Tile = GameMap()->Collision()->GetTileAt(m_Pos);
-	int LastTile = GameMap()->Collision()->GetTileAt(m_LastPos);
-	int NewTile = Tile != LastTile ? Tile : TILE_AIR;
+	//int LastTile = GameMap()->Collision()->GetTileAt(m_LastPos);
+	//int NewTile = Tile != LastTile ? Tile : TILE_AIR;
 
 	if (Tile == TILE_FREEZE)
 		Freeze(3.0f);
@@ -844,7 +916,10 @@ void CCharacter::Snap(int SnappingClient)
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
 
 	if (IsFreezed())
+	{
 		pCharacter->m_Weapon = WEAPON_NINJA;
+		pCharacter->m_Emote = EMOTE_PAIN;
+	}
 
 	//translate hook
 	if (pCharacter->m_HookedPlayer != -1)

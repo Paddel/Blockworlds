@@ -593,6 +593,7 @@ public:
 		ms_BackgroundTexture = 0;
 		ms_CursorTexture = 0;
 		ms_EntitiesTexture = 0;
+		ms_ExtrasTexture = 0;
 
 		m_EditingExtraX = -1;
 		m_EditingExtraY = -1;
@@ -726,6 +727,7 @@ public:
 	static int ms_BackgroundTexture;
 	static int ms_CursorTexture;
 	static int ms_EntitiesTexture;
+	static int ms_ExtrasTexture;
 
 	CLayerGroup m_Brush;
 	CLayerTiles m_TilesetPicker;

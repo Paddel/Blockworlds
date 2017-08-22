@@ -70,6 +70,10 @@ public:
 	bool IsFreezed();
 	bool TakeWeapons();
 	void RaceFinish();
+	void SpeedUp(int Force, int MaxSpeed, int Angle);
+
+	void SetEmoteType(int Type) { m_EmoteType = Type; }
+	void SetEmoteStop(int Stop) { m_EmoteStop = Stop; }
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
