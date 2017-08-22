@@ -1,7 +1,7 @@
 
 #include "extras.h"
 
-char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
+const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { "ID" },							//EXTRAS_TELEPORT_FROM
 { "ID" },							//EXTRAS_TELEPORT_TO
 { "Force", "Max Speed", "Angle"},	//EXTRAS_SPEEDUP
