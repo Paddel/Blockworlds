@@ -16,9 +16,10 @@ CAccountsHandler::CAccountsHandler()
 
 void CAccountsHandler::TestFunc(void *pResultData, bool Error, void *pUserData)
 {
+	dbg_msg(0, "in");
 	if (Error)
 	{
-		dbg_msg(0, "in");
+		dbg_msg(0, "error");
 		return;
 	}
 
@@ -41,7 +42,7 @@ void CAccountsHandler::Init(CGameContext *pGameServer)
 	m_pGameServer = pGameServer;
 	m_Database.Init("78.47.53.206", "taschenrechner", "hades", "teeworlds");
 
-	thread_sleep(1500);
+	thread_sleep(3500);
 	m_Database.QueryThread("SELECT * FROM accounts WHERE Slot > 0", TestFunc, m_pGameServer);
 }
 
