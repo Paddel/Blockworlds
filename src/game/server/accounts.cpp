@@ -25,8 +25,10 @@ void CAccountsHandler::TestFunc(void *pResultData, bool Error, void *pUserData)
 
 	MYSQL_RES *pResult = (MYSQL_RES *)pResultData;
 	int count = (int)pResult->row_count;
+	dbg_msg(0, "rows %i", count);
 	for(int i = 0; i < count; i++)
 	{
+		dbg_msg(0, "catching new field");
 		MYSQL_ROW Field = mysql_fetch_row(pResult);
 		int affected = mysql_num_fields(pResult);
 
@@ -42,7 +44,7 @@ void CAccountsHandler::Init(CGameContext *pGameServer)
 	m_pGameServer = pGameServer;
 	m_Database.Init("78.47.53.206", "taschenrechner", "hades", "teeworlds");
 
-	thread_sleep(3500);
+	thread_sleep(2000);
 	m_Database.QueryThread("SELECT * FROM accounts WHERE Slot > 0", TestFunc, m_pGameServer);
 }
 
