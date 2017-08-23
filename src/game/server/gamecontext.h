@@ -12,6 +12,7 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
+#include "accounts.h"
 #include "chatcommands.h"
 #include "player.h"
 
@@ -22,6 +23,7 @@ class CGameContext : public IGameServer
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
 	CChatCommandsHandler m_ChatCommandsHandler;
+	CAccountsHandler m_AccountsHandler;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);

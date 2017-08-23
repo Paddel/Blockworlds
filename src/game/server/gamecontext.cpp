@@ -366,6 +366,8 @@ void CGameContext::HandleInactive()
 
 void CGameContext::OnTick()
 {
+	m_AccountsHandler.Tick();
+
 	// copy tuning
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
 		Server()->GetGameMap(i)->Tick();
@@ -1209,6 +1211,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
 	m_ChatCommandsHandler.Init(this);
+	m_AccountsHandler.Init(this);
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
