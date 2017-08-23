@@ -10,14 +10,14 @@ class CDatabase
 public:
 	typedef void(*ResultFunction)(void *pQueryData, bool Error, void *pUserData);
 
-	struct CResultField
+	/*struct CResultField
 	{
-		char m_aValue[QUERY_MAX_RESULT_LEN];
-	};
+		char *m_pValue;
+	};*/
 
 	struct CResultRow
 	{
-		array<CResultField *>m_lpResultFields;
+		array<char *>m_lpResultFields;
 	};
 
 	struct CQueryData

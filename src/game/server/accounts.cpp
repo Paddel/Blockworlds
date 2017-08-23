@@ -28,7 +28,7 @@ void CAccountsHandler::TestFunc(void *pQueryData, bool Error, void *pUserData)
 
 	for (int i = 0; i < pData->m_lpResultRows.size(); i++)
 		for (int x = 0; x < pData->m_lpResultRows[i]->m_lpResultFields.size(); x++)
-			dbg_msg(0, "%i %i %s", i, x, pData->m_lpResultRows[i]->m_lpResultFields[x]->m_aValue);
+			dbg_msg(0, "%i %i %s", i, x, pData->m_lpResultRows[i]->m_lpResultFields[x]);
 }
 
 void CAccountsHandler::Init(CGameContext *pGameServer)

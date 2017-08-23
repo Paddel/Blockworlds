@@ -78,7 +78,6 @@ void CDatabase::ExecuteQuery(void *pData)
 	}
 
 	int count = (int)pResult->row_count;
-	dbg_msg(0, "rows %i", count);
 	for (int i = 0; i < count; i++)
 	{
 		CResultRow *pNewRow = new CResultRow();
@@ -88,9 +87,11 @@ void CDatabase::ExecuteQuery(void *pData)
 
 		for (int x = 0; x < affected; x++)
 		{
-			CResultField *pNewField = new CResultField();
-			str_copy(pNewField->m_aValue, CDatabase::GetDatabaseValue(Field[x]), sizeof(pNewField->m_aValue));
-			pNewRow->m_lpResultFields.add(pNewField);
+			const char *pResult = CDatabase::GetDatabaseValue(Field[x]);
+			int Length = str_length(pResult);
+			char *pInsertion = new char[Length + 1];
+			str_copy(pInsertion, pResult, Length);
+			pNewRow->m_lpResultFields.add(pInsertion);
 		}
 
 		pThreadData->m_lpResultRows.add(pNewRow);
