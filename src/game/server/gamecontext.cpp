@@ -532,7 +532,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_LastChat = Server()->Tick();
 
 			if (pMsg->m_pMessage[0] == '/')
-				m_ChatCommandsHandler.ProcessMessage(pMsg->m_pMessage + 1, ClientID);
+			{
+				if (m_ChatCommandsHandler.ProcessMessage(pMsg->m_pMessage + 1, ClientID) == false)
+					pPlayer->m_LastChat = 0;
+			}
 			else
 				pGameMap->SendChat(ClientID, Team, pMsg->m_pMessage);
 		}

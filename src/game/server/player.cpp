@@ -156,7 +156,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_ClientID == SnappingClient)
 		pPlayerInfo->m_Local = 1;
 
-	if (m_Pause)
+	if (m_Pause && m_ClientID == SnappingClient)
 		pPlayerInfo->m_Team = TEAM_SPECTATORS;
 
 	if(m_ClientID == SnappingClient && pPlayerInfo->m_Team == TEAM_SPECTATORS)

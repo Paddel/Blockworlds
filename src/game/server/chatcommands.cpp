@@ -161,7 +161,7 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 
 	Register("help", "?s", 0, ComHelp,">--- BOOOM ---<");
 	Register("info", "", 0, ComInfo, "Gamemode BW364 made by 13x37");
-	Register("pause", "", 0, ComPause, "Detaches the camera from you tee to let you discover the map");
+	Register("pause", "", CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
@@ -169,16 +169,16 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("w", "r", CHATCMDFLAG_HIDDEN, ComWhisper, "Personal message to anybody on this server");
 }
 
-void CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
+bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
 {
 	int Length = str_length(pMsg);
 	
 	if (Length == 0)
-		return;
+		return true;
 
 	CConsole::CResult Result;
 	if (Console()->ParseStart(&Result, pMsg, Length + 1) != 0)
-		return;
+		return true;
 
 	CChatCommand *pCommand = 0x0;
 	for (int i = 0; i < m_lpChatCommands.size(); i++)
@@ -197,11 +197,11 @@ void CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "Chatcommand '%s' not found. Use /cmdlist to see all available commands", Result.m_pCommand);
 		GameServer()->SendChatTarget(ClientID, aBuf);
-		return;
+		return true;
 	}
 
 	if (pCommand->m_pfnCallback == 0x0)
-		return;
+		return true;
 
 	str_format(Result.m_aAllStr, sizeof(Result.m_aAllStr), "%i", ClientID);
 	str_format(Result.m_aMeStr, sizeof(Result.m_aMeStr), "%i", ClientID);
@@ -210,8 +210,11 @@ void CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "Invalid arguments... Usage: %s %s", pCommand->m_pName, pCommand->m_pParams);
 		GameServer()->SendChatTarget(ClientID, aBuf);
-		return;
+		return true;
 	}
 
 	pCommand->m_pfnCallback(&Result, GameServer(), ClientID);
+	if (pCommand->m_Flags & CHATCMDFLAG_SPAMABLE)
+		return false;
+	return true;
 }

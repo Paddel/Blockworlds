@@ -6,3 +6,5 @@ clan
 vpncheck fix
 
 rcon stuff (global)
+
+mute spamming

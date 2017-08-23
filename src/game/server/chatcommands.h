@@ -15,6 +15,7 @@ class CChatCommandsHandler
 		CHATCMDFLAG_HIDDEN=1, // not shown in cmdlist
 		CHATCMDFLAG_MOD=2,
 		CHATCMDFLAG_ADMIN=4,
+		CHATCMDFLAG_SPAMABLE=8,
 	};
 
 	struct CChatCommand
@@ -44,7 +45,7 @@ public:
 	~CChatCommandsHandler();
 
 	void Init(CGameContext *pGameServer);
-	void ProcessMessage(const char *pMsg, int ClientID);
+	bool ProcessMessage(const char *pMsg, int ClientID);
 
 	CGameContext *GameServer() const { return m_pGameServer; };
 	IConsole *Console() const { return m_pConsole; };

@@ -264,6 +264,9 @@ void CCharacter::FireWeapon()
 	if(m_ActiveWeapon == WEAPON_GRENADE || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_RIFLE)
 		FullAuto = true;
 
+	if (GetPlayer()->GetPause())
+		return;
+
 	if (IsFreezed())
 	{
 		if (CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
@@ -492,7 +495,7 @@ void CCharacter::RaceFinish()
 	str_fcat(aBuf, sizeof(aBuf), "%.2f Seconds", Seconds);
 
 	//TODO: Save time
-	GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
+	GameMap()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 	m_RaceStart = 0;
 }
 
