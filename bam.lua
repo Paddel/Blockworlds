@@ -113,6 +113,7 @@ nethash = CHash("src/game/generated/nethash.cpp", "src/engine/shared/protocol.h"
 client_link_other = {}
 client_depends = {}
 server_link_other = {}
+server_depends = {}
 
 if family == "windows" then
 	if platform == "win32" then
@@ -122,6 +123,9 @@ if family == "windows" then
 		table.insert(client_depends, CopyToDirectory(".", "other\\freetype\\lib64\\freetype.dll"))
 		table.insert(client_depends, CopyToDirectory(".", "other\\sdl\\lib64\\SDL.dll"))
 	end
+	
+	table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysqld.dll"))
+	table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysql.dll"))
 
 	if config.compiler.driver == "cl" then
 		client_link_other = {ResCompile("other/icons/teeworlds_cl.rc")}
@@ -226,6 +230,10 @@ function build(settings)
 		client_settings.link.libs:Add("glu32")
 		client_settings.link.libs:Add("winmm")
 	end
+	
+	server_settings.cc.includes:Add("other/mysql/include")
+	server_settings.link.libpath:Add("other/mysql/lib")
+	server_settings.link.libs:Add("libmysql")
 
 	-- apply sdl settings
 	config.sdl:Apply(client_settings)
@@ -280,7 +288,7 @@ function build(settings)
 
 	-- make targets
 	c = PseudoTarget("client".."_"..settings.config_name, client_exe, client_depends)
-	s = PseudoTarget("server".."_"..settings.config_name, server_exe, serverlaunch)
+	s = PseudoTarget("server".."_"..settings.config_name, server_exe, serverlaunch, server_depends)
 	g = PseudoTarget("game".."_"..settings.config_name, client_exe, server_exe)
 
 	v = PseudoTarget("versionserver".."_"..settings.config_name, versionserver_exe)
