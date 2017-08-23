@@ -152,7 +152,12 @@ int CConsole::ParseArgs(CResult *pResult, const char *pFormat)
 			}
 			else
 			{
-				pResult->AddArgument(pStr);
+				if (Command == 'i' && str_comp_nocase_num(pStr, "me", 2) == 0)
+					pResult->AddArgument(pResult->m_aMeStr);
+				else if (Command == 'i' && str_comp_nocase_num(pStr, "all", 3) == 0)
+					pResult->AddArgument(pResult->m_aAllStr);
+				else
+					pResult->AddArgument(pStr);
 
 				if(Command == 'r') // rest of the string
 					break;
@@ -263,6 +268,7 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr)
 		const char *pEnd = pStr;
 		const char *pNextPart = 0;
 		int InString = 0;
+		str_format(Result.m_aMeStr, sizeof(Result.m_aMeStr), "%i", m_CallerID);
 
 		while(*pEnd)
 		{
@@ -323,7 +329,41 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr)
 						m_ExecutionQueue.m_pLast->m_Result = Result;
 					}
 					else
-						pCommand->m_pfnCallback(&Result, pCommand->m_pUserData);
+					{
+						//check if me is used right
+						bool Error = false;
+						if(m_CallerID < 0 || m_CallerID >= MAX_CLIENTS)
+							for (int i = 0; i < Result.NumArguments(); i++)
+								if (Result.GetString(i) == Result.m_aMeStr)
+									Error = true;
+
+						if (Error)
+						{
+							char aBuf[256];
+							str_format(aBuf, sizeof(aBuf), "Use 'me' only as rcon input");
+							Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+						}
+						else
+						{
+							int NumAll = 0;
+							for (int i = 0; i < Result.NumArguments(); i++)
+								if (Result.GetString(i) == Result.m_aAllStr)
+									NumAll++;
+								
+							if (NumAll == 1)
+							{
+								for (int i = 0; i < MAX_CLIENTS; i++)
+								{
+									str_format(Result.m_aAllStr, sizeof(Result.m_aAllStr), "%i", i);
+									pCommand->m_pfnCallback(&Result, pCommand->m_pUserData);
+								}
+							}
+							else if (NumAll > 1)
+								Print(OUTPUT_LEVEL_STANDARD, "Console", "Only one 'all' allowed");
+							else
+								pCommand->m_pfnCallback(&Result, pCommand->m_pUserData);
+						}
+					}
 				}
 			}
 			else if(Stroke)
@@ -659,6 +699,7 @@ CConsole::CConsole(int FlagMask)
 	m_NumPrintCB = 0;
 
 	m_pStorage = 0;
+	m_CallerID = -1;
 
 	// register some basic commands
 	Register("echo", "r", CFGFLAG_SERVER|CFGFLAG_CLIENT, Con_Echo, this, "Echo the text");

@@ -50,7 +50,7 @@ public:
 
 	bool HandleExtrasLayer(int Layer);
 	void HandleExtras();
-	void HandleDoors();
+	void HandleStops();
 
 	void HandleTiles();
 
@@ -85,7 +85,6 @@ private:
 
 	bool m_Alive;
 	int m_FreezeTime;
-	int m_FreezeIndicator;
 	bool m_DeepFreeze;
 	int64 m_RaceStart;
 

@@ -1042,8 +1042,10 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				m_RconClientID = ClientID;
 				m_RconAuthLevel = m_aClients[ClientID].m_Authed;
 				Console()->SetAccessLevel(m_aClients[ClientID].m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : IConsole::ACCESS_LEVEL_MOD);
+				Console()->SetCallerID(ClientID);
 				Console()->ExecuteLineFlag(pCmd, CFGFLAG_SERVER);
 				Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
+				Console()->SetCallerID(IServer::RCON_CID_SERV);
 				m_RconClientID = IServer::RCON_CID_SERV;
 				m_RconAuthLevel = AUTHED_ADMIN;
 			}
@@ -1398,7 +1400,7 @@ bool CServer::ReloadMap(const char *pMapName)
 		if (m_aClients[i].m_State <= CClient::STATE_EMPTY)
 			continue;
 
-		if (pMap == m_aClients[i].m_pMap && MovePlayer(i, m_pDefaultMap) == false)
+		if (pMap == m_aClients[i].m_pMap && MovePlayer(i, pNewMap) == false)
 				DropClient(i, "Map has been reloaded. Please reconnect");
 	}
 
@@ -1658,7 +1660,7 @@ void CServer::ConRemoveMap(IConsole::IResult *pResult, void *pUser)
 	if (pThis->RemoveMap(pMapName) != false)
 		str_format(aBuf, sizeof(aBuf), "Map '%s' removed", pMapName);
 	else
-		str_format(aBuf, sizeof(aBuf), "Could remove map '%s'", pMapName);
+		str_format(aBuf, sizeof(aBuf), "Could not remove map '%s'", pMapName);
 
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
@@ -1672,7 +1674,7 @@ void CServer::ConReloadMap(IConsole::IResult *pResult, void *pUser)
 	if (pThis->ReloadMap(pMapName) != false)
 		str_format(aBuf, sizeof(aBuf), "Map '%s' reloaded", pMapName);
 	else
-		str_format(aBuf, sizeof(aBuf), "Could reload map '%s'", pMapName);
+		str_format(aBuf, sizeof(aBuf), "Could not reload map '%s'", pMapName);
 
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
@@ -1707,8 +1709,25 @@ void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
 		return;
 	}
 
-	if(pThis->MovePlayer(ClientID, pMap) == false)
+	if (pThis->m_aClients[ClientID].m_State != CClient::STATE_INGAME)
+	{
+		str_format(aBuf, sizeof(aBuf), "ClientID %i not online.", ClientID);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	if(pMap->HasFreePlayerSlot() == false)
+	{
+		str_format(aBuf, sizeof(aBuf), "%s is full", pMapName);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	if (pThis->MovePlayer(ClientID, pMap) == false)
+	{
 		str_format(aBuf, sizeof(aBuf), "Could not move player '%s to map '%s'", pThis->ClientName(ClientID), pMapName);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+	}
 }
 
 void CServer::ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

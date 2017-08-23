@@ -81,6 +81,8 @@ class CConsole : public IConsole
 	public:
 		char m_aStringStorage[CONSOLE_MAX_STR_LENGTH+1];
 		char *m_pArgsStart;
+		char m_aMeStr[5];
+		char m_aAllStr[5];
 
 		const char *m_pCommand;
 		const char *m_apArgs[MAX_PARTS];
@@ -154,6 +156,8 @@ class CConsole : public IConsole
 	void AddCommandSorted(CCommand *pCommand);
 	CCommand *FindCommand(const char *pName, int FlagMask);
 
+	int m_CallerID;
+
 public:
 	CConsole(int FlagMask);
 
@@ -173,6 +177,7 @@ public:
 	virtual void ExecuteLine(const char *pStr);
 	virtual void ExecuteLineFlag(const char *pStr, int FlagMask);
 	virtual void ExecuteFile(const char *pFilename);
+	virtual void SetCallerID(int CallerID) { m_CallerID = CallerID; }
 
 	virtual int RegisterPrintCallback(int OutputLevel, FPrintCallback pfnPrintCallback, void *pUserData);
 	virtual void SetPrintOutputLevel(int Index, int OutputLevel);

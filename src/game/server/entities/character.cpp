@@ -442,12 +442,8 @@ void CCharacter::Unfreeze()
 
 void CCharacter::Freeze(float Seconds)
 {
-	if(m_FreezeTime <= 0)
-		m_FreezeIndicator = 0;
-
-	int NewTime = Server()->TickSpeed() * Seconds;
-	if (NewTime > m_FreezeTime)
-		m_FreezeTime = NewTime;
+	if (m_FreezeTime <= Server()->TickSpeed() * (Seconds - 1.0f) || Seconds < 1.0f)
+		m_FreezeTime = Server()->TickSpeed() * Seconds;
 }
 
 bool CCharacter::IsFreezed()
@@ -503,7 +499,7 @@ void CCharacter::SpeedUp(int Force, int MaxSpeed, int Angle)
 {
 	//Copied from DDNet Source: https://ddnet.tw/
 	float AngleRad = Angle * (pi / 180.0f);
-	vec2 Direction = vec2(cos(AngleRad), sin(AngleRad)), MaxVel, TempVel = m_Core.m_Vel;
+	vec2 Direction = vec2(cosf(AngleRad), sinf(AngleRad)), MaxVel, TempVel = m_Core.m_Vel;
 	float TeeAngle, SpeederAngle, DiffAngle, SpeedLeft, TeeSpeed;
 
 	if (Force == 255 && MaxSpeed)
@@ -628,18 +624,6 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		}
 	}
 
-	if (Tile == EXTRAS_SPEEDUP)
-	{
-		const char *pData = ExtrasData.m_aData;
-		int Force = str_toint(pData);
-		pData += +gs_ExtrasSizes[Tile][0];
-		int MaxSpeed = str_toint(pData);
-		pData += +gs_ExtrasSizes[Tile][1];
-		int Angle = str_toint(pData);
-		pData += +gs_ExtrasSizes[Tile][2];
-		SpeedUp(Force, MaxSpeed, Angle);
-	}
-
 	if (Tile == EXTRAS_DOOR_HANDLE)
 	{
 		const char *pData = ExtrasData.m_aData;
@@ -654,6 +638,7 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_FREEZE)
 		Freeze(3.0f);
+
 	if (Tile == EXTRAS_UNFREEZE)
 		Unfreeze();
 
@@ -667,7 +652,7 @@ void CCharacter::HandleExtras()
 			break;
 }
 
-void CCharacter::HandleDoors()
+void CCharacter::HandleStops()
 {
 	for (int i = 0; i < GameMap()->Layers()->GetNumExtrasLayer(); i++)
 	{
@@ -710,6 +695,64 @@ void CCharacter::HandleDoors()
 				m_Core.m_Vel.y = 0.0f;
 		}
 	}
+
+	for (int i = 0; i < GameMap()->Layers()->GetNumExtrasLayer(); i++)
+	{
+		int Index = GameMap()->Layers()->ExtrasIndex(i, m_Pos.x, m_Pos.y);
+		int Tile = GameMap()->Layers()->GetExtrasTile(i)[Index].m_Index;
+		CExtrasData ExtrasData = GameMap()->Layers()->GetExtrasData(i)[Index];
+
+		if (Tile == EXTRAS_SPEEDUP)
+		{
+			const char *pData = ExtrasData.m_aData;
+			int Force = str_toint(pData);
+			pData += +gs_ExtrasSizes[Tile][0];
+			int MaxSpeed = str_toint(pData);
+			pData += +gs_ExtrasSizes[Tile][1];
+			int Angle = str_toint(pData);
+			pData += +gs_ExtrasSizes[Tile][2];
+			SpeedUp(Force, MaxSpeed, Angle);
+		}
+	}
+
+	//tiles
+	{
+		int Tile = GameMap()->Collision()->GetTileAt(m_Pos);
+
+		if (Tile == TILE_ONEWAY_RIGHT)
+		{
+			if (m_Core.m_Vel.x < 0.0f)
+			{
+				m_Core.m_Vel.x = 0.0f;
+				m_Core.m_Pos = m_LastPos;
+			}
+		}
+		if (Tile == TILE_ONEWAY_LEFT)
+		{
+			if (m_Core.m_Vel.x > 0.0f)
+			{
+				m_Core.m_Vel.x = 0.0f;
+				m_Core.m_Pos = m_LastPos;
+			}
+		}
+		if (Tile == TILE_ONEWAY_UP)
+		{
+			if (m_Core.m_Vel.y > 0.0f)
+			{
+				m_Core.m_Vel.y = 0.0f;
+				m_Core.m_Pos = m_LastPos;
+			}
+		}
+
+		if (Tile == TILE_ONEWAY_DOWN)
+		{
+			if (m_Core.m_Vel.y < 0.0f)
+			{
+				m_Core.m_Vel.y = 0.0f;
+				m_Core.m_Pos = m_LastPos;
+			}
+		}
+	}
 }
 
 void CCharacter::HandleTiles()
@@ -723,15 +766,10 @@ void CCharacter::HandleTiles()
 	if (Tile == TILE_UNFREEZE)
 		Unfreeze();
 	if (Tile == TILE_FREEZE_DEEP)
-	{
 		m_DeepFreeze = true;
-		m_FreezeIndicator = 0;
-	}
-	if (Tile == TILE_UNFREEZE_DEEP && m_DeepFreeze == true)
-	{
+
+	if (Tile == TILE_UNFREEZE_DEEP)
 		m_DeepFreeze = false;
-		Freeze(3.0f);
-	}
 	if (Tile == TILE_RACE_START && m_RaceStart == 0)
 		m_RaceStart = Server()->Tick();
 	if (Tile == TILE_RACE_FINISH)
@@ -759,8 +797,8 @@ void CCharacter::HandleRace()
 		m_Input.m_Direction = 0;
 		m_Input.m_Hook = 0;
 
-		m_FreezeIndicator++;
-		if (m_FreezeIndicator % Server()->TickSpeed() == 1)
+
+		if (m_FreezeTime % Server()->TickSpeed() == Server()->TickSpeed() - 1)
 		{
 			int NumStars = (m_FreezeTime + 1) / Server()->TickSpeed();
 			if (m_DeepFreeze)
@@ -783,7 +821,7 @@ void CCharacter::Tick()
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
-	HandleDoors();
+	HandleStops();
 
 	// handle death-tiles and leaving gamelayer
 	if(GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||
