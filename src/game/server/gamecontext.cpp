@@ -326,13 +326,6 @@ void CGameContext::HandleInactive()
 	{
 		for (int i = 0; i < MAX_CLIENTS; ++i)
 		{
-#ifdef CONF_DEBUG
-			if (g_Config.m_DbgDummies)
-			{
-				if (i >= MAX_CLIENTS - g_Config.m_DbgDummies)
-					break;
-			}
-#endif
 			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
 			{
 				if (Server()->Tick() > m_apPlayers[i]->m_LastActionTick + g_Config.m_SvInactiveKickTime*Server()->TickSpeed() * 60)
@@ -387,19 +380,6 @@ void CGameContext::OnTick()
 			m_apPlayers[i]->PostTick();
 		}
 	}
-
-
-#ifdef CONF_DEBUG
-	if(g_Config.m_DbgDummies)
-	{
-		for(int i = 0; i < g_Config.m_DbgDummies ; i++)
-		{
-			CNetObj_PlayerInput Input = {0};
-			Input.m_Direction = (i&1)?-1:1;
-			m_apPlayers[MAX_CLIENTS-i-1]->OnPredictedInput(&Input);
-		}
-	}
-#endif
 }
 
 // Server hooks
@@ -453,14 +433,6 @@ void CGameContext::OnClientConnected(int ClientID)
 		Server()->DropClient(ClientID, "Map is full");
 		return;
 	}
-
-#ifdef CONF_DEBUG
-	if(g_Config.m_DbgDummies)
-	{
-		if(ClientID >= MAX_CLIENTS-g_Config.m_DbgDummies)
-			return;
-	}
-#endif
 
 	// send motd
 	CNetMsg_Sv_Motd Msg;
@@ -559,7 +531,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			pPlayer->m_LastChat = Server()->Tick();
 
-			pGameMap->SendChat(ClientID, Team, pMsg->m_pMessage);
+			if (pMsg->m_pMessage[0] == '/')
+				m_ChatCommandsHandler.ProcessMessage(pMsg->m_pMessage + 1, ClientID);
+			else
+				pGameMap->SendChat(ClientID, Team, pMsg->m_pMessage);
 		}
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
@@ -706,7 +681,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 			}
 			
-			if(pPlayer->GetTeam() != TEAM_SPECTATORS || pPlayer->m_SpectatorID == pMsg->m_SpectatorID || ClientID == pMsg->m_SpectatorID ||
+			if((pPlayer->GetTeam() != TEAM_SPECTATORS && !pPlayer->GetPause()) || pPlayer->m_SpectatorID == pMsg->m_SpectatorID || ClientID == pMsg->m_SpectatorID ||
 				(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*3 > Server()->Tick()))
 				return;
 
@@ -1230,19 +1205,10 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
+	m_ChatCommandsHandler.Init(this);
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
-
-#ifdef CONF_DEBUG
-	if(g_Config.m_DbgDummies)
-	{
-		for(int i = 0; i < g_Config.m_DbgDummies ; i++)
-		{
-			OnClientConnected(MAX_CLIENTS-i-1);
-		}
-	}
-#endif
 }
 
 void CGameContext::OnShutdown()

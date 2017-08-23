@@ -418,15 +418,18 @@ void CGameMap::FillTranslateItems(CTranslateItem *pTranslateItems)
 {
 	int Num = 0;
 	for (int i = 0; i < MAX_CLIENTS; i++)
-	{
 		if (m_apPlayers[i] != 0x0)
-		{
 			mem_copy(&pTranslateItems[Num++], m_apPlayers[i]->GetTranslateItem(), sizeof(CTranslateItem));
-		}
-	}
 
 	for (CNpc *pNpc = (CNpc *)m_World.FindFirst(CGameWorld::ENTTYPE_NPC); pNpc; pNpc = (CNpc *)pNpc->TypeNext())
 		mem_copy(&pTranslateItems[Num++], pNpc->GetTranslateItem(), sizeof(CTranslateItem));
+}
+
+vec2 CGameMap::GetPlayerViewPos(int ClientID)
+{
+	if (m_apPlayers[ClientID] == 0x0)
+		return vec2(0.0f, 0.0f);
+	return m_apPlayers[ClientID]->m_ViewPos;
 }
 
 bool CGameMap::CanSpawn(int Team, vec2 *pOutPos)

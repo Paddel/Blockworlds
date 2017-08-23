@@ -25,6 +25,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_TeamChangeTick = Server()->Tick();
 	m_Vote = 0;
 	m_VotePos = 0;
+	m_Pause = false;
 }
 
 CPlayer::~CPlayer()
@@ -35,9 +36,6 @@ CPlayer::~CPlayer()
 
 void CPlayer::Tick()
 {
-#ifdef CONF_DEBUG
-	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS-g_Config.m_DbgDummies)
-#endif
 	if(!Server()->ClientIngame(m_ClientID))
 		return;
 
@@ -45,12 +43,12 @@ void CPlayer::Tick()
 
 	// do latency stuff
 	{
-		IServer::CClientInfo Info;
-		if(Server()->GetClientInfo(m_ClientID, &Info))
+		int Latency = Server()->GetClientLatency(m_ClientID);
+		if(Latency > 0)
 		{
-			m_Latency.m_Accum += Info.m_Latency;
-			m_Latency.m_AccumMax = max(m_Latency.m_AccumMax, Info.m_Latency);
-			m_Latency.m_AccumMin = min(m_Latency.m_AccumMin, Info.m_Latency);
+			m_Latency.m_Accum += Latency;
+			m_Latency.m_AccumMax = max(m_Latency.m_AccumMax, Latency);
+			m_Latency.m_AccumMin = min(m_Latency.m_AccumMin, Latency);
 		}
 		// each second
 		if(Server()->Tick()%Server()->TickSpeed() == 0)
@@ -64,7 +62,7 @@ void CPlayer::Tick()
 		}
 	}
 
-	if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
+	if(((!m_pCharacter && m_Team == TEAM_SPECTATORS) || m_Pause) && m_SpectatorID == SPEC_FREEVIEW)
 		m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
 
 	if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
@@ -74,7 +72,8 @@ void CPlayer::Tick()
 	{
 		if(m_pCharacter->IsAlive())
 		{
-			m_ViewPos = m_pCharacter->m_Pos;
+			if(m_Pause == false)
+				m_ViewPos = m_pCharacter->m_Pos;
 		}
 		else
 		{
@@ -99,7 +98,7 @@ void CPlayer::PostTick()
 	}
 
 	// update view pos for spectators
-	if (m_Team == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
+	if ((m_Team == TEAM_SPECTATORS || m_Pause) && m_SpectatorID != SPEC_FREEVIEW)
 	{
 		if (m_SpectatorID < MAX_CLIENTS)
 		{
@@ -115,16 +114,16 @@ void CPlayer::PostTick()
 	}
 
 	//update translate item
-	m_TranslateItem.m_Pos = m_ViewPos;
 	m_TranslateItem.m_Team = m_Team;
 	m_TranslateItem.m_ClientID = m_ClientID;
+	if (GetCharacter())
+		m_TranslateItem.m_Pos = GetCharacter()->m_Pos;
+	else
+		m_TranslateItem.m_Pos = m_ViewPos;
 }
 
 void CPlayer::Snap(int SnappingClient)
 {
-#ifdef CONF_DEBUG
-	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS-g_Config.m_DbgDummies)
-#endif
 	if(!Server()->ClientIngame(m_ClientID))
 		return;
 
@@ -157,7 +156,10 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_ClientID == SnappingClient)
 		pPlayerInfo->m_Local = 1;
 
-	if(m_ClientID == SnappingClient && m_Team == TEAM_SPECTATORS)
+	if (m_Pause)
+		pPlayerInfo->m_Team = TEAM_SPECTATORS;
+
+	if(m_ClientID == SnappingClient && pPlayerInfo->m_Team == TEAM_SPECTATORS)
 	{
 		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, TranslatedID, sizeof(CNetObj_SpectatorInfo)));
 		if(!pSpectatorInfo)

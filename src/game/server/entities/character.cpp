@@ -437,7 +437,8 @@ void CCharacter::SetEmote(int Emote, int Tick)
 
 void CCharacter::Unfreeze()
 {
-	m_FreezeTime = 0;
+	if(m_DeepFreeze == false)
+		m_FreezeTime = 0;
 }
 
 void CCharacter::Freeze(float Seconds)
@@ -664,10 +665,10 @@ void CCharacter::HandleStops()
 			switch (j)
 			{
 			case 0: Pos = m_Pos; break;
-			case 1: Pos = vec2(m_Pos.x + m_ProximityRadius / 2.125f, m_Pos.y - m_ProximityRadius / 2.125f); break;
-			case 2: Pos = vec2(m_Pos.x + m_ProximityRadius / 2.125f, m_Pos.y + m_ProximityRadius / 2.125f); break;
-			case 3: Pos = vec2(m_Pos.x - m_ProximityRadius / 2.125f, m_Pos.y - m_ProximityRadius / 2.125f); break;
-			case 4: Pos = vec2(m_Pos.x - m_ProximityRadius / 2.125f, m_Pos.y + m_ProximityRadius / 2.125f); break;
+			case 1: Pos = vec2(m_Pos.x + m_ProximityRadius / 1.5f, m_Pos.y - m_ProximityRadius / 1.5f); break;
+			case 2: Pos = vec2(m_Pos.x + m_ProximityRadius / 1.5f, m_Pos.y + m_ProximityRadius / 1.5f); break;
+			case 3: Pos = vec2(m_Pos.x - m_ProximityRadius / 1.5f, m_Pos.y - m_ProximityRadius / 1.5f); break;
+			case 4: Pos = vec2(m_Pos.x - m_ProximityRadius / 1.5f, m_Pos.y + m_ProximityRadius / 1.5f); break;
 			}
 
 			int TempIndex = pLayers->ExtrasIndex(i, Pos.x, Pos.y);
@@ -684,15 +685,22 @@ void CCharacter::HandleStops()
 		CGameMap::CDoorTile *pDoorTile = GameMap()->GetDoorTile(Index);
 		if (pDoorTile && GameMap()->DoorTileActive(pDoorTile))
 		{
-			m_Core.m_Pos = m_LastPos;
-
-			if (pDoorTile->m_Type == 2 && m_Pos.y > m_LastPos.y)
-				m_Core.m_Jumped = 0;
-
+			vec2 DoorPos = vec2(Index % pLayers->GetExtrasWidth(i) * 32.0f + 16.0f, Index / pLayers->GetExtrasWidth(i) * 32.0f + 16.0f);
 			if (pDoorTile->m_Type == 1)
-				m_Core.m_Vel.x = 0.0f;
+			{
+				if(DoorPos.x > m_Pos.x && m_Core.m_Vel.x > 0.0f ||
+					DoorPos.x < m_Pos.x && m_Core.m_Vel.x < 0.0f)
+					m_Core.m_Vel.x = 0.0f;
+			}
 			else if (pDoorTile->m_Type == 2)
-				m_Core.m_Vel.y = 0.0f;
+			{
+				if(DoorPos.y > m_Pos.y && m_Core.m_Vel.y > 0.0f)
+					m_Core.m_Jumped = 0;
+
+				if (DoorPos.y > m_Pos.y && m_Core.m_Vel.y > 0.0f ||
+					DoorPos.y < m_Pos.y && m_Core.m_Vel.y < 0.0f)
+					m_Core.m_Vel.y = 0.0f;
+			}
 		}
 	}
 
@@ -720,38 +728,20 @@ void CCharacter::HandleStops()
 		int Tile = GameMap()->Collision()->GetTileAt(m_Pos);
 
 		if (Tile == TILE_ONEWAY_RIGHT)
-		{
 			if (m_Core.m_Vel.x < 0.0f)
-			{
 				m_Core.m_Vel.x = 0.0f;
-				m_Core.m_Pos = m_LastPos;
-			}
-		}
+				
 		if (Tile == TILE_ONEWAY_LEFT)
-		{
 			if (m_Core.m_Vel.x > 0.0f)
-			{
 				m_Core.m_Vel.x = 0.0f;
-				m_Core.m_Pos = m_LastPos;
-			}
-		}
-		if (Tile == TILE_ONEWAY_UP)
-		{
-			if (m_Core.m_Vel.y > 0.0f)
-			{
-				m_Core.m_Vel.y = 0.0f;
-				m_Core.m_Pos = m_LastPos;
-			}
-		}
 
-		if (Tile == TILE_ONEWAY_DOWN)
-		{
-			if (m_Core.m_Vel.y < 0.0f)
-			{
+		if (Tile == TILE_ONEWAY_UP)
+			if (m_Core.m_Vel.y > 0.0f)
 				m_Core.m_Vel.y = 0.0f;
-				m_Core.m_Pos = m_LastPos;
-			}
-		}
+				
+		if (Tile == TILE_ONEWAY_DOWN)
+			if (m_Core.m_Vel.y < 0.0f)
+				m_Core.m_Vel.y = 0.0f;
 	}
 }
 
@@ -787,25 +777,29 @@ void CCharacter::HandleTiles()
 
 void CCharacter::HandleRace()
 {
+	if (m_DeepFreeze)
+		Freeze(3.0f);
+
 	//Freeze
 	if (m_FreezeTime > 0)
 		m_FreezeTime--;
 
-	if (IsFreezed())
+	//ignore imput
+	if (IsFreezed() || GetPlayer()->GetPause())
 	{
 		m_Input.m_Jump = 0;
 		m_Input.m_Direction = 0;
 		m_Input.m_Hook = 0;
+	}
 
+	//counting stars
+	if (IsFreezed() && m_FreezeTime % Server()->TickSpeed() == Server()->TickSpeed() - 1)
+	{
+		int NumStars = (m_FreezeTime + 1) / Server()->TickSpeed();
+		if (m_DeepFreeze)
+			NumStars = 3;
 
-		if (m_FreezeTime % Server()->TickSpeed() == Server()->TickSpeed() - 1)
-		{
-			int NumStars = (m_FreezeTime + 1) / Server()->TickSpeed();
-			if (m_DeepFreeze)
-				NumStars = 3;
-
-			GameServer()->CreateDamageInd(GameMap(), m_Pos, 0, NumStars);
-		}
+		GameServer()->CreateDamageInd(GameMap(), m_Pos, 0, NumStars);
 	}
 }
 
@@ -820,8 +814,6 @@ void CCharacter::Tick()
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
-
-	HandleStops();
 
 	// handle death-tiles and leaving gamelayer
 	if(GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||
@@ -855,6 +847,8 @@ void CCharacter::TickDefered()
 		m_ReckoningCore.Move();
 		m_ReckoningCore.Quantize();
 	}
+
+	HandleStops();
 
 	//lastsentcore
 	vec2 StartPos = m_Core.m_Pos;

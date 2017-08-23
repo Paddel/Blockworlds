@@ -38,6 +38,8 @@ public:
 	CCharacter *GetCharacter();
 
 	CTranslateItem *GetTranslateItem() { return &m_TranslateItem; };
+	bool GetPause() const { return m_Pause; }
+	void TogglePause() { m_Pause = !m_Pause; }
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -111,6 +113,7 @@ private:
 	bool m_Spawning;
 	int m_ClientID;
 	int m_Team;
+	bool m_Pause;
 };
 
 #endif

@@ -12,6 +12,7 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
+#include "chatcommands.h"
 #include "player.h"
 
 class CGameContext : public IGameServer
@@ -20,6 +21,7 @@ class CGameContext : public IGameServer
 	class IConsole *m_pConsole;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
+	CChatCommandsHandler m_ChatCommandsHandler;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
@@ -44,6 +46,7 @@ public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
 	CTuningParams *Tuning() { return &m_Tuning; }
+	CChatCommandsHandler *ChatCommandsHandler() { return &m_ChatCommandsHandler; }
 
 	CGameContext();
 	~CGameContext();

@@ -24,17 +24,6 @@ void CTranslator::SortMap(void *pData)
 {
 	CSortionData *pSortionData = (CSortionData *)pData;
 
-	//find own Translate item
-	CTranslateItem *pOwnTranslateItem = 0x0;
-	for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
-	{
-		CTranslateItem *pTranslateItem = &pSortionData->m_aTranslateItems[i];
-		if (pTranslateItem->m_ClientID != pSortionData->m_ClientID)
-			continue;
-		pOwnTranslateItem = pTranslateItem;
-		break;
-	}
-
 	//Check if we can do easy filling
 	if (pSortionData->m_NumTranslateItems < pSortionData->m_UsingMapItems)// <= if you dont need last id
 	{
@@ -101,25 +90,17 @@ void CTranslator::SortMap(void *pData)
 	}
 	else
 	{
-		if (pOwnTranslateItem == 0x0)// cannot calculate distances if we are not in liste
-		{
-			pSortionData->m_Working = false;
-			return;
-		}
-
 		CSortItem *aSortItems = new CSortItem[pSortionData->m_NumTranslateItems];
 		//GetDistances
 		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
 		{
 			long double Distance;
 			CTranslateItem *pTranslateItem = &pSortionData->m_aTranslateItems[i];
-			if (pOwnTranslateItem == pTranslateItem)
-				Distance = 0.0f;
-			else if (pTranslateItem->m_Team == TEAM_SPECTATORS)
+			if (pTranslateItem->m_Team == TEAM_SPECTATORS)
 				Distance = LDBL_MAX - 1;
 			else
 			{
-				vec2 DeltaPos = pOwnTranslateItem->m_Pos - pTranslateItem->m_Pos;
+				vec2 DeltaPos = pSortionData->m_Pos - pTranslateItem->m_Pos;
 				Distance = DeltaPos.x*DeltaPos.x + DeltaPos.y*DeltaPos.y;//no sqrt = way better performance
 			}
 
@@ -214,6 +195,7 @@ void CTranslator::UpdatePlayerMap(int ClientID)
 	m_Sortions[ClientID].m_aTranslateItems = new CTranslateItem[m_aNumItems[MapIndex]];
 	Server()->GetGameMap(MapIndex)->FillTranslateItems(m_Sortions[ClientID].m_aTranslateItems);
 	m_Sortions[ClientID].m_ClientID = ClientID;
+	m_Sortions[ClientID].m_Pos = Server()->GetGameMap(MapIndex)->GetPlayerViewPos(ClientID);
 
 	if (THREADING)
 		thread_init(SortMap, &m_Sortions[ClientID]);

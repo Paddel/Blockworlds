@@ -17,6 +17,7 @@ class CTranslator
 private:
 	struct CSortionData // contains all data for a thread
 	{
+		vec2 m_Pos; // clas writes
 		CTranslateItem *m_aTranslateItems; // class writes
 		int m_ClientID; // class writs
 		int m_NumTranslateItems; // class writes

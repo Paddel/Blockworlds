@@ -19,13 +19,17 @@ protected:
 	int m_TickSpeed;
 
 public:
-	/*
-		Structure: CClientInfo
-	*/
-	struct CClientInfo
+	
+	enum
 	{
-		const char *m_pName;
-		int m_Latency;
+		AUTHED_NO = 0,
+		AUTHED_MOD,
+		AUTHED_ADMIN,
+	};
+
+	struct CClientInfo
+	{//this data is shared by game and engine and does not get resettet on map change
+
 	};
 
 	int Tick() const { return m_CurrentGameTick; }
@@ -38,6 +42,8 @@ public:
 	virtual bool ClientIngame(int ClientID) = 0;
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) = 0;
 	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
+	virtual int GetClientAuthed(int ClientID) = 0;
+	virtual int GetClientLatency(int ClientID) = 0;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
 

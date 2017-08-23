@@ -84,10 +84,6 @@ public:
 
 	enum
 	{
-		AUTHED_NO=0,
-		AUTHED_MOD,
-		AUTHED_ADMIN,
-
 		MAX_RCONCMD_SEND=16,
 	};
 
@@ -156,14 +152,12 @@ public:
 	CTranslator m_Translator;
 
 	int64 m_GameStartTime;
-	//int m_CurrentGameTick;
 	int m_RunServer;
 	int m_RconClientID;
 	int m_RconAuthLevel;
 	int m_PrintCBIndex;
 
 	int64 m_Lastheartbeat;
-	//static NETADDR4 master_server;
 
 	array<CMap *> m_lpMaps;
 	CMap *m_pDefaultMap;
@@ -181,9 +175,7 @@ public:
 	virtual void DropClient(int ClientID, const char *pReason);
 	virtual int RconClientID() { return m_RconClientID; }
 
-	//int Tick()
 	int64 TickStartTime(int Tick);
-	//int TickSpeed()
 
 	int Init();
 
@@ -195,6 +187,8 @@ public:
 	const char *ClientClan(int ClientID);
 	int ClientCountry(int ClientID);
 	bool ClientIngame(int ClientID);
+	int GetClientAuthed(int ClientID);
+	int GetClientLatency(int ClientID);
 	int MaxClients() const;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);

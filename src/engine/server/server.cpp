@@ -432,8 +432,7 @@ int CServer::GetClientInfo(int ClientID, CClientInfo *pInfo)
 
 	if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
 	{
-		pInfo->m_pName = m_aClients[ClientID].m_aName;
-		pInfo->m_Latency = m_aClients[ClientID].m_Latency;
+		
 		return 1;
 	}
 	return 0;
@@ -485,6 +484,22 @@ bool CServer::ClientIngame(int ClientID)
 int CServer::MaxClients() const
 {
 	return m_NetServer.MaxClients();
+}
+
+int CServer::GetClientAuthed(int ClientID)
+{
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+		return AUTHED_NO;
+
+	return m_aClients[ClientID].m_Authed;
+}
+
+int CServer::GetClientLatency(int ClientID)
+{
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State != CClient::STATE_INGAME)
+		return 0;
+
+	return m_aClients[ClientID].m_Latency;
 }
 
 int CServer::SendMsg(CMsgPacker *pMsg, int Flags, int ClientID)

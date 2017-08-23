@@ -88,6 +88,9 @@ public:
 	virtual void Print(int Level, const char *pFrom, const char *pStr) = 0;
 
 	virtual void SetAccessLevel(int AccessLevel) = 0;
+
+	virtual int ParseStart(IResult *pResultInterface, const char *pString, int Length) = 0;
+	virtual int ParseArgs(IResult *pResultInterface, const char *pFormat) = 0;
 };
 
 extern IConsole *CreateConsole(int FlagMask);

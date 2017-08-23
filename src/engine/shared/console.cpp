@@ -61,8 +61,9 @@ const IConsole::CCommandInfo *CConsole::FirstCommandInfo(int AccessLevel, int Fl
 // the maximum number of tokens occurs in a string of length CONSOLE_MAX_STR_LENGTH with tokens size 1 separated by single spaces
 
 
-int CConsole::ParseStart(CResult *pResult, const char *pString, int Length)
+int CConsole::ParseStart(IResult *pResultInterface, const char *pString, int Length)
 {
+	CResult *pResult = (CResult *)pResultInterface;
 	char *pStr;
 	int Len = sizeof(pResult->m_aStringStorage);
 	if(Length < Len)
@@ -86,8 +87,10 @@ int CConsole::ParseStart(CResult *pResult, const char *pString, int Length)
 	return 0;
 }
 
-int CConsole::ParseArgs(CResult *pResult, const char *pFormat)
+int CConsole::ParseArgs(IResult *pResultInterface, const char *pFormat)
 {
+	CResult *pResult = (CResult *)pResultInterface;
+
 	char Command;
 	char *pStr;
 	int Optional = 0;

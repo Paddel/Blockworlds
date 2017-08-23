@@ -3,11 +3,17 @@
 #ifndef ENGINE_SHARED_CONSOLE_H
 #define ENGINE_SHARED_CONSOLE_H
 
+#include <new>
+
+#include <base/math.h>
+
 #include <engine/console.h>
 #include "memheap.h"
 
 class CConsole : public IConsole
 {
+
+public:
 	class CCommand : public CCommandInfo
 	{
 	public:
@@ -119,9 +125,6 @@ class CConsole : public IConsole
 		virtual float GetFloat(unsigned Index);
 	};
 
-	int ParseStart(CResult *pResult, const char *pString, int Length);
-	int ParseArgs(CResult *pResult, const char *pFormat);
-
 	class CExecutionQueue
 	{
 		CHeap m_Queue;
@@ -182,6 +185,9 @@ public:
 	virtual int RegisterPrintCallback(int OutputLevel, FPrintCallback pfnPrintCallback, void *pUserData);
 	virtual void SetPrintOutputLevel(int Index, int OutputLevel);
 	virtual void Print(int Level, const char *pFrom, const char *pStr);
+
+	virtual int ParseStart(IResult *pResultInterface, const char *pString, int Length);
+	virtual int ParseArgs(IResult *pResultInterface, const char *pFormat);
 
 	void SetAccessLevel(int AccessLevel) { m_AccessLevel = clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_MOD)); }
 };

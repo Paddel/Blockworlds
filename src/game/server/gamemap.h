@@ -108,6 +108,7 @@ public:
 
 	int NumTranslateItems();
 	void FillTranslateItems(CTranslateItem *pTranslateItems);
+	vec2 GetPlayerViewPos(int ClientID);
 
 	bool CanSpawn(int Team, vec2 *pOutPos);
 	CDoorTile *GetDoorTile(int Index);

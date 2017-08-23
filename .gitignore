@@ -13,3 +13,4 @@ config.lua
 *logs.txt
 /*.dll
 /*.exe
+compile_out.txt
