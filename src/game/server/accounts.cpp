@@ -14,8 +14,9 @@ CAccountsHandler::CAccountsHandler()
 	m_pGameServer = 0x0;
 }
 
-void CAccountsHandler::TestFunc(void *pResultData, bool Error, void *pUserData)
+void CAccountsHandler::TestFunc(void *pQueryData, bool Error, void *pUserData)
 {
+	CDatabase::CQueryData *pData = (CDatabase::CQueryData *)pQueryData;
 	dbg_msg(0, "in");
 	if (Error)
 	{
@@ -23,20 +24,11 @@ void CAccountsHandler::TestFunc(void *pResultData, bool Error, void *pUserData)
 		return;
 	}
 
-	MYSQL_RES *pResult = (MYSQL_RES *)pResultData;
-	int count = (int)pResult->row_count;
-	dbg_msg(0, "rows %i", count);
-	for(int i = 0; i < count; i++)
-	{
-		dbg_msg(0, "catching new field");
-		MYSQL_ROW Field = mysql_fetch_row(pResult);
-		int affected = mysql_num_fields(pResult);
 
-		for (int x = 0; x < affected; x++)
-		{
-			dbg_msg(0, "%i %i %s", i, x, CDatabase::GetDatabaseValue(Field[x]));
-		}
-	}
+
+	for (int i = 0; i < pData->m_lpResultRows.size(); i++)
+		for (int x = 0; x < pData->m_lpResultRows[i]->m_lpResultFields.size(); x++)
+			dbg_msg(0, "%i %i %s", i, x, pData->m_lpResultRows[i]->m_lpResultFields[x]->m_aValue);
 }
 
 void CAccountsHandler::Init(CGameContext *pGameServer)

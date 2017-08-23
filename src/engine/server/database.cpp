@@ -17,9 +17,9 @@ void CDatabase::ExecuteQuery(void *pData)
 {
 	MYSQL_RES *pResult = 0x0;
 	MYSQL *pConn = 0x0;
-	CThreadData *pThreadData = (CThreadData *)pData;
+	MYSQL_ROW Field;
+	CQueryData *pThreadData = (CQueryData *)pData;
 
-	pThreadData->m_pResultData = 0x0;
 	pThreadData->m_Error = false;
 
 	pConn = mysql_init(0x0);
@@ -40,6 +40,7 @@ void CDatabase::ExecuteQuery(void *pData)
 			dbg_msg("Database", "Connecting failed: '%s'", mysql_error(pConn));
 		pThreadData->m_Error = true;
 		pThreadData->m_Working = false;
+		mysql_close(pConn);
         return;
 	}
 
@@ -69,19 +70,31 @@ void CDatabase::ExecuteQuery(void *pData)
 
 	pResult = mysql_store_result(pConn);
 
-	if(!pResult)//no Results. DONE
+	if (!pResult)//no Results. DONE
 	{
-		//*pFeed->m_pResult = -1;
 		mysql_close(pConn);
-		pThreadData->m_Error = true;
 		pThreadData->m_Working = false;
 		return;
 	}
 
-	MYSQL_RES *pNewResult = new MYSQL_RES();
-	mem_copy(pNewResult, pResult, sizeof(MYSQL_RES));
-	pThreadData->m_pResultData = pNewResult;
+	int count = (int)pResult->row_count;
+	dbg_msg(0, "rows %i", count);
+	for (int i = 0; i < count; i++)
+	{
+		CResultRow *pNewRow = new CResultRow();
 
+		Field = mysql_fetch_row(pResult);
+		int affected = mysql_num_fields(pResult);
+
+		for (int x = 0; x < affected; x++)
+		{
+			CResultField *pNewField = new CResultField();
+			str_copy(pNewField->m_aValue, CDatabase::GetDatabaseValue(Field[x]), sizeof(pNewField->m_aValue));
+			pNewRow->m_lpResultFields.add(pNewField);
+		}
+
+		pThreadData->m_lpResultRows.add(pNewRow);
+	}
 	mysql_close(pConn);
 
 	pThreadData->m_Working = false;
@@ -89,7 +102,7 @@ void CDatabase::ExecuteQuery(void *pData)
 
 void CDatabase::QueryThreadFunction(void *pData)
 {
-	CThreadData *pThreadData = (CThreadData *)pData;
+	CQueryData *pThreadData = (CQueryData *)pData;
 
 	lock_wait(s_QueryLock);
 	ExecuteQuery(pThreadData);
@@ -116,6 +129,7 @@ void CDatabase::QueryTestConnection(void *pData)
 	{
 		dbg_msg("Database", "Connecting to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
+		mysql_close(pConn);
 		lock_unlock(s_QueryLock);
 		return;
 	}
@@ -162,12 +176,12 @@ void CDatabase::Tick()
 {
 	for (int i = 0; i < m_ThreadData.size(); i++)
 	{
-		CThreadData *pData = m_ThreadData[i];
+		CQueryData *pData = m_ThreadData[i];
 		if (pData->m_Working == true)
 			continue;
 
 		if (pData->m_fResultCallback)
-			pData->m_fResultCallback(pData->m_pResultData, pData->m_Error, pData->m_pUserData);
+			pData->m_fResultCallback(pData, pData->m_Error, pData->m_pUserData);
 
 		DeleteThreadData(m_ThreadData[i]);
 		m_ThreadData.remove_index(i);
@@ -195,7 +209,7 @@ void CDatabase::QueryThread(const char *pCommand, ResultFunction fResultCallback
 		return;
 	}
 
-	CThreadData *pThreadData = new CThreadData();
+	CQueryData *pThreadData = new CQueryData();
 	pThreadData->m_fResultCallback = fResultCallback;
 	pThreadData->m_pUserData = pUserData;
 	str_copy(pThreadData->m_aCommand, pCommand, sizeof(pThreadData->m_aCommand));
@@ -282,10 +296,11 @@ void CDatabase::Reconnect()
 	s_ReconnectVal++;
 }
 
-void CDatabase::DeleteThreadData(CThreadData *pData)
+void CDatabase::DeleteThreadData(CQueryData *pData)
 {
-	if (pData->m_pResultData != 0x0)
-		delete (MYSQL_RES *)pData->m_pResultData;
-	
+	for (int i = 0; i < pData->m_lpResultRows.size(); i++)
+		pData->m_lpResultRows[i]->m_lpResultFields.delete_all();
+	pData->m_lpResultRows.delete_all();
+
 	delete pData;
 }

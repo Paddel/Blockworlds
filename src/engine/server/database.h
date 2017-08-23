@@ -7,9 +7,20 @@
 
 class CDatabase
 {
-	typedef void(*ResultFunction)(void *pResultData, bool Error, void *pUserData);
+public:
+	typedef void(*ResultFunction)(void *pQueryData, bool Error, void *pUserData);
 
-	struct CThreadData
+	struct CResultField
+	{
+		char m_aValue[QUERY_MAX_RESULT_LEN];
+	};
+
+	struct CResultRow
+	{
+		array<CResultField *>m_lpResultFields;
+	};
+
+	struct CQueryData
 	{
 		//class writes
 		char m_aAddr[32]; char m_aUserName[128]; char m_aPass[128]; char m_aSchema[64];
@@ -18,8 +29,8 @@ class CDatabase
 		void *m_pUserData;
 
 		//thread writes
-		void *m_pResultData;
 		bool m_Error;
+		array<CResultRow *>m_lpResultRows;
 
 		//both write
 		bool m_Working;
@@ -29,7 +40,7 @@ private:
 	char m_aAddr[32]; char m_aUserName[128]; char m_aPass[128]; char m_aSchema[64];
 	bool m_Connected;
 	int m_ReconnectVal;
-	array <CThreadData *>m_ThreadData;
+	array <CQueryData *>m_ThreadData;
 
 	static void QueryTestConnection(void *pData);
 	bool InitConnection(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema);
@@ -55,7 +66,7 @@ public:
 	static const char *GetDatabaseValue(char *pStr);
 
 	static void Reconnect();
-	static void DeleteThreadData(CThreadData *pData);
+	static void DeleteThreadData(CQueryData *pData);
 
 
 	bool GetConnected() const { return m_Connected; }

@@ -10,7 +10,7 @@ private:
 	CDatabase m_Database;
 	CGameContext *m_pGameServer;
 
-	static void TestFunc(void *pResultData, bool Error, void *pUserData);
+	static void TestFunc(void *pQueryData, bool Error, void *pUserData);
 public:
 	CAccountsHandler();
 
