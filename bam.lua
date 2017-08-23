@@ -233,7 +233,7 @@ function build(settings)
 	
 	server_settings.cc.includes:Add("other/mysql/include")
 	server_settings.link.libpath:Add("other/mysql/lib")
-	server_settings.link.libs:Add("libmysql")
+	--server_settings.link.libs:Add("libmysql")
 
 	-- apply sdl settings
 	config.sdl:Apply(client_settings)
