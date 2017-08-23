@@ -1,6 +1,8 @@
 ddnet combtilitibily ( - royal )
 
-chatcommands
 scoresystem
 accountsystem
 clan
+vpncheck fix
+
+rcon stuff (global)

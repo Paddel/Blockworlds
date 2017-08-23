@@ -92,7 +92,6 @@ void CChatCommandsHandler::ComInfo(CConsole::CResult *pResult, CGameContext *pGa
 	str_format(aBuf, sizeof(aBuf), "Based on Teeworlds %s", GAME_VERSION);
 	pGameContext->SendChatTarget(ClientID, aBuf);
 	pGameContext->SendChatTarget(ClientID, "Hosted by Google");
-	pGameContext->SendChatTarget(ClientID, "Last Man Blocking LMB by Furos");
 	pGameContext->SendChatTarget(ClientID, "www.13x37.com");
 }
 

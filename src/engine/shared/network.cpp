@@ -160,10 +160,7 @@ int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct
 {
 	// check the size
 	if(Size < NET_PACKETHEADERSIZE || Size > NET_MAX_PACKETSIZE)
-	{
-		dbg_msg("", "packet too small, %d", Size);
 		return -1;
-	}
 
 	// log the data
 	if(ms_DataLogRecv)
@@ -184,10 +181,7 @@ int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct
 	if(pPacket->m_Flags&NET_PACKETFLAG_CONNLESS)
 	{
 		if(Size < 6)
-		{
-			dbg_msg("", "connection less packet too small, %d", Size);
 			return -1;
-		}
 
 		pPacket->m_Flags = NET_PACKETFLAG_CONNLESS;
 		pPacket->m_Ack = 0;
