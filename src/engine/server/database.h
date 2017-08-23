@@ -32,7 +32,7 @@ private:
 	array <CThreadData *>m_ThreadData;
 
 	static void QueryTestConnection(void *pData);
-	bool InitConnection(char *pAddr, char *pUserName, char *pPass, char *pSchema);
+	bool InitConnection(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema);
 
 	void CheckReconnect();
 
@@ -42,7 +42,7 @@ private:
 public:
 	CDatabase();
 
-	void Init(char *pAddr, char *pUserName, char *pPass, char *pTable);
+	void Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pTable);
 	void Tick();
 
 	void QueryThread(char *command, ResultFunction fResultCallback, void *pUserData);
@@ -52,7 +52,7 @@ public:
 	static void AddQueryStr(char *pDst, const char *pStr, int DstSize);
 	static void AddQueryInt(char *pDst, int Val, int DstSize);
 
-	static char *GetDatabaseValue(char *pStr);
+	static const char *GetDatabaseValue(char *pStr);
 
 	static void Reconnect();
 	static void DeleteThreadData(CThreadData *pData);

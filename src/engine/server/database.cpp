@@ -10,20 +10,20 @@
 
 #include "database.h"
 
-static LOCK s_QueryLock = NULL;
+static LOCK s_QueryLock = 0x0;
 static int s_ReconnectVal = 0;
 
 void CDatabase::ExecuteQuery(void *pData)
 {
-	MYSQL_RES *pResult = NULL;
-	MYSQL *pConn = NULL;
+	MYSQL_RES *pResult = 0x0;
+	MYSQL *pConn = 0x0;
 	CThreadData *pThreadData = (CThreadData *)pData;
 
 	pThreadData->m_pResultData = 0x0;
 	pThreadData->m_Error = false;
 
-	pConn = mysql_init(NULL);
-	if (pConn == NULL)
+	pConn = mysql_init(0x0);
+	if (pConn == 0x0)
 	{
 		if (g_Config.m_Debug)
 			dbg_msg("Database", "Initialing connection failed: '%s'", mysql_error(pConn));
@@ -34,7 +34,7 @@ void CDatabase::ExecuteQuery(void *pData)
 
 	mysql_options(pConn, MYSQL_SET_CHARSET_NAME, "utf8");
 
-	if (mysql_real_connect(pConn, pThreadData->m_aAddr, pThreadData->m_aUserName, pThreadData->m_aPass, pThreadData->m_aSchema, 0, NULL, 0) == NULL)
+	if (mysql_real_connect(pConn, pThreadData->m_aAddr, pThreadData->m_aUserName, pThreadData->m_aPass, pThreadData->m_aSchema, 0, 0x0, 0) == 0x0)
 	{
 		if (g_Config.m_Debug)
 			dbg_msg("Database", "Connecting failed: '%s'", mysql_error(pConn));
@@ -102,9 +102,9 @@ void CDatabase::QueryTestConnection(void *pData)
 
 	lock_wait(s_QueryLock);
 
-	MYSQL *pConn = mysql_init(NULL);
+	MYSQL *pConn = mysql_init(0x0);
 
-	if (pConn == NULL)
+	if (pConn == 0x0)
 	{
 		dbg_msg("Database", "Initialing connection to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
@@ -138,7 +138,7 @@ CDatabase::CDatabase()
 	mem_zero(m_aSchema, sizeof(m_aSchema));
 }
 
-void CDatabase::Init(char *pAddr, char *pUserName, char *pPass, char *pSchema)
+void CDatabase::Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema)
 {
 	if (s_QueryLock == NULL)
 		s_QueryLock = lock_create();
@@ -147,7 +147,7 @@ void CDatabase::Init(char *pAddr, char *pUserName, char *pPass, char *pSchema)
 }
 
 
-bool CDatabase::InitConnection(char *pAddr, char *pUserName, char *pPass, char *pSchema)
+bool CDatabase::InitConnection(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema)
 {
 	str_copy(m_aAddr, pAddr, sizeof(m_aAddr));
 	str_copy(m_aUserName, pUserName, sizeof(m_aUserName));
@@ -195,8 +195,6 @@ void CDatabase::QueryThread(char *pCommand, ResultFunction fResultCallback, void
 		return;
 	}
 
-	int Result = 0;
-
 	CThreadData *pThreadData = new CThreadData();
 	pThreadData->m_fResultCallback = fResultCallback;
 	pThreadData->m_pUserData = pUserData;
@@ -236,7 +234,7 @@ int CDatabase::Query(char *pCommand, ResultFunction fResultCallback, void *pUser
 	return Result;
 }
 
-char *CDatabase::GetDatabaseValue(char *pStr)
+const char *CDatabase::GetDatabaseValue(char *pStr)
 {
 	if(pStr == 0)
 		return "";
