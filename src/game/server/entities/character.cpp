@@ -691,7 +691,7 @@ void CCharacter::HandleStops()
 			vec2 DoorPos = vec2(Index % pLayers->GetExtrasWidth(i) * 32.0f + 16.0f, Index / pLayers->GetExtrasWidth(i) * 32.0f + 16.0f);
 			if (pDoorTile->m_Type == 1)
 			{
-				if((DoorPos.x > m_Pos.x) && m_Core.m_Vel.x > 0.0f) ||
+				if((DoorPos.x > m_Pos.x && m_Core.m_Vel.x > 0.0f) ||
 					(DoorPos.x < m_Pos.x && m_Core.m_Vel.x < 0.0f))
 					m_Core.m_Vel.x = 0.0f;
 			}
