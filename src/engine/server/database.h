@@ -45,8 +45,8 @@ public:
 	void Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pTable);
 	void Tick();
 
-	void QueryThread(char *command, ResultFunction fResultCallback, void *pUserData);
-	int Query(char *pCommand, ResultFunction fResultCallback, void *pUserData);
+	void QueryThread(const char *command, ResultFunction fResultCallback, void *pUserData);
+	int Query(const char *pCommand, ResultFunction fResultCallback, void *pUserData);
 
 	static void PreventInjectionAppend(char *pDst, const char *pStr, int DstSize);
 	static void AddQueryStr(char *pDst, const char *pStr, int DstSize);

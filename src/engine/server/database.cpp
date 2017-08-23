@@ -112,7 +112,7 @@ void CDatabase::QueryTestConnection(void *pData)
 		return;
 	}
 
-	if (mysql_real_connect(pConn, pThis->m_aAddr, pThis->m_aUserName, pThis->m_aPass, pThis->m_aSchema, 0, NULL, 0) == NULL)
+	if (mysql_real_connect(pConn, pThis->m_aAddr, pThis->m_aUserName, pThis->m_aPass, pThis->m_aSchema, 0, 0x0, 0) == 0x0)
 	{
 		dbg_msg("Database", "Connecting to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
@@ -140,7 +140,7 @@ CDatabase::CDatabase()
 
 void CDatabase::Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema)
 {
-	if (s_QueryLock == NULL)
+	if (s_QueryLock == 0x0)
 		s_QueryLock = lock_create();
 
 	InitConnection(pAddr, pUserName, pPass, pSchema);
@@ -184,7 +184,7 @@ void CDatabase::CheckReconnect()
 	m_ReconnectVal = s_ReconnectVal;
 }
 
-void CDatabase::QueryThread(char *pCommand, ResultFunction fResultCallback, void *pUserData)
+void CDatabase::QueryThread(const char *pCommand, ResultFunction fResultCallback, void *pUserData)
 {
 	CheckReconnect();
 
@@ -211,7 +211,7 @@ void CDatabase::QueryThread(char *pCommand, ResultFunction fResultCallback, void
 	thread_init(QueryThreadFunction, pThreadData);
 }
 
-int CDatabase::Query(char *pCommand, ResultFunction fResultCallback, void *pUserData)
+int CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void *pUserData)
 {
 	CheckReconnect();
 
