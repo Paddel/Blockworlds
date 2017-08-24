@@ -93,7 +93,6 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 
 void CAccountsHandler::ResultRegister(void *pQueryData, bool Error, void *pUserData)
 {
-	CDatabase::CQueryData *pQueryResult = (CDatabase::CQueryData *)pQueryData;
 	CResultData *pResultData = (CResultData *)pUserData;
 	CGameContext *pGameServer = pResultData->m_pGameServer;
 

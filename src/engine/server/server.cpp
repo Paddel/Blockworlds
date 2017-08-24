@@ -1624,7 +1624,6 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 {
 	char aBuf[1024];
-	char aAddrStr[NETADDR_MAXSTRSIZE];
 	CServer* pThis = static_cast<CServer *>(pUser);
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
