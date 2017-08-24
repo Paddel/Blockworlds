@@ -240,10 +240,7 @@ void CAccountsHandler::Logout(int ClientID)
 	}
 
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
-	{
-		GameServer()->SendChatTarget(ClientID, "You are not logged in.");
 		return;
-	}
 
 	Save(ClientID);
 
@@ -290,6 +287,8 @@ void CAccountsHandler::Save(int ClientID)
 	str_append(aQuery, " WHERE username=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pAccountData->m_aName, sizeof(aQuery));
 	m_Database.Query(aQuery, 0x0, 0x0);
+
+	dbg_msg(0, "saved");
 }
 
 void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, const char *pNewPassword)
@@ -327,7 +326,9 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 
 bool CAccountsHandler::CanShutdown()
 {
+	//dbg_msg(0, "running %i", m_Database.NumRunningThreads());
 	if (m_Database.NumRunningThreads() > 0)
 		return false;
+
 	return true;
 }

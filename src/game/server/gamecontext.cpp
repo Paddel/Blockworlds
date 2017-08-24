@@ -1190,11 +1190,18 @@ void CGameContext::ConchainAccountsystemupdate(IConsole::IResult *pResult, void 
 {
 	if (pResult->NumArguments() == 1)
 	{
-		CGameContext *pThis = static_cast<CGameContext *>(pUserData);
-		if (pResult->GetInteger(0) == 0)
+		if (pResult->GetInteger(0) != g_Config.m_SvAccountsystem)
 		{
-			for (int i = 0; i < MAX_CLIENTS; i++)
-				pThis->m_AccountsHandler.Logout(i);
+			CGameContext *pThis = static_cast<CGameContext *>(pUserData);
+			if (pResult->GetInteger(0) <= 0)
+			{
+				for (int i = 0; i < MAX_CLIENTS; i++)
+					pThis->m_AccountsHandler.Logout(i);
+
+				pThis->SendChat(-1, CHAT_ALL, "Accountsystem is disabled now!");
+			}
+			else
+				pThis->SendChat(-1, CHAT_ALL, "Accountsystem is enabled now!");
 		}
 	}
 

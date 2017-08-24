@@ -1575,6 +1575,12 @@ int CServer::Run()
 		m_Econ.Shutdown();
 	}
 
+	while (GameServer()->CanShutdown() == false)
+	{
+		GameServer()->OnTick();
+		thread_sleep(100);
+	}
+
 	GameServer()->OnShutdown();
 
 	m_lpMaps.delete_all();
@@ -1997,9 +2003,6 @@ int main(int argc, const char **argv) // ignore_convention
 	// run the server
 	dbg_msg("server", "starting...");
 	pServer->Run();
-
-	while (pGameServer->CanShutdown() == false)
-		pGameServer->OnTick();
 
 	// free
 	delete pServer;
