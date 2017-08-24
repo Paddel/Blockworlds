@@ -81,22 +81,16 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 	return m_apPlayers[ClientID]->GetCharacter();
 }
 
-bool CGameContext::CanJoinTeam(int Team, int NotThisID)
+bool CGameContext::TryJoinTeam(int Team, int ClientID)
 {
-	if (Team == TEAM_SPECTATORS || (m_apPlayers[NotThisID] && m_apPlayers[NotThisID]->GetTeam() != TEAM_SPECTATORS))
-		return true;
-
-	int aNumplayers[2] = { 0,0 };
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	if (m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS &&
+		Team == 0 && g_Config.m_SvAccountForce == 1 && Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
-		if (m_apPlayers[i] && i != NotThisID)
-		{
-			if (m_apPlayers[i]->GetTeam() >= TEAM_RED && m_apPlayers[i]->GetTeam() <= TEAM_BLUE)
-				aNumplayers[m_apPlayers[i]->GetTeam()]++;
-		}
+		SendBroadcast("Register/Login first to join the game", ClientID);
+		return false;
 	}
 
-	return (aNumplayers[0] + aNumplayers[1]) < Server()->MaxClients() - g_Config.m_SvSpectatorSlots;
+	return true;
 }
 
 const char *CGameContext::GetTeamName(int Team)
@@ -340,22 +334,9 @@ void CGameContext::HandleInactive()
 					break;
 					case 1:
 					{
-						// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
-						int Spectators = 0;
-						for (int j = 0; j < MAX_CLIENTS; ++j)
-							if (m_apPlayers[j] && m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS)
-								++Spectators;
-						if (Spectators >= g_Config.m_SvSpectatorSlots)
-							Server()->Kick(i, "Kicked for inactivity");
-						else
-							m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
-					}
-					break;
-					case 2:
-					{
-						// kick the player
 						Server()->Kick(i, "Kicked for inactivity");
 					}
+					break;
 					}
 				}
 			}
@@ -426,7 +407,10 @@ void CGameContext::OnClientEnter(int ClientID, bool MapSwitching)
 void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
-	const int StartTeam = g_Config.m_SvTournamentMode ? TEAM_SPECTATORS : 0;
+	int StartTeam = g_Config.m_SvTournamentMode ? TEAM_SPECTATORS : 0;
+
+	if (StartTeam == 0 && g_Config.m_SvAccountForce == 1 && Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+		StartTeam = TEAM_SPECTATORS;
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
@@ -665,19 +649,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 
 			// Switch team on given client and kill/respawn him
-			if(CanJoinTeam(pMsg->m_Team, ClientID))
+			if(TryJoinTeam(pMsg->m_Team, ClientID))
 			{
 				pPlayer->m_LastSetTeam = Server()->Tick();
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
 					pGameMap->UpdateVotes();
 				pPlayer->SetTeam(pMsg->m_Team);
 				pPlayer->m_TeamChangeTick = Server()->Tick();
-			}
-			else
-			{
-				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "Only %d active players are allowed", Server()->MaxClients()-g_Config.m_SvSpectatorSlots);
-				SendBroadcast(aBuf, ClientID);
 			}
 		}
 		else if (MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
@@ -1208,6 +1186,23 @@ void CGameContext::ConchainAccountsystemupdate(IConsole::IResult *pResult, void 
 	pfnCallback(pResult, pCallbackUserData);
 }
 
+void CGameContext::ConchainAccountForceupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	if (pResult->NumArguments() == 1)
+	{
+		CGameContext *pThis = static_cast<CGameContext *>(pUserData);
+		if (pResult->GetInteger(0) >= 1)
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (pThis->m_apPlayers[i] && pThis->Server()->GetClientInfo(i)->m_LoggedIn == false)
+					pThis->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, false);
+			}
+		}
+	}
+
+	pfnCallback(pResult, pCallbackUserData);
+}
 
 void CGameContext::OnConsoleInit()
 {
@@ -1232,6 +1227,7 @@ void CGameContext::OnConsoleInit()
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 	Console()->Chain("sv_accountsystem", ConchainAccountsystemupdate, this);
+	Console()->Chain("sv_account_force", ConchainAccountForceupdate, this);
 }
 
 void CGameContext::OnInit(/*class IKernel *pKernel*/)

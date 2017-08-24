@@ -26,6 +26,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_Vote = 0;
 	m_VotePos = 0;
 	m_Pause = false;
+	m_pClientInfo = Server()->GetClientInfo(ClientID);
 }
 
 CPlayer::~CPlayer()
@@ -150,7 +151,7 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[TranslatedID];
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = TranslatedID;
-	pPlayerInfo->m_Score = m_Score;
+	pPlayerInfo->m_Score = ClientInfo()->m_LoggedIn ? ClientInfo()->m_AccountData.m_Level : 0;
 	pPlayerInfo->m_Team = m_Team;
 
 	if(m_ClientID == SnappingClient)

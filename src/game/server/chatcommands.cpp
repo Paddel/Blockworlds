@@ -1,4 +1,5 @@
 
+#include <engine/shared/config.h>
 #include <game/version.h>
 #include <game/server/gamecontext.h>
 
@@ -198,7 +199,7 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("info", "", 0, ComInfo, "Gamemode BW364 made by 13x37");
 	Register("pause", "", CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
-	Register("acoount", "", 0, ComAccount, "Sends you all information about the account system");
+	Register("account", "", 0, ComAccount, "Sends you all information about the account system");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

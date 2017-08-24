@@ -85,7 +85,11 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Successful logged in as '%s'", pResultData->m_aName);
 	pGameServer->SendChatTarget(pResultData->m_ClientID, aBuf);
-	if(pGameServer->m_apPlayers[pResultData->m_ClientID] != 0x0)
+
+	if (g_Config.m_SvAccountForce == 1 && pGameServer->m_apPlayers[pResultData->m_ClientID] &&
+		pGameServer->m_apPlayers[pResultData->m_ClientID]->GetTeam() == TEAM_SPECTATORS)
+		pGameServer->m_apPlayers[pResultData->m_ClientID]->SetTeam(0, false);
+	else if(pGameServer->m_apPlayers[pResultData->m_ClientID] != 0x0)
 		pGameServer->m_apPlayers[pResultData->m_ClientID]->KillCharacter(WEAPON_GAME);
 
 	delete pResultData;
@@ -247,7 +251,10 @@ void CAccountsHandler::Logout(int ClientID)
 	mem_zero(&Server()->GetClientInfo(ClientID)->m_AccountData, sizeof(IServer::CAccountData));
 	Server()->GetClientInfo(ClientID)->m_LoggedIn = false;
 	GameServer()->SendChatTarget(ClientID, "Successfully logged out");
-	if (GameServer()->m_apPlayers[ClientID] != 0x0)
+	if (g_Config.m_SvAccountForce == 1 && GameServer()->m_apPlayers[ClientID] &&
+		GameServer()->m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS)
+		GameServer()->m_apPlayers[ClientID]->SetTeam(TEAM_SPECTATORS, false);
+	else if (GameServer()->m_apPlayers[ClientID] != 0x0)
 		GameServer()->m_apPlayers[ClientID]->KillCharacter(WEAPON_GAME);
 }
 
@@ -326,7 +333,6 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 
 bool CAccountsHandler::CanShutdown()
 {
-	//dbg_msg(0, "running %i", m_Database.NumRunningThreads());
 	if (m_Database.NumRunningThreads() > 0)
 		return false;
 

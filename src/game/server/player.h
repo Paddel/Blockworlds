@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_PLAYER_H
 #define GAME_SERVER_PLAYER_H
 
+#include <engine/server.h>
 #include <engine/server/translator.h>
 
 // this include should perhaps be removed
@@ -40,6 +41,7 @@ public:
 	CTranslateItem *GetTranslateItem() { return &m_TranslateItem; };
 	bool GetPause() const { return m_Pause; }
 	void TogglePause() { m_Pause = !m_Pause; }
+	IServer::CClientInfo *ClientInfo() { return m_pClientInfo; }
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -108,6 +110,7 @@ private:
 	IServer *Server() const;
 	CGameMap *GameMap() const;
 	CTranslateItem m_TranslateItem;
+	IServer::CClientInfo *m_pClientInfo;
 
 	//
 	bool m_Spawning;

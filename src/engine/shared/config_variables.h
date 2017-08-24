@@ -93,6 +93,7 @@ MACRO_CONFIG_INT(SvRconBantime, sv_rcon_bantime, 5, 0, 1440, CFGFLAG_SERVER, "Th
 MACRO_CONFIG_INT(SvPunishStress, sv_punish_stress, 1, 0, 1, CFGFLAG_SERVER, "Bans a client when stressing the server")
 MACRO_CONFIG_INT(SvFakeGametype, sv_fake_gametype, 0, 0, 1, CFGFLAG_SERVER, "Remove after testing")
 MACRO_CONFIG_INT(SvAccountsystem, sv_accountsystem, 0, 0, 1, CFGFLAG_SERVER, "Enables/disables the Accountsystem")
+MACRO_CONFIG_INT(SvAccountForce, sv_account_force, 0, 0, 1, CFGFLAG_SERVER, "Forces the player to login to play the Accountsystem")
 MACRO_CONFIG_STR(SvDbAccName, sv_db_acc_name, 16, "root", CFGFLAG_SERVER, "Username for Account Database")
 MACRO_CONFIG_STR(SvDbAccPassword, sv_db_acc_password, 16, "", CFGFLAG_SERVER, "Password for Account Database")
 MACRO_CONFIG_STR(SvDbAccAddress, sv_db_acc_address, 48, "localhost", CFGFLAG_SERVER, "Address for Account Database")
