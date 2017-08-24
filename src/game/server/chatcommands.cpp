@@ -142,6 +142,35 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 	}
 }
 
+void CChatCommandsHandler::ComAccount(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+{
+	pGameContext->SendChatTarget(ClientID, "Account System V. 3.17");
+	pGameContext->SendChatTarget(ClientID, "Use \"/login name password\" to login and \"/register name password\" to create an account.");
+	pGameContext->SendChatTarget(ClientID, "If you are logged in you can change your password with \"/password oldpass newpass\".");
+	pGameContext->SendChatTarget(ClientID, "You can log out anytime by writing \"/logout\".");
+	pGameContext->SendChatTarget(ClientID, "Your progress will be saved automaticly!");
+}
+
+void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+{
+	pGameContext->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
+}
+
+void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+{
+	pGameContext->AccountsHandler()->Logout(ClientID);
+}
+
+void CChatCommandsHandler::ComRegister(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+{
+	pGameContext->AccountsHandler()->Register(ClientID, pResult->GetString(0), pResult->GetString(1));
+}
+
+void CChatCommandsHandler::ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+{
+	pGameContext->AccountsHandler()->ChangePassword(ClientID, pResult->GetString(0), pResult->GetString(1));
+}
+
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
 {
 	CChatCommand *pCommand = new CChatCommand();
@@ -163,10 +192,15 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("info", "", 0, ComInfo, "Gamemode BW364 made by 13x37");
 	Register("pause", "", CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
+	Register("acoount", "", 0, ComAccount, "Sends you all information about the account system");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
 	Register("w", "r", CHATCMDFLAG_HIDDEN, ComWhisper, "Personal message to anybody on this server");
+	Register("login", "ss", CHATCMDFLAG_HIDDEN, ComLogin, "Login into your Blockworlds account. For more informatino write /account");
+	Register("logout", "", CHATCMDFLAG_HIDDEN, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
+	Register("register", "ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
+	Register("password", "ss", CHATCMDFLAG_HIDDEN, ComChangePassword, "Set a password to your Blockworlds account. For more informatino write /account");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)

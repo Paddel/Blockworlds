@@ -39,6 +39,7 @@ class CGameContext : public IGameServer
 	static void ConClearVotes(IConsole::IResult *pResult, void *pUserData);
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainAccountsystemupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -49,6 +50,7 @@ public:
 	class IConsole *Console() { return m_pConsole; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CChatCommandsHandler *ChatCommandsHandler() { return &m_ChatCommandsHandler; }
+	CAccountsHandler *AccountsHandler() { return &m_AccountsHandler; }
 
 	CGameContext();
 	~CGameContext();
@@ -119,6 +121,7 @@ public:
 
 	virtual void OnClientConnected(int ClientID);
 	virtual void OnClientEnter(int ClientID, bool MapSwitching);
+	virtual void OnClientLeave(int ClientID, const char *pReason);
 	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching);
 	virtual void OnClientDirectInput(int ClientID, void *pInput);
 	virtual void OnClientPredictedInput(int ClientID, void *pInput);
@@ -127,6 +130,8 @@ public:
 
 	virtual bool IsClientReady(int ClientID);
 	virtual bool IsClientPlayer(int ClientID);
+
+	virtual bool CanShutdown();
 
 	virtual const char *GameType();
 	virtual const char *Version();

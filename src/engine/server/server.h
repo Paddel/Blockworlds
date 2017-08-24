@@ -137,6 +137,7 @@ public:
 		int m_MapitemUsage;
 
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
+		IServer::CClientInfo m_ClientInfo;
 
 		void Reset();
 	};
@@ -179,17 +180,16 @@ public:
 
 	int Init();
 
-	void SetRconCID(int ClientID);
-	bool IsAuthed(int ClientID);
-	int GetClientInfo(int ClientID, CClientInfo *pInfo);
-	void GetClientAddr(int ClientID, char *pAddrStr, int Size);
-	const char *ClientName(int ClientID);
-	const char *ClientClan(int ClientID);
-	int ClientCountry(int ClientID);
-	bool ClientIngame(int ClientID);
-	int GetClientAuthed(int ClientID);
-	int GetClientLatency(int ClientID);
-	int MaxClients() const;
+	virtual void SetRconCID(int ClientID);
+	virtual IServer::CClientInfo *GetClientInfo(int ClientID);
+	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size);
+	virtual const char *ClientName(int ClientID);
+	virtual const char *ClientClan(int ClientID);
+	virtual int ClientCountry(int ClientID);
+	virtual bool ClientIngame(int ClientID);
+	virtual int GetClientAuthed(int ClientID);
+	virtual int GetClientLatency(int ClientID);
+	virtual int MaxClients() const;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);
 	int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System);
@@ -227,6 +227,7 @@ public:
 
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
+	static void ConStatusAccounts(IConsole::IResult *pResult, void *pUser);
 	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConAddMap(IConsole::IResult *pResult, void *pUser);
@@ -234,6 +235,7 @@ public:
 	static void ConReloadMap(IConsole::IResult *pResult, void *pUser);
 	static void ConListMaps(IConsole::IResult *pResult, void *pUser);
 	static void ConMovePlayer(IConsole::IResult *pResult, void *pUser);
+	static void ConReconnectDatabases(IConsole::IResult *pResult, void *pUser);
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);

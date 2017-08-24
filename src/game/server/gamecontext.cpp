@@ -326,7 +326,7 @@ void CGameContext::HandleInactive()
 	{
 		for (int i = 0; i < MAX_CLIENTS; ++i)
 		{
-			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
+			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && Server()->GetClientAuthed(i) == IServer::AUTHED_ADMIN)
 			{
 				if (Server()->Tick() > m_apPlayers[i]->m_LastActionTick + g_Config.m_SvInactiveKickTime*Server()->TickSpeed() * 60)
 				{
@@ -440,6 +440,11 @@ void CGameContext::OnClientConnected(int ClientID)
 	CNetMsg_Sv_Motd Msg;
 	Msg.m_pMessage = g_Config.m_SvMotd;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+}
+
+void CGameContext::OnClientLeave(int ClientID, const char *pReason)
+{
+	m_AccountsHandler.Save(ClientID);
 }
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching)
@@ -1181,6 +1186,22 @@ void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *p
 	}
 }
 
+void CGameContext::ConchainAccountsystemupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	if (pResult->NumArguments() == 1)
+	{
+		CGameContext *pThis = static_cast<CGameContext *>(pUserData);
+		if (pResult->GetInteger(0) == 0)
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++)
+				pThis->m_AccountsHandler.Logout(i);
+		}
+	}
+
+	pfnCallback(pResult, pCallbackUserData);
+}
+
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -1203,6 +1224,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
+	Console()->Chain("sv_accountsystem", ConchainAccountsystemupdate, this);
 }
 
 void CGameContext::OnInit(/*class IKernel *pKernel*/)
@@ -1248,6 +1270,14 @@ bool CGameContext::IsClientReady(int ClientID)
 bool CGameContext::IsClientPlayer(int ClientID)
 {
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+}
+
+bool CGameContext::CanShutdown()
+{
+	if (m_AccountsHandler.CanShutdown() == false)//wait for all accounts to be updatet
+		return false;
+
+	return true;
 }
 
 const char *CGameContext::GameType() { return g_Config.m_SvFakeGametype ? "DDRaceNetwork" : "BW564"; }

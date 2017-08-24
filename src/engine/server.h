@@ -27,9 +27,22 @@ public:
 		AUTHED_ADMIN,
 	};
 
+	struct CAccountData
+	{
+		char m_aName[32];
+		char m_aPassword[32];
+		bool m_Vip;
+		int m_Pages;
+		int m_Level;
+		int m_Experience;
+		char m_aAddress[47];
+		int m_WeaponKits;
+	};
+
 	struct CClientInfo
 	{//this data is shared by game and engine and does not get resettet on map change
-
+		bool m_LoggedIn;
+		CAccountData m_AccountData;
 	};
 
 	int Tick() const { return m_CurrentGameTick; }
@@ -40,7 +53,7 @@ public:
 	virtual const char *ClientClan(int ClientID) = 0;
 	virtual int ClientCountry(int ClientID) = 0;
 	virtual bool ClientIngame(int ClientID) = 0;
-	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) = 0;
+	virtual CClientInfo *GetClientInfo(int ClientID) = 0;
 	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
 	virtual int GetClientAuthed(int ClientID) = 0;
 	virtual int GetClientLatency(int ClientID) = 0;
@@ -128,7 +141,6 @@ public:
 		RCON_CID_VOTE=-2,
 	};
 	virtual void SetRconCID(int ClientID) = 0;
-	virtual bool IsAuthed(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 	virtual void DropClient(int ClientID, const char *pReason) = 0;
 	virtual int RconClientID() = 0;
@@ -160,6 +172,7 @@ public:
 
 	virtual void OnClientConnected(int ClientID) = 0;
 	virtual void OnClientEnter(int ClientID, bool MapSwitching) = 0;
+	virtual void OnClientLeave(int ClientID, const char *pReason) = 0;
 	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching) = 0;
 	virtual void OnClientDirectInput(int ClientID, void *pInput) = 0;
 	virtual void OnClientPredictedInput(int ClientID, void *pInput) = 0;
@@ -168,6 +181,8 @@ public:
 
 	virtual bool IsClientReady(int ClientID) = 0;
 	virtual bool IsClientPlayer(int ClientID) = 0;
+	
+	virtual bool CanShutdown() = 0;
 
 	virtual const char *GameType() = 0;
 	virtual const char *Version() = 0;

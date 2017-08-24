@@ -20,6 +20,7 @@
 
 #include <mastersrv/mastersrv.h>
 
+#include "database.h"
 #include "register.h"
 #include "server.h"
 
@@ -408,6 +409,7 @@ int CServer::Init()
 		m_aClients[i].m_aClan[0] = 0;
 		m_aClients[i].m_Country = -1;
 		m_aClients[i].m_Snapshots.Init();
+		mem_zero(&m_aClients[i].m_ClientInfo, sizeof(IServer::CClientInfo));
 	}
 
 	m_CurrentGameTick = 0;
@@ -420,22 +422,9 @@ void CServer::SetRconCID(int ClientID)
 	m_RconClientID = ClientID;
 }
 
-bool CServer::IsAuthed(int ClientID)
+IServer::CClientInfo *CServer::GetClientInfo(int ClientID)
 {
-	return m_aClients[ClientID].m_Authed;
-}
-
-int CServer::GetClientInfo(int ClientID, CClientInfo *pInfo)
-{
-	dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "client_id is not valid");
-	dbg_assert(pInfo != 0, "info can not be null");
-
-	if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
-	{
-		
-		return 1;
-	}
-	return 0;
+	return &m_aClients[ClientID].m_ClientInfo;
 }
 
 void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size)
@@ -713,6 +702,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_MapitemUsage = 16;
 	pThis->m_aClients[ClientID].m_Online = false;
 	pThis->m_aClients[ClientID].Reset();
+	mem_zero(&pThis->m_aClients[ClientID].m_ClientInfo, sizeof(IServer::CClientInfo));
 
 	pThis->SetMapOnConnect(ClientID);
 	return 0;
@@ -732,6 +722,8 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 	}
 
+	pThis->GameServer()->OnClientLeave(ClientID, pReason);
+
 	// notify the mod about the drop
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY)
 		pThis->GameServer()->OnClientDrop(ClientID, pReason, pThis->m_aClients[ClientID].m_pMap->GameMap(), false);
@@ -744,6 +736,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
+	mem_zero(&pThis->m_aClients[ClientID].m_ClientInfo, sizeof(IServer::CClientInfo));
 	return 0;
 }
 
@@ -1477,6 +1470,8 @@ int CServer::Run()
 	str_format(aBuf, sizeof(aBuf), "version %s", GameServer()->NetVersion());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
+	GameServer()->OnInit();
+
 	// reinit snapshot ids
 	m_IDPool.TimeoutIDs();
 
@@ -1617,8 +1612,41 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s' score=%d %s", i, aAddrStr,
 					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_Score, pAuthStr);
 			}
+			else if(pThis->m_aClients[i].m_Online == true)
+				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s switching map", i, aAddrStr);
 			else
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s connecting", i, aAddrStr);
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		}
+	}
+}
+
+void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
+{
+	char aBuf[1024];
+	char aAddrStr[NETADDR_MAXSTRSIZE];
+	CServer* pThis = static_cast<CServer *>(pUser);
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pThis->m_aClients[i].m_State != CClient::STATE_EMPTY)
+		{
+			str_format(aBuf, sizeof(aBuf), "id=%d name='%s' ", i, pThis->m_aClients[i].m_aName);
+
+			if (pThis->m_aClients[i].m_ClientInfo.m_LoggedIn == true)
+			{
+				CAccountData *pAccountData = &pThis->m_aClients[i].m_ClientInfo.m_AccountData;
+				str_fcat(aBuf, sizeof(aBuf), "username='%s'", pAccountData->m_aName);
+				str_fcat(aBuf, sizeof(aBuf), " password='%s'", pAccountData->m_aPassword);
+				str_fcat(aBuf, sizeof(aBuf), " vip=%i", pAccountData->m_Vip);
+				str_fcat(aBuf, sizeof(aBuf), " pages=%i", pAccountData->m_Pages);
+				str_fcat(aBuf, sizeof(aBuf), " level=%i", pAccountData->m_Level);
+				str_fcat(aBuf, sizeof(aBuf), " exp=%i", pAccountData->m_Experience);
+				str_fcat(aBuf, sizeof(aBuf), " weaponkits=%i", pAccountData->m_WeaponKits);
+			}
+			else
+				str_append(aBuf, "Not Logged In", sizeof(aBuf));
+
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
 		}
 	}
@@ -1708,6 +1736,11 @@ void CServer::ConListMaps(IConsole::IResult *pResult, void *pUser)
 
 		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	}
+}
+
+void CServer::ConReconnectDatabases(IConsole::IResult *pResult, void *pUser)
+{
+	CDatabase::Reconnect();
 }
 
 void CServer::ConMovePlayer(IConsole::IResult *pResult, void *pUser)
@@ -1808,6 +1841,7 @@ void CServer::RegisterCommands()
 	// register console commands
 	Console()->Register("kick", "i?r", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");
 	Console()->Register("status", "", CFGFLAG_SERVER, ConStatus, this, "List players");
+	Console()->Register("status_acc", "", CFGFLAG_SERVER, ConStatusAccounts, this, "All account infos");
 	Console()->Register("shutdown", "", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
 	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
 
@@ -1816,6 +1850,7 @@ void CServer::RegisterCommands()
 	Console()->Register("reload_map", "s", CFGFLAG_SERVER, ConReloadMap, this, "Add a Map");
 	Console()->Register("list_maps", "", CFGFLAG_SERVER, ConListMaps, this, "List added Maps");
 	Console()->Register("move_player", "is", CFGFLAG_SERVER, ConMovePlayer, this, "Move a Player to a Map");
+	Console()->Register("databases_reconnect", "", CFGFLAG_SERVER, ConReconnectDatabases, this, "Reconnects all databases");
 
 	Console()->Chain("sv_name", ConchainSpecialInfoupdate, this);
 	Console()->Chain("password", ConchainSpecialInfoupdate, this);
@@ -1947,8 +1982,6 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// register all console commands
 	pServer->RegisterCommands();
-	
-	pGameServer->OnInit();
 
 	// execute autoexec file
 	pConsole->ExecuteFile("autoexec.cfg");
@@ -1965,6 +1998,9 @@ int main(int argc, const char **argv) // ignore_convention
 	// run the server
 	dbg_msg("server", "starting...");
 	pServer->Run();
+
+	while (pGameServer->CanShutdown() == false)
+		pGameServer->OnTick();
 
 	// free
 	delete pServer;

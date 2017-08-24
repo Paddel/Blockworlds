@@ -1,10 +1,11 @@
-ddnet combtilitibily ( - royal )
-
 scoresystem
-accountsystem
 clan
 vpncheck fix
 
 rcon stuff (global)
 
 mute spamming
+
+anti wb
+pages
+weaponkit
