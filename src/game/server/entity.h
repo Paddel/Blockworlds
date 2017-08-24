@@ -81,7 +81,7 @@ public:
 	CEntity *TypePrev() { return m_pPrevTypeEntity; }
 	int GetObjType() const { return m_ObjType; }
 
-	virtual void Push(vec2 Force) {}
+	virtual void Push(vec2 Force, int From) {}
 	virtual void Freeze(float Seconds) {}
 	virtual void Unfreeze() {}
 

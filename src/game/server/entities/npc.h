@@ -27,5 +27,5 @@ public:
 	virtual void TickDefered();
 	virtual void TickPaused();
 	virtual void Snap(int SnappingClient);
-	virtual void Push(vec2 Force) { m_Core.m_Vel += Force; }
+	virtual void Push(vec2 Force, int From) { m_Core.m_Vel += Force; }
 };

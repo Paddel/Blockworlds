@@ -8,6 +8,7 @@
 #include <game/version.h>
 #include <game/collision.h>
 #include <game/gamecore.h>
+#include <game/server/entities/experience.h>
 
 #include "gamemap.h"
 #include "gamecontext.h"
@@ -158,7 +159,7 @@ void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner, int 
 			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
 			float Dmg = 6 * l;
 			if((int)Dmg)
-				apEnts[i]->Push(ForceDir*Dmg*2);
+				apEnts[i]->Push(ForceDir*Dmg*2, Owner);
 		}
 	}
 }
@@ -344,6 +345,85 @@ void CGameContext::HandleInactive()
 	}
 }
 
+void CGameContext::ScoreSystemFinish(int ClientID, vec2 Pos)
+{
+	if (g_Config.m_SvScoreSystem == 0)
+		return;
+
+	//TODO: Check if hes on a blocking area
+
+	CPlayer *pPlayer = m_apPlayers[ClientID];
+	CCharacter *pChr = GetPlayerChar(ClientID);
+	if (pPlayer == 0x0 || pChr == 0x0 || pChr->IsAlive() == false || pPlayer->m_AttackedBy == ClientID)
+		return;
+
+	if (pPlayer->m_AttackedBy != -1 && pPlayer->m_AttackedByTick + Server()->TickSpeed() * 6.5f > Server()->Tick() &&// if getting attacked more than 5.5 seconds ago does not count
+		pChr->IsFreezed())
+	{
+		CCharacter *pChr = GetPlayerChar(pPlayer->m_AttackedBy);
+		if (pChr == 0x0 || pChr->IsFreezed())//do not give blocked exp
+			return;
+
+		int Amount = 0;
+		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick())
+		{
+			pPlayer->m_UnblockedTick = Server()->Tick();
+			Amount = 3;
+		}
+
+		new CExperience(pChr->GameWorld(), Pos, Amount, pPlayer->m_AttackedBy);
+		pPlayer->m_AttackedBy = -1;
+	}
+}
+
+void CGameContext::ScoreSystemAttack(int Attacker, int Victim)
+{
+	if (g_Config.m_SvScoreSystem == 0)
+		return;
+
+	CPlayer *pPlayerVictim = m_apPlayers[Victim];
+	CCharacter *pChrVictim = GetPlayerChar(Victim);
+	if (pPlayerVictim == 0x0 || pChrVictim == 0x0 || pChrVictim->IsFreezed() == true || Attacker == Victim)
+		return;
+
+	if (pPlayerVictim->m_AttackedByTick + Server()->TickSpeed() * 1.5f < Server()->Tick())
+	{
+		pPlayerVictim->m_AttackedBy = Attacker;
+		pPlayerVictim->m_AttackedByTick = Server()->Tick();
+	}
+	else if (pPlayerVictim->m_AttackedByTick == Server()->Tick())
+		pPlayerVictim->m_AttackedBy = -1;//attacked by more than 1 Players. Noone gets exp
+}
+
+void CGameContext::HandleScoreSystem()
+{
+	if (g_Config.m_SvScoreSystem == 0)
+		return;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		CPlayer *pPlayer = m_apPlayers[i];
+		CCharacter *pChr = GetPlayerChar(i);
+		if (pPlayer == 0x0 || pChr == 0x0 || pChr->IsAlive() == false)
+			continue;
+
+		//reset blocked
+		if (m_apPlayers[i]->m_Blocked == true && pChr->IsFreezed() == false)
+			m_apPlayers[i]->m_Blocked = false;
+
+		//set blocked
+		if (m_apPlayers[i]->m_Blocked == false && pChr->IsFreezed() == true && pChr->FreezeTick() + Server()->TickSpeed() * 3.7f < Server()->Tick())
+		{
+			m_apPlayers[i]->m_Blocked = true;
+			ScoreSystemFinish(i, pChr->m_Pos);
+		}
+
+		int HookedPlayer = pChr->Core()->m_HookedPlayer;
+		if (pChr->Core()->m_HookState == HOOK_GRABBED && pChr->Core()->m_HookTick >= Server()->TickSpeed() * 0.5f &&
+			HookedPlayer >= 0 && HookedPlayer < MAX_CLIENTS) //not bots
+			ScoreSystemAttack(i, HookedPlayer);
+	}
+}
 
 void CGameContext::OnTick()
 {
@@ -354,6 +434,7 @@ void CGameContext::OnTick()
 		Server()->GetGameMap(i)->Tick();
 
 	HandleInactive();
+	HandleScoreSystem();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{

@@ -84,6 +84,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	mem_zero(&m_GotWeapon, sizeof(m_GotWeapon));
 	GiveWeapon(WEAPON_HAMMER);
 	GiveWeapon(WEAPON_GUN);
+	GiveWeapon(WEAPON_SHOTGUN);
 
 	return true;
 }
@@ -115,6 +116,14 @@ bool CCharacter::IsGrounded()
 	if(GameMap()->Collision()->CheckPoint(m_Pos.x-m_ProximityRadius/2, m_Pos.y+m_ProximityRadius/2+5))
 		return true;
 	return false;
+}
+
+void CCharacter::Push(vec2 Force, int From)
+{
+	m_Core.m_Vel += Force;
+	dbg_msg(0, "%.2f", length(Force));
+	if(length(Force) >= 10.0f && From != -1)
+		GameServer()->ScoreSystemAttack(From, GetPlayer()->GetCID());
 }
 
 void CCharacter::HandleNinja()
@@ -190,7 +199,7 @@ void CCharacter::HandleNinja()
 				if(m_NumObjectsHit < 10)
 					m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
 
-				aEnts[i]->Push(vec2(0, -10.0f));
+				aEnts[i]->Push(vec2(0, -10.0f), GetPlayer()->GetCID());
 			}
 		}
 
@@ -269,9 +278,9 @@ void CCharacter::FireWeapon()
 
 	if (IsFreezed())
 	{
-		if (CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
+		if (CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses && m_FreezeCryTick < Server()->Tick())
 		{
-			m_ReloadTimer = Server()->TickSpeed();
+			m_FreezeCryTick = Server()->Tick() + Server()->TickSpeed();
 			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PLAYER_PAIN_LONG);
 		}
 
@@ -322,7 +331,7 @@ void CCharacter::FireWeapon()
 				else
 					Dir = vec2(0.f, -1.f);
 
-				pTarget->Push(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f);
+				pTarget->Push(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, GetPlayer()->GetCID());
 				pTarget->Unfreeze();
 				Hits++;
 			}
@@ -440,12 +449,17 @@ void CCharacter::SetEmote(int Emote, int Tick)
 
 void CCharacter::Unfreeze()
 {
-	if(m_DeepFreeze == false)
-		m_FreezeTime = 0;
+	if (m_DeepFreeze == true || m_FreezeTime <= 0)
+		return;
+
+	m_FreezeTime = 0;
 }
 
 void CCharacter::Freeze(float Seconds)
 {
+	if (m_FreezeTime <= 0)
+		m_FreezeTick = Server()->Tick();
+
 	if (m_FreezeTime <= Server()->TickSpeed() * (Seconds - 1.0f) || Seconds < 1.0f)
 		m_FreezeTime = Server()->TickSpeed() * Seconds;
 }
@@ -949,6 +963,8 @@ void CCharacter::Die(int Killer, int Weapon)
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	}
 
+	GameServer()->ScoreSystemFinish(m_pPlayer->GetCID(), m_Pos);
+
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
 	Msg.m_Killer = Killer;
@@ -1016,7 +1032,7 @@ void CCharacter::Snap(int SnappingClient)
 
 
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
-		(!g_Config.m_SvStrictSpectateMode && GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID != -1 && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
+		(GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID != -1 && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
 	{
 		pCharacter->m_Health = 10;
 		pCharacter->m_Armor = 10;

@@ -32,7 +32,7 @@ public:
 	virtual void TickDefered();
 	virtual void TickPaused();
 	virtual void Snap(int SnappingClient);
-	virtual void Push(vec2 Force) { m_Core.m_Vel += Force; }
+	virtual void Push(vec2 Force, int From);
 
 	bool IsGrounded();
 
@@ -78,6 +78,9 @@ public:
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
+	CSrvCharacterCore *Core() { return &m_Core; }
+	int64 FreezeTick() const { return m_FreezeTick; }
+	int FreezeTime() const { return m_FreezeTime; }
 
 private:
 	// player controlling this character
@@ -85,8 +88,11 @@ private:
 
 	bool m_Alive;
 	int m_FreezeTime;
+	int64 m_FreezeTick;
 	bool m_DeepFreeze;
 	int64 m_RaceStart;
+	int64 m_FreezeCryTick;
+
 
 	vec2 m_LastPos;
 

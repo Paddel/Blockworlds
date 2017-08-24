@@ -102,6 +102,12 @@ public:
 		int m_Max;
 	} m_Latency;
 
+	//scoresystem -- do not use these variables
+	int m_AttackedBy;
+	int64 m_AttackedByTick;
+	bool m_Blocked;
+	int64 m_UnblockedTick;
+
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;

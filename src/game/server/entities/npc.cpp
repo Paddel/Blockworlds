@@ -121,7 +121,7 @@ void CNpc::Snap(int SnappingClient)
 	pCharacter->m_Direction = 0;// m_Input.m_Direction;
 
 	if (m_ClientID == SnappingClient || SnappingClient == -1 ||
-		(!g_Config.m_SvStrictSpectateMode && GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID != -1 && m_ClientID == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
+		(GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID != -1 && m_ClientID == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
 	{
 		pCharacter->m_Health = 10;//m_Health;
 		pCharacter->m_Armor = 10;//m_Armor;

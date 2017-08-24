@@ -29,7 +29,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 		return false;
 
 	if (m_Weapon == WEAPON_SHOTGUN)
-		pHit->Push(m_Dir * -10.0f);
+		pHit->Push(m_Dir * -10.0f, m_Owner);
 	else if(m_Weapon == WEAPON_RIFLE)
 		pHit->Unfreeze();
 

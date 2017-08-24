@@ -27,6 +27,10 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_VotePos = 0;
 	m_Pause = false;
 	m_pClientInfo = Server()->GetClientInfo(ClientID);
+	m_AttackedBy = -1;
+	m_AttackedByTick = 0;
+	m_Blocked = false;
+	m_UnblockedTick = Server()->Tick();//hast to be at least 60 seconds on server to give exp
 }
 
 CPlayer::~CPlayer()
