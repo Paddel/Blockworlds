@@ -11,6 +11,7 @@
 #include <game/gamecore.h>
 #include <game/server/entities/experience.h>
 
+#include "balancing.h"
 #include "gamemap.h"
 #include "gamecontext.h"
 
@@ -357,13 +358,8 @@ void CGameContext::HandleInactive()
 	}
 }
 
-void CGameContext::ScoreSystemFinish(int ClientID, vec2 Pos)
+void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos)
 {
-	if (g_Config.m_SvScoreSystem == 0)
-		return;
-
-	//TODO: Check if hes on a blocking area
-
 	CPlayer *pPlayer = m_apPlayers[ClientID];
 	CCharacter *pChr = GetPlayerChar(ClientID);
 	if (pPlayer == 0x0 || pChr == 0x0 || pChr->IsAlive() == false || pPlayer->m_AttackedBy == ClientID)
@@ -376,23 +372,32 @@ void CGameContext::ScoreSystemFinish(int ClientID, vec2 Pos)
 		if (pChrAttacker == 0x0 || pChrAttacker->IsFreezed())//do not give blocked exp
 			return;
 
-		int Amount = 0;
-		if (/*pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick() &&*/ pChr->InBlockZone())
+		int ExperienceAmount = 0;
+		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick() && pChr->InBlockZone())
 		{
 			pPlayer->m_UnblockedTick = Server()->Tick();
-			Amount = 3;
+			ExperienceAmount = 3;
 		}
 
-		new CExperience(pChrAttacker->GameWorld(), Pos, Amount, pPlayer->m_AttackedBy);
+		//ranking
+		if (Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_LoggedIn == true &&
+			Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
+		{
+			NewRankings(Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_AccountData.m_Ranking,
+				Server()->GetClientInfo(ClientID)->m_AccountData.m_Ranking);
+			m_AccountsHandler.Save(ClientID);
+			m_AccountsHandler.Save(pPlayer->m_AttackedBy);
+		}
+
+		if (g_Config.m_SvScoreSystem == 1)
+			new CExperience(pChrAttacker->GameWorld(), Pos, ExperienceAmount, pPlayer->m_AttackedBy);
+
 		pPlayer->m_AttackedBy = -1;
 	}
 }
 
-void CGameContext::ScoreSystemAttack(int Attacker, int Victim)
+void CGameContext::BlockSystemAttack(int Attacker, int Victim)
 {
-	if (g_Config.m_SvScoreSystem == 0)
-		return;
-
 	CPlayer *pPlayerVictim = m_apPlayers[Victim];
 	CCharacter *pChrVictim = GetPlayerChar(Victim);
 	if (pPlayerVictim == 0x0 || pChrVictim == 0x0 || pChrVictim->IsFreezed() == true || Attacker == Victim)
@@ -407,11 +412,8 @@ void CGameContext::ScoreSystemAttack(int Attacker, int Victim)
 		pPlayerVictim->m_AttackedBy = -1;//attacked by more than 1 Players. Noone gets exp
 }
 
-void CGameContext::HandleScoreSystem()
+void CGameContext::HandleBlockSystem()
 {
-	if (g_Config.m_SvScoreSystem == 0)
-		return;
-
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		CPlayer *pPlayer = m_apPlayers[i];
@@ -427,13 +429,13 @@ void CGameContext::HandleScoreSystem()
 		if (m_apPlayers[i]->m_Blocked == false && pChr->IsFreezed() == true && pChr->FreezeTick() + Server()->TickSpeed() * 3.7f < Server()->Tick())
 		{
 			m_apPlayers[i]->m_Blocked = true;
-			ScoreSystemFinish(i, pChr->m_Pos);
+			BlockSystemFinish(i, pChr->m_Pos);
 		}
 
 		int HookedPlayer = pChr->Core()->m_HookedPlayer;
 		if (pChr->Core()->m_HookState == HOOK_GRABBED && pChr->Core()->m_HookTick >= Server()->TickSpeed() * 0.5f &&
 			HookedPlayer >= 0 && HookedPlayer < MAX_CLIENTS) //not bots
-			ScoreSystemAttack(i, HookedPlayer);
+			BlockSystemAttack(i, HookedPlayer);
 	}
 }
 
@@ -445,7 +447,7 @@ void CGameContext::OnTick()
 		Server()->GetGameMap(i)->Tick();
 
 	HandleInactive();
-	HandleScoreSystem();
+	HandleBlockSystem();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -455,6 +457,39 @@ void CGameContext::OnTick()
 			m_apPlayers[i]->PostTick();
 		}
 	}
+}
+
+void CGameContext::GiveExperience(int ClientID, int Amount)
+{
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
+	{
+		IServer::CAccountData *pAccountData = &Server()->GetClientInfo(ClientID)->m_AccountData;
+		pAccountData->m_Experience += Amount;
+		if (pAccountData->m_Experience >= NeededExp(pAccountData->m_Level))
+			SetLevel(ClientID, pAccountData->m_Level + 1);
+	}
+	else
+		SendChatTarget(ClientID, "Login/Register an account to receive your experience points");
+}
+
+void CGameContext::SetLevel(int ClientID, int Level)
+{
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		IServer::CAccountData *pAccountData = &Server()->GetClientInfo(ClientID)->m_AccountData;
+		if (Level > pAccountData->m_Level)
+		{
+			CCharacter *pChr = GetPlayerChar(ClientID);
+			if(pChr)
+				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + 2 * Server()->TickSpeed());
+		}
+
+		pAccountData->m_Experience = 0;
+		pAccountData->m_Level = Level;
+		m_AccountsHandler.Save(ClientID);
+	}
+	else
+		SendChatTarget(ClientID, "Login/Register an account to receive the levelup");
 }
 
 // Server hooks
@@ -804,43 +839,43 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
 
-			CCharacter* pChr = pPlayer->GetCharacter();
-			if (pChr)
+			int Emote = -1;
+			switch (pMsg->m_Emoticon)
 			{
-				switch (pMsg->m_Emoticon)
-				{
-				case EMOTICON_EXCLAMATION:
-				case EMOTICON_GHOST:
-				case EMOTICON_QUESTION:
-				case EMOTICON_WTF:
-					pChr->SetEmoteType(EMOTE_SURPRISE);
-					break;
-				case EMOTICON_DOTDOT:
-				case EMOTICON_DROP:
-				case EMOTICON_ZZZ:
-					pChr->SetEmoteType(EMOTE_BLINK);
-					break;
-				case EMOTICON_EYES:
-				case EMOTICON_HEARTS:
-				case EMOTICON_MUSIC:
-					pChr->SetEmoteType(EMOTE_HAPPY);
-					break;
-				case EMOTICON_OOP:
-				case EMOTICON_SORRY:
-				case EMOTICON_SUSHI:
-					pChr->SetEmoteType(EMOTE_PAIN);
-					break;
-				case EMOTICON_DEVILTEE:
-				case EMOTICON_SPLATTEE:
-				case EMOTICON_ZOMG:
-					pChr->SetEmoteType(EMOTE_ANGRY);
-					break;
-				default:
-					pChr->SetEmoteType(EMOTE_NORMAL);
-					break;
-				}
-				pChr->SetEmoteStop(Server()->Tick() + 2 * Server()->TickSpeed());
+			case EMOTICON_EXCLAMATION:
+			case EMOTICON_GHOST:
+			case EMOTICON_QUESTION:
+			case EMOTICON_WTF:
+				Emote = EMOTE_SURPRISE;
+				break;
+			case EMOTICON_DOTDOT:
+			case EMOTICON_DROP:
+			case EMOTICON_ZZZ:
+				Emote = EMOTE_BLINK;
+				break;
+			case EMOTICON_EYES:
+			case EMOTICON_HEARTS:
+			case EMOTICON_MUSIC:
+				Emote = EMOTE_HAPPY;
+				break;
+			case EMOTICON_OOP:
+			case EMOTICON_SORRY:
+			case EMOTICON_SUSHI:
+				Emote = EMOTE_PAIN;
+				break;
+			case EMOTICON_DEVILTEE:
+			case EMOTICON_SPLATTEE:
+			case EMOTICON_ZOMG:
+				Emote = EMOTE_ANGRY;
+				break;
+			default:
+				Emote = EMOTE_NORMAL;
+				break;
 			}
+
+			CCharacter* pChr = pPlayer->GetCharacter();
+			if (pChr && Emote != -1)
+				pChr->SetEmote(Emote, Server()->Tick() + 2 * Server()->TickSpeed());
 		}
 		else if (MsgID == NETMSGTYPE_CL_KILL)
 		{

@@ -1648,6 +1648,7 @@ void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 				str_fcat(aBuf, sizeof(aBuf), " level=%i", pAccountData->m_Level);
 				str_fcat(aBuf, sizeof(aBuf), " exp=%i", pAccountData->m_Experience);
 				str_fcat(aBuf, sizeof(aBuf), " weaponkits=%i", pAccountData->m_WeaponKits);
+				str_fcat(aBuf, sizeof(aBuf), " ranking=%i", pAccountData->m_Ranking);
 			}
 			else
 				str_append(aBuf, "Not Logged In", sizeof(aBuf));

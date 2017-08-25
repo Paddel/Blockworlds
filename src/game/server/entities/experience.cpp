@@ -31,6 +31,7 @@ void CExperience::Tick()
 	float Distance = distance(m_Pos, pChr->m_Pos);
 	if(Distance < 28.0f)
 	{
+		GameServer()->GiveExperience(m_TargetID, m_Amount);
 		GameWorld()->DestroyEntity(this);
 		GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH, CmaskOne(m_TargetID));
 		return;
@@ -58,6 +59,4 @@ void CExperience::Snap(int SnappingClient)
 	pProj->m_VelY = 0;
 	pProj->m_StartTick = Server()->Tick()-1;
 	pProj->m_Type = WEAPON_HAMMER;
-	if(m_Amount == 0)
-		pProj->m_Type = WEAPON_GRENADE;
 }

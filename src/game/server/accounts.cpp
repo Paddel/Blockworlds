@@ -28,7 +28,7 @@ void CAccountsHandler::CreateTables()
 	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s"
 		"(name VARCHAR(32) BINARY NOT NULL, password VARCHAR(32) BINARY NOT NULL,"
 		"address VARCHAR(47), vip INT(2) DEFAULT 0, pages INT DEFAULT 0, level INT DEFAULT 1,"
-		"experience INT DEFAULT 0, weaponkits INT DEFAULT 0, PRIMARY KEY(name)) CHARACTER SET utf8; ", TABLE_NAME);
+		"experience INT DEFAULT 0, weaponkits INT DEFAULT 0, ranking INT DEFAULT 1000, PRIMARY KEY(name)) CHARACTER SET utf8; ", TABLE_NAME);
 	m_Database.Query(aQuery, 0x0, 0x0);
 }
 
@@ -54,7 +54,7 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 
 	CDatabase::CResultRow *pRow = pQueryResult->m_lpResultRows[0];
 
-	if (pRow->m_lpResultFields.size() != 8)//wrong database structure
+	if (pRow->m_lpResultFields.size() != 9)//wrong database structure
 	{
 		pGameServer->SendChatTarget(pResultData->m_ClientID, "Internal Server Error. Please contact an admin. Code 0x00002");
 		delete pResultData;
@@ -94,6 +94,7 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 	pFillingData->m_Level = str_toint(pRow->m_lpResultFields[5]);
 	pFillingData->m_Experience = str_toint(pRow->m_lpResultFields[6]);
 	pFillingData->m_WeaponKits = str_toint(pRow->m_lpResultFields[7]);
+	pFillingData->m_Ranking = str_toint(pRow->m_lpResultFields[8]);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Successful logged in as '%s'", pResultData->m_aName);
@@ -204,7 +205,7 @@ void CAccountsHandler::Register(int ClientID, const char *pName, const char *pPa
 
 	if(PasswortLength <= 3)
 	{
-		GameServer()->SendChatTarget(ClientID, "Your name must be at least 4 characters long!");
+		GameServer()->SendChatTarget(ClientID, "Your password must be at least 4 characters long!");
 		return;
 	}
 
@@ -307,6 +308,9 @@ void CAccountsHandler::Save(int ClientID)
 	str_append(aQuery, ",weaponkits=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pAccountData->m_WeaponKits, sizeof(aQuery));
 
+	str_append(aQuery, ",ranking=", sizeof(aQuery));
+	CDatabase::AddQueryInt(aQuery, pAccountData->m_Ranking, sizeof(aQuery));
+
 	str_append(aQuery, " WHERE name=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pAccountData->m_aName, sizeof(aQuery));
 	m_Database.Query(aQuery, 0x0, 0x0);
@@ -350,6 +354,7 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 	m_Database.Query(aQuery, 0x0, 0x0);
 
 	GameServer()->SendChatTarget(ClientID, "Password successfully changed");
+	Save(ClientID);
 }
 
 bool CAccountsHandler::CanShutdown()

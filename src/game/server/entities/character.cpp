@@ -125,7 +125,7 @@ void CCharacter::Push(vec2 Force, int From)
 
 	m_Core.m_Vel += Force;
 	if(length(Force) > 10.0f && From != -1)
-		GameServer()->ScoreSystemAttack(From, GetPlayer()->GetCID());
+		GameServer()->BlockSystemAttack(From, GetPlayer()->GetCID());
 }
 
 void CCharacter::HandleNinja()
@@ -975,7 +975,7 @@ void CCharacter::Die(int Killer, int Weapon)
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	}
 
-	GameServer()->ScoreSystemFinish(m_pPlayer->GetCID(), m_Pos);
+	GameServer()->BlockSystemFinish(m_pPlayer->GetCID(), m_Pos);
 
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;

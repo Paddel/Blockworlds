@@ -37,6 +37,7 @@ public:
 		int m_Experience;
 		char m_aAddress[47];
 		int m_WeaponKits;
+		int m_Ranking;
 	};
 
 	struct CClientInfo

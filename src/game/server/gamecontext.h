@@ -108,11 +108,14 @@ public:
 
 	//handles
 	void HandleInactive();
-	void HandleScoreSystem();
+	void HandleBlockSystem();
 
 	//score system
-	void ScoreSystemFinish(int ClientID, vec2 Pos);
-	void ScoreSystemAttack(int Attacker, int Victim);
+	void BlockSystemFinish(int ClientID, vec2 Pos);
+	void BlockSystemAttack(int Attacker, int Victim);
+
+	void GiveExperience(int ClientID, int Amount);
+	void SetLevel(int ClientID, int Level);
 
 	// engine events
 	virtual void OnInit();
