@@ -153,6 +153,8 @@ CDatabase::CDatabase()
 	mem_zero(m_aUserName, sizeof(m_aUserName));
 	mem_zero(m_aPass, sizeof(m_aPass));
 	mem_zero(m_aSchema, sizeof(m_aSchema));
+
+	m_CreateTables = 0;
 }
 
 void CDatabase::Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema)
@@ -177,6 +179,12 @@ bool CDatabase::InitConnection(const char *pAddr, const char *pUserName, const c
 
 void CDatabase::Tick()
 {
+	if (m_CreateTables == 0)
+	{
+		if (m_Connected)
+			m_CreateTables = 1;
+	}
+
 	for (int i = 0; i < m_ThreadData.size(); i++)
 	{
 		CQueryData *pData = m_ThreadData[i];
@@ -197,7 +205,7 @@ void CDatabase::CheckReconnect()
 		return;
 
 	thread_init(QueryTestConnection, this);
-
+	m_CreateTables = 0;
 	m_ReconnectVal = s_ReconnectVal;
 }
 
@@ -238,6 +246,16 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 int CDatabase::NumRunningThreads()
 {
 	return m_ThreadData.size();
+}
+
+bool CDatabase::CreateTables()
+{
+	if (m_CreateTables == 1)
+	{
+		m_CreateTables = 2;
+		return true;
+	}
+	return false;
 }
 
 const char *CDatabase::GetDatabaseValue(char *pStr)

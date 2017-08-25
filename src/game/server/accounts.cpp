@@ -5,6 +5,8 @@
 
 #include "accounts.h"
 
+#define TABLE_NAME "accounts_temp"
+
 struct CResultData
 {
 	CGameContext *m_pGameServer;
@@ -17,6 +19,19 @@ CAccountsHandler::CAccountsHandler()
 {
 	m_pGameServer = 0x0;
 	m_pServer = 0x0;
+}
+
+void CAccountsHandler::CreateTables()
+{
+	char aQuery[QUERY_MAX_STR_LEN];
+	str_format(aQuery, sizeof(aQuery), "CREATE DATABASE IF NOT EXISTS %s", g_Config.m_SvDbAccSchema);
+	m_Database.Query(aQuery, 0x0, 0x0);
+
+	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s"
+		"(name VARCHAR(32) BINARY NOT NULL, password VARCHAR(32) BINARY NOT NULL,"
+		"address VARCHAR(47), vip INT(2) DEFAULT 0, pages INT DEFAULT 0, level INT DEFAULT 1,"
+		"experience INT DEFAULT 0, weaponkits INT DEFAULT 0, PRIMARY KEY(name)) CHARACTER SET utf8; ", TABLE_NAME);
+	m_Database.Query(aQuery, 0x0, 0x0);
 }
 
 void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData)
@@ -41,7 +56,7 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 
 	CDatabase::CResultRow *pRow = pQueryResult->m_lpResultRows[0];
 
-	if (pRow->m_lpResultFields.size() != 9)//wrong database structure
+	if (pRow->m_lpResultFields.size() != 8)//wrong database structure
 	{
 		pGameServer->SendChatTarget(pResultData->m_ClientID, "Internal Server Error. Please contact an admin. Code 0x00002");
 		delete pResultData;
@@ -76,10 +91,10 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 
 	str_copy(pFillingData->m_aName, pRow->m_lpResultFields[0], sizeof(pFillingData->m_aName));
 	str_copy(pFillingData->m_aPassword, pRow->m_lpResultFields[1], sizeof(pFillingData->m_aPassword));
-	pFillingData->m_Vip = str_toint(pRow->m_lpResultFields[2]);
-	pFillingData->m_Pages = str_toint(pRow->m_lpResultFields[3]);
-	pFillingData->m_Level = str_toint(pRow->m_lpResultFields[4]);
-	pFillingData->m_Experience = str_toint(pRow->m_lpResultFields[5]);
+	pFillingData->m_Vip = str_toint(pRow->m_lpResultFields[3]);
+	pFillingData->m_Pages = str_toint(pRow->m_lpResultFields[4]);
+	pFillingData->m_Level = str_toint(pRow->m_lpResultFields[5]);
+	pFillingData->m_Experience = str_toint(pRow->m_lpResultFields[6]);
 	pFillingData->m_WeaponKits = str_toint(pRow->m_lpResultFields[7]);
 
 	char aBuf[128];
@@ -124,6 +139,9 @@ void CAccountsHandler::Init(CGameContext *pGameServer)
 void CAccountsHandler::Tick()
 {
 	m_Database.Tick();
+
+	if (m_Database.CreateTables() == true)
+		CreateTables();
 }
 
 void CAccountsHandler::Login(int ClientID, const char *pName, const char *pPassword)
@@ -164,7 +182,7 @@ void CAccountsHandler::Login(int ClientID, const char *pName, const char *pPassw
 	str_copy(pResultData->m_aName, pName, sizeof(pResultData->m_aName));
 
 	char aQuery[QUERY_MAX_STR_LEN];
-	str_format(aQuery, sizeof(aQuery), "SELECT * FROM accounts WHERE username=");
+	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s WHERE name=", TABLE_NAME);
 	CDatabase::AddQueryStr(aQuery, pName, sizeof(aQuery));
 	m_Database.Query(aQuery, ResultLogin, pResultData);
 }
@@ -225,7 +243,7 @@ void CAccountsHandler::Register(int ClientID, const char *pName, const char *pPa
 	str_copy(pResultData->m_aName, pName, sizeof(pResultData->m_aName));
 
 	char aQuery[QUERY_MAX_STR_LEN];
-	str_format(aQuery, sizeof(aQuery), "INSERT INTO accounts (username, password, ip) VALUES(");
+	str_format(aQuery, sizeof(aQuery), "INSERT INTO %s (name, password, address) VALUES(", TABLE_NAME);
 	CDatabase::AddQueryStr(aQuery, pName, sizeof(aQuery));
 	str_append(aQuery, ",", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pPassword, sizeof(aQuery));
@@ -271,7 +289,7 @@ void CAccountsHandler::Save(int ClientID)
 	IServer::CAccountData *pAccountData = &Server()->GetClientInfo(ClientID)->m_AccountData;
 
 	char aQuery[QUERY_MAX_STR_LEN];
-	str_format(aQuery, sizeof(aQuery), "UPDATE accounts SET ");
+	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET ", TABLE_NAME);
 
 	str_append(aQuery, "vip=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pAccountData->m_Vip, sizeof(aQuery));
@@ -282,20 +300,18 @@ void CAccountsHandler::Save(int ClientID)
 	str_append(aQuery, ",level=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pAccountData->m_Level, sizeof(aQuery));
 
-	str_append(aQuery, ",exp=", sizeof(aQuery));
+	str_append(aQuery, ",experience=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pAccountData->m_Experience, sizeof(aQuery));
 
-	str_append(aQuery, ",ip=", sizeof(aQuery));
+	str_append(aQuery, ",address=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, m_aAddressStr, sizeof(aQuery));
 
 	str_append(aQuery, ",weaponkits=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pAccountData->m_WeaponKits, sizeof(aQuery));
 
-	str_append(aQuery, " WHERE username=", sizeof(aQuery));
+	str_append(aQuery, " WHERE name=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pAccountData->m_aName, sizeof(aQuery));
 	m_Database.Query(aQuery, 0x0, 0x0);
-
-	dbg_msg(0, "saved");
 }
 
 void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, const char *pNewPassword)
@@ -312,19 +328,26 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 		return;
 	}
 
+	if (str_comp(pOldPassword, pNewPassword) == 0)
+	{
+		GameServer()->SendChatTarget(ClientID, "Old and new password are identical.");
+		return;
+	}
+
 	if (str_comp(pOldPassword, Server()->GetClientInfo(ClientID)->m_AccountData.m_aPassword) != 0)
 	{
 		GameServer()->SendChatTarget(ClientID, "Old password is not right!");
 		return;
 	}
 
+
 	char aQuery[QUERY_MAX_STR_LEN];
-	str_format(aQuery, sizeof(aQuery), "UPDATE accounts SET ");
+	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET ", TABLE_NAME);
 
 	str_append(aQuery, "password=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pNewPassword, sizeof(aQuery));
 
-	str_append(aQuery, " WHERE username=", sizeof(aQuery));
+	str_append(aQuery, " WHERE name=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, Server()->GetClientInfo(ClientID)->m_AccountData.m_aName, sizeof(aQuery));
 	m_Database.Query(aQuery, 0x0, 0x0);
 

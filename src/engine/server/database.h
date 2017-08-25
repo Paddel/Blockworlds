@@ -35,6 +35,7 @@ class CDatabase
 		char m_aAddr[48]; char m_aUserName[16]; char m_aPass[16]; char m_aSchema[16];
 		bool m_Connected;
 		int m_ReconnectVal;
+		int m_CreateTables;
 		array <CQueryData *>m_ThreadData;
 		
 		static void QueryTestConnection(void *pData);
@@ -54,12 +55,14 @@ class CDatabase
 		void Query(const char *command, ResultFunction fResultCallback, void *pUserData);
 
 		int NumRunningThreads();
+
+		bool CreateTables();
 		
+		static const char *GetDatabaseValue(char *pStr);
+
 		static void PreventInjectionAppend(char *pDst, const char *pStr, int DstSize);
 		static void AddQueryStr(char *pDst, const char *pStr, int DstSize);
 		static void AddQueryInt(char *pDst, int Val, int DstSize);
-		
-		static const char *GetDatabaseValue(char *pStr);
 		
 		static void Reconnect();
 		static void DeleteThreadData(CQueryData *pData);

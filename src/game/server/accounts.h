@@ -11,6 +11,9 @@ private:
 	CDatabase m_Database;
 	CGameContext *m_pGameServer;
 	IServer *m_pServer;
+	bool m_Inited;
+
+	void CreateTables();
 
 	static void ResultLogin(void *pQueryData, bool Error, void *pUserData);
 	static void ResultRegister(void *pQueryData, bool Error, void *pUserData);
