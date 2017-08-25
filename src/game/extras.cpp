@@ -9,6 +9,8 @@ const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 {},									//EXTRAS_UNFREEZE
 { "ID", "Direction", "Default"},	//EXTRAS_DOOR
 { "ID", "Delay", "Activate"},		//EXTRAS_DOOR_HANDLE
+{},									//EXTRAS_ZONE_BLOCK
+{},									//EXTRAS_ZONE_PROTECTION
 };
 
 int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
@@ -19,6 +21,8 @@ int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 {},				//EXTRAS_UNFREEZE
 { 4, 2, 3},		//EXTRAS_DOOR
 { 4, 3, 3},		//EXTRAS_DOOR_HANDLE
+{},				//EXTRAS_ZONE_BLOCK
+{},				//EXTRAS_ZONE_PROTECTION
 };
 
 //TODO add angles
@@ -30,4 +34,6 @@ int gs_ExtrasColumntypes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {}, // 1 = integer,
 {},				//EXTRAS_UNFREEZE
 { 1, 0, 1},		//EXTRAS_DOOR
 { 1, 1, 1},		//EXTRAS_DOOR_HANDLE
+{},				//EXTRAS_ZONE_BLOCK
+{},				//EXTRAS_ZONE_PROTECTION
 };

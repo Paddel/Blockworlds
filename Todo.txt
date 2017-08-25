@@ -1,5 +1,6 @@
 scoresystem (block area)
 clan
+1on1 system
 vpncheck fix
 
 rcon stuff (global)

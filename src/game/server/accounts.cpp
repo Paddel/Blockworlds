@@ -5,7 +5,7 @@
 
 #include "accounts.h"
 
-#define TABLE_NAME "accounts_temp"
+#define TABLE_NAME "accounts"
 
 struct CResultData
 {
@@ -24,8 +24,6 @@ CAccountsHandler::CAccountsHandler()
 void CAccountsHandler::CreateTables()
 {
 	char aQuery[QUERY_MAX_STR_LEN];
-	str_format(aQuery, sizeof(aQuery), "CREATE DATABASE IF NOT EXISTS %s", g_Config.m_SvDbAccSchema);
-	m_Database.Query(aQuery, 0x0, 0x0);
 
 	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s"
 		"(name VARCHAR(32) BINARY NOT NULL, password VARCHAR(32) BINARY NOT NULL,"

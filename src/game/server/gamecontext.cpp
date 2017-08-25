@@ -2,6 +2,7 @@
 
 #include <new>
 #include <base/math.h>
+#include <engine/server/map.h>
 #include <engine/shared/config.h>
 #include <engine/mapengine.h>
 #include <engine/console.h>
@@ -307,9 +308,20 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID)
 
 void CGameContext::SendTuningParams(int ClientID)
 {
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+			SendTuningParams(i);
+		return;
+	}
+
+	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+	if (pGameMap == 0x0)//TODO handle this somehow else
+		return;
+
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-	int *pParams = (int *)&m_Tuning;
-	for(unsigned i = 0; i < sizeof(m_Tuning)/sizeof(int); i++)
+	int *pParams = (int *)&pGameMap->World()->m_Core.m_Tuning;
+	for(unsigned i = 0; i < sizeof(pGameMap->World()->m_Core.m_Tuning)/sizeof(int); i++)
 		Msg.AddInt(pParams[i]);
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
@@ -360,18 +372,18 @@ void CGameContext::ScoreSystemFinish(int ClientID, vec2 Pos)
 	if (pPlayer->m_AttackedBy != -1 && pPlayer->m_AttackedByTick + Server()->TickSpeed() * 6.5f > Server()->Tick() &&// if getting attacked more than 5.5 seconds ago does not count
 		pChr->IsFreezed())
 	{
-		CCharacter *pChr = GetPlayerChar(pPlayer->m_AttackedBy);
-		if (pChr == 0x0 || pChr->IsFreezed())//do not give blocked exp
+		CCharacter *pChrAttacker = GetPlayerChar(pPlayer->m_AttackedBy);
+		if (pChrAttacker == 0x0 || pChrAttacker->IsFreezed())//do not give blocked exp
 			return;
 
 		int Amount = 0;
-		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick())
+		if (/*pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick() &&*/ pChr->InBlockZone())
 		{
 			pPlayer->m_UnblockedTick = Server()->Tick();
 			Amount = 3;
 		}
 
-		new CExperience(pChr->GameWorld(), Pos, Amount, pPlayer->m_AttackedBy);
+		new CExperience(pChrAttacker->GameWorld(), Pos, Amount, pPlayer->m_AttackedBy);
 		pPlayer->m_AttackedBy = -1;
 	}
 }
@@ -429,7 +441,6 @@ void CGameContext::OnTick()
 {
 	m_AccountsHandler.Tick();
 
-	// copy tuning
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
 		Server()->GetGameMap(i)->Tick();
 
@@ -980,6 +991,39 @@ void CGameContext::ConTuneDump(IConsole::IResult *pResult, void *pUserData)
 	}
 }
 
+void CGameContext::ConBlockmapSet(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	char aBuf[256];
+	const char *pMapName = pResult->GetString(0);
+	bool Value = (bool)pResult->GetInteger(1);
+	CGameMap *pGameMap = 0x0;
+	for (int i = 0; i < pSelf->Server()->GetNumMaps(); i++)
+	{
+		if (str_comp(pSelf->Server()->GetGameMap(i)->Map()->GetFileName(), pMapName) != 0)
+			continue;
+		pGameMap = pSelf->Server()->GetGameMap(i);
+		break;
+	}
+
+	if (pGameMap == 0x0)
+	{
+		str_format(aBuf, sizeof(aBuf), "Map '%s' not found!", pMapName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+		return;
+	}
+
+	if(pGameMap->IsBlockMap() == Value)
+	{
+		str_format(aBuf, sizeof(aBuf), "Nothing to change", pMapName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+		return;
+	}
+
+	pGameMap->SetBlockMap(Value);
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", "Value changed");
+}
+
 void CGameContext::ConBroadcast(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -1258,6 +1302,7 @@ void CGameContext::ConchainAccountsystemupdate(IConsole::IResult *pResult, void 
 					pThis->m_AccountsHandler.Logout(i);
 
 				pThis->SendChat(-1, CHAT_ALL, "Accountsystem is disabled now!");
+				g_Config.m_SvAccountForce = 0;
 			}
 			else
 				pThis->SendChat(-1, CHAT_ALL, "Accountsystem is enabled now!");
@@ -1269,9 +1314,16 @@ void CGameContext::ConchainAccountsystemupdate(IConsole::IResult *pResult, void 
 
 void CGameContext::ConchainAccountForceupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
+	CGameContext *pThis = static_cast<CGameContext *>(pUserData);
+
+	if (g_Config.m_SvAccountsystem == 0 && pResult->NumArguments() > 0)
+	{
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", "Accounsystem is disabled");
+		return;
+	}
+
 	if (pResult->NumArguments() == 1)
 	{
-		CGameContext *pThis = static_cast<CGameContext *>(pUserData);
 		if (pResult->GetInteger(0) >= 1)
 		{
 			for (int i = 0; i < MAX_CLIENTS; i++)
@@ -1293,6 +1345,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("tune", "si", CFGFLAG_SERVER, ConTuneParam, this, "Tune variable to value");
 	Console()->Register("tune_reset", "", CFGFLAG_SERVER, ConTuneReset, this, "Reset tuning");
 	Console()->Register("tune_dump", "", CFGFLAG_SERVER, ConTuneDump, this, "Dump tuning");
+	Console()->Register("blockmap_set", "si", CFGFLAG_SERVER, ConBlockmapSet, this, "Sets a map as a blocking map");
 
 	Console()->Register("broadcast", "r", CFGFLAG_SERVER, ConBroadcast, this, "Broadcast message");
 	Console()->Register("say", "r", CFGFLAG_SERVER, ConSay, this, "Say in chat");

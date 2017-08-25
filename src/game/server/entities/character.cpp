@@ -120,9 +120,11 @@ bool CCharacter::IsGrounded()
 
 void CCharacter::Push(vec2 Force, int From)
 {
+	if (GameMap()->IsBlockMap() == false)
+		return;
+
 	m_Core.m_Vel += Force;
-	dbg_msg(0, "%.2f", length(Force));
-	if(length(Force) >= 10.0f && From != -1)
+	if(length(Force) > 10.0f && From != -1)
 		GameServer()->ScoreSystemAttack(From, GetPlayer()->GetCID());
 }
 
@@ -618,6 +620,12 @@ void CCharacter::ResetInput()
 	m_LatestPrevInput = m_LatestInput = m_Input;
 }
 
+void CCharacter::ResetZones()
+{
+	m_ZoneProtection = false;
+	m_ZoneBlock = false;
+}
+
 bool CCharacter::HandleExtrasLayer(int Layer)
 {
 	CLayers *pLayers = GameMap()->Layers();
@@ -659,6 +667,9 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_UNFREEZE)
 		Unfreeze();
+
+	if (Tile == EXTRAS_ZONE_BLOCK)
+		m_ZoneBlock = true;
 
 	return false;
 }
@@ -822,6 +833,7 @@ void CCharacter::HandleRace()
 
 void CCharacter::Tick()
 {
+	ResetZones();
 	HandleTiles();
 	HandleExtras();
 	HandleRace();

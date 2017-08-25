@@ -21,6 +21,7 @@ CGameMap::CGameMap(CMap *pMap)
 		m_apPlayers[i] = 0x0;
 
 	m_VoteCloseTime = 0;
+	m_BlockMap = false;
 }
 
 CGameMap::~CGameMap()
@@ -310,8 +311,19 @@ void CGameMap::InitExtras()
 					pTeleTo->m_ID = str_toint(ExtrasData.m_aData);
 					m_lTeleTo.add(pTeleTo);
 				}
+				else if (Tile == EXTRAS_ZONE_BLOCK)
+					m_BlockMap = true;
 			}
 		}
+	}
+}
+
+void CGameMap::DoMapTunings()
+{
+	if (m_BlockMap == false)
+	{
+		m_World.m_Core.m_Tuning.m_PlayerCollision = 0;
+		m_World.m_Core.m_Tuning.m_PlayerHooking = 0;
 	}
 }
 
@@ -697,6 +709,8 @@ void CGameMap::VoteEnforce(const char *pVote)
 void CGameMap::Tick()
 {
 	mem_copy(&m_World.m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_World.m_Core.m_Tuning));
+	DoMapTunings();
+
 	m_World.Tick();
 	UpdateVote();
 }

@@ -69,6 +69,7 @@ private:
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 	int m_RoundStartTick;
+	bool m_BlockMap;
 
 	//Voting
 	int m_VoteCreator;
@@ -94,6 +95,8 @@ private:
 	void InitEntities();
 	void InitDoorTile(CDoorTile *pTile);
 	void InitExtras();
+
+	void DoMapTunings();
 public:
 	CGameMap(CMap *pMap);
 	~CGameMap();
@@ -131,6 +134,8 @@ public:
 	void SetVotePos(int Pos) { m_VotePos = Pos; };
 	int GetVotePos() const { return m_VotePos; };
 	void UpdateVotes() { m_VoteUpdate = true; };
+	bool IsBlockMap() const { return m_BlockMap; }
+	void SetBlockMap(bool Value) { m_BlockMap = Value; }
 
 	void Tick();
 	void SendChat(int ChatterClientID, int Team, const char *pText);

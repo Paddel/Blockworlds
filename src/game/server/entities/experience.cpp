@@ -32,13 +32,14 @@ void CExperience::Tick()
 	if(Distance < 28.0f)
 	{
 		GameWorld()->DestroyEntity(this);
+		GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH, CmaskOne(m_TargetID));
 		return;
 	}
 
 	vec2 Direction = normalize(pChr->m_Pos - m_Pos);
 
-	//y = x * 0.035 + 16
-	float Speed = Distance * 0.015f + 9.0f;
+	//y = x * 0.035 + 11
+	float Speed = Distance * 0.035f + 11.0f;
 	m_Pos += Direction * Speed;
 }
 
@@ -55,8 +56,8 @@ void CExperience::Snap(int SnappingClient)
 	pProj->m_Y = (int)m_Pos.y;
 	pProj->m_VelX = 0;
 	pProj->m_VelY = 0;
-	pProj->m_StartTick = Server()->Tick();
+	pProj->m_StartTick = Server()->Tick()-1;
 	pProj->m_Type = WEAPON_HAMMER;
-	if (m_Amount == 0)
+	if(m_Amount == 0)
 		pProj->m_Type = WEAPON_GRENADE;
 }

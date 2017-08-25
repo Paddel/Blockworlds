@@ -6,8 +6,8 @@
 #include "editor.h"
 
 
-int CEditor::ms_ExtrasPopupSize[NUM_EXTRAS][2] = { {0,0}, { 145, 50},{ 145, 50 },{ 145, 100 }, {0, 0},{ 0, 0 }, {145, 100}, {145, 100} };
-static const char *gs_ExtrasHeader[NUM_EXTRAS] = { 0x0, "Teleport From", "Teleport To", "Speedup", "Freeze", "Unfreeze", "Door", "Door Handle" };
+int CEditor::ms_ExtrasPopupSize[NUM_EXTRAS][2] = { {0,0}, { 145, 50},{ 145, 50 },{ 145, 100 }, {45, 25},{ 60, 25 }, {145, 100}, {145, 100}, { 65, 25 },{ 85, 25 } };
+static const char *gs_ExtrasHeader[NUM_EXTRAS] = { 0x0, "Teleport From", "Teleport To", "Speedup", "Freeze", "Unfreeze", "Door", "Door Handle", "Blockzone", "Protectionzone" };
 
 CLayerExtras::CLayerExtras(int w, int h)
 : CLayerTiles(w, h)
@@ -73,10 +73,10 @@ void CLayerExtras::RenderColumn(CEditor *pEditor, CUIRect View, int Index)
 
 int CLayerExtras::RenderEditExtra(CEditor *pEditor, CUIRect View, int Index)
 {
-	if (gs_ExtrasSizes[m_pTiles[Index].m_Index][0] == 0)// no arguments
-		return 1;
+	//if (gs_ExtrasSizes[m_pTiles[Index].m_Index][0] == 0)// no arguments
+		//return 1;
 
-	EXTRAS_TELEPORT_FROM: RenderColumn(pEditor, View, Index);
+	RenderColumn(pEditor, View, Index);
 	return 0;
 }
 

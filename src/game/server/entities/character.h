@@ -48,6 +48,7 @@ public:
 	void ResetInput();
 	void FireWeapon();
 
+	void ResetZones();
 	bool HandleExtrasLayer(int Layer);
 	void HandleExtras();
 	void HandleStops();
@@ -81,6 +82,7 @@ public:
 	CSrvCharacterCore *Core() { return &m_Core; }
 	int64 FreezeTick() const { return m_FreezeTick; }
 	int FreezeTime() const { return m_FreezeTime; }
+	bool InBlockZone() const { return m_ZoneBlock; }
 
 private:
 	// player controlling this character
@@ -92,6 +94,10 @@ private:
 	bool m_DeepFreeze;
 	int64 m_RaceStart;
 	int64 m_FreezeCryTick;
+
+	//zones
+	bool m_ZoneProtection;
+	bool m_ZoneBlock;
 
 
 	vec2 m_LastPos;

@@ -1735,9 +1735,10 @@ void CServer::ConListMaps(IConsole::IResult *pResult, void *pUser)
 	for (int i = 0; i < pThis->m_lpMaps.size(); i++)
 	{
 		CMap *pMap = pThis->m_lpMaps[i];
-		str_format(aBuf, sizeof(aBuf), "%s", pMap->GetFileName());
+		str_format(aBuf, sizeof(aBuf), "name='%s'", pMap->GetFileName());
+		str_fcat(aBuf, sizeof(aBuf), " port='%i'", pMap->GetPort());
 		if (pMap == pThis->m_pDefaultMap)
-			str_fcat(aBuf, sizeof(aBuf), " (Default)");
+			str_fcat(aBuf, sizeof(aBuf), " [Default]");
 
 		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	}
