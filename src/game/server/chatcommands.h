@@ -8,7 +8,7 @@ class IServer;
 
 class CChatCommandsHandler
 {
-	typedef void(*FChatCommandCallback)(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
+	typedef void(*FChatCommandCallback)(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	
 	enum
 	{
@@ -33,16 +33,17 @@ private:
 	IConsole *m_pConsole;
 	array<CChatCommand *> m_lpChatCommands;
 
-	static void ComHelp(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComCmdlist(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComPause(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComInfo(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComWhisper(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComAccount(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
-	static void ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID);
+	static void ComHelp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComCmdlist(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComPause(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComInfo(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComWhisper(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComAccount(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComEmote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 
 	void Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp);
 public:

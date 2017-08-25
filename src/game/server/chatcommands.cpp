@@ -5,6 +5,9 @@
 
 #include "chatcommands.h"
 
+static char SignArrowLeft[] = { '\xE2','\x86', '\x90', 0 };
+static char SignArrowRight[] = { '\xE2','\x86', '\x92', 0 };
+
 CChatCommandsHandler::CChatCommandsHandler()
 {
 	m_pGameServer = 0x0;
@@ -16,14 +19,14 @@ CChatCommandsHandler::~CChatCommandsHandler()
 	m_lpChatCommands.delete_all();
 }
 
-void CChatCommandsHandler::ComHelp(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComHelp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	CChatCommandsHandler *pThis = pGameContext->ChatCommandsHandler();
+	CChatCommandsHandler *pThis = pGameServer->ChatCommandsHandler();
 	char aBuf[256];
 
 	if (pResult->NumArguments() == 0)
 	{
-		pGameContext->SendChatTarget(ClientID, "Use this command to get help to a chatcommand. Possible input: /help cmdlist");
+		pGameServer->SendChatTarget(ClientID, "Use this command to get help to a chatcommand. Possible input: /help cmdlist");
 		return;
 	}
 
@@ -47,16 +50,16 @@ void CChatCommandsHandler::ComHelp(CConsole::CResult *pResult, CGameContext *pGa
 	if (pCommand == 0x0)
 	{
 		str_format(aBuf, sizeof(aBuf), "'%s' is not a chatcommand.", pCommandName);
-		pGameContext->SendChatTarget(ClientID, aBuf);
+		pGameServer->SendChatTarget(ClientID, aBuf);
 		return;
 	}
 
-	pGameContext->SendChatTarget(ClientID, pCommand->m_pHelp);
+	pGameServer->SendChatTarget(ClientID, pCommand->m_pHelp);
 }
 
-void CChatCommandsHandler::ComCmdlist(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComCmdlist(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	CChatCommandsHandler *pThis = pGameContext->ChatCommandsHandler();
+	CChatCommandsHandler *pThis = pGameServer->ChatCommandsHandler();
 	char aBuf[512];
 	str_copy(aBuf, "Commands:", sizeof(aBuf));
 
@@ -72,31 +75,31 @@ void CChatCommandsHandler::ComCmdlist(CConsole::CResult *pResult, CGameContext *
 	}
 	aBuf[str_length(aBuf) - 1] = '\0';//remove the last ,
 
-	pGameContext->SendChatTarget(ClientID, aBuf);
+	pGameServer->SendChatTarget(ClientID, aBuf);
 }
 
-void CChatCommandsHandler::ComPause(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComPause(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	CPlayer *pPlayer = pGameContext->m_apPlayers[ClientID];
+	CPlayer *pPlayer = pGameServer->m_apPlayers[ClientID];
 	if (pPlayer == 0x0)
 		return;
 
 	pPlayer->TogglePause();
 }
 
-void CChatCommandsHandler::ComInfo(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComInfo(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	char aBuf[512];
-	pGameContext->SendChatTarget(ClientID, "Blockworlds made by 13x37");
+	pGameServer->SendChatTarget(ClientID, "Blockworlds made by 13x37");
 	str_format(aBuf, sizeof(aBuf), "Version %s", GAMEMODE_VERSION);
-	pGameContext->SendChatTarget(ClientID, aBuf);
+	pGameServer->SendChatTarget(ClientID, aBuf);
 	str_format(aBuf, sizeof(aBuf), "Based on Teeworlds %s", GAME_VERSION);
-	pGameContext->SendChatTarget(ClientID, aBuf);
-	pGameContext->SendChatTarget(ClientID, "Hosted by Google");
-	pGameContext->SendChatTarget(ClientID, "www.13x37.com");
+	pGameServer->SendChatTarget(ClientID, aBuf);
+	pGameServer->SendChatTarget(ClientID, "Hosted by Google");
+	pGameServer->SendChatTarget(ClientID, "www.13x37.com");
 }
 
-void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	const char *pMessage = pResult->GetString(0);
 	int Length = str_length(pMessage);
@@ -105,10 +108,10 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 	int TargetID = -1;
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if (pGameContext->Server()->ClientIngame(i) == false || i == ClientID)
+		if (pGameServer->Server()->ClientIngame(i) == false || i == ClientID)
 			continue;
 
-		const char *pReceiverName = pGameContext->Server()->ClientName(i);
+		const char *pReceiverName = pGameServer->Server()->ClientName(i);
 		int ReceiverLength = str_length(pReceiverName);
 		if (ReceiverLength > Length || pMessage[ReceiverLength] != ' ' ||
 			str_comp_nocase_num(pReceiverName, pMessage, ReceiverLength) != 0)
@@ -120,62 +123,94 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 
 	if (NumPersons == 0)
 	{
-		if (str_length(pGameContext->Server()->ClientName(ClientID)) < Length
-			&& str_comp_nocase_num(pGameContext->Server()->ClientName(ClientID), pMessage, str_length(pGameContext->Server()->ClientName(ClientID))) == 0)
-			pGameContext->SendChatTarget(ClientID, "You cannot whisper to yourself");
+		if (str_length(pGameServer->Server()->ClientName(ClientID)) < Length
+			&& str_comp_nocase_num(pGameServer->Server()->ClientName(ClientID), pMessage, str_length(pGameServer->Server()->ClientName(ClientID))) == 0)
+			pGameServer->SendChatTarget(ClientID, "You cannot whisper to yourself");
 		else
-			pGameContext->SendChatTarget(ClientID, "Invalid receiver name");
+			pGameServer->SendChatTarget(ClientID, "Invalid receiver name");
 	}
 	else if (NumPersons > 1)
 	{
 		char aBuf[32];
 		str_format(aBuf, sizeof(aBuf), "%i possible receivers found");
-		pGameContext->SendChatTarget(ClientID, aBuf);
+		pGameServer->SendChatTarget(ClientID, aBuf);
 	}
 	else
 	{
 		char aBuf[512];
-		pMessage += str_length(pGameContext->Server()->ClientName(TargetID)) + 1;
-		str_format(aBuf, sizeof(aBuf), "[-> %s] %s", pGameContext->Server()->ClientName(TargetID), pMessage);
-		pGameContext->SendChatTarget(ClientID, aBuf);
-		str_format(aBuf, sizeof(aBuf), "[<- %s] %s", pGameContext->Server()->ClientName(ClientID), pMessage);
-		pGameContext->SendChatTarget(TargetID, aBuf);
+		pMessage += str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
+		str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowLeft, pGameServer->Server()->ClientName(ClientID), pMessage);
+		pGameServer->SendChatTarget(TargetID, aBuf);
 	}
 }
 
-void CChatCommandsHandler::ComAccount(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComAccount(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	pGameContext->SendChatTarget(ClientID, "Account System V. 3.17");
-	pGameContext->SendChatTarget(ClientID, "Use \"/login name password\" to login and \"/register name password\" to create an account.");
-	pGameContext->SendChatTarget(ClientID, "If you are logged in you can change your password with \"/password oldpass newpass\".");
-	pGameContext->SendChatTarget(ClientID, "You can log out anytime by writing \"/logout\".");
-	pGameContext->SendChatTarget(ClientID, "Your progress will be saved automaticly!");
+	pGameServer->SendChatTarget(ClientID, "Account System V. 3.17");
+	pGameServer->SendChatTarget(ClientID, "Use \"/login name password\" to login and \"/register name password\" to create an account.");
+	pGameServer->SendChatTarget(ClientID, "If you are logged in you can change your password with \"/password oldpass newpass\".");
+	pGameServer->SendChatTarget(ClientID, "You can log out anytime by writing \"/logout\".");
+	pGameServer->SendChatTarget(ClientID, "Your progress will be saved automaticly!");
 }
 
-void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComEmote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	pGameContext->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
-}
+	const char *pEmoteName = pResult->GetString(0);
+	int Time = 2;
+	if (pResult->NumArguments() == 2)
+		Time = clamp(pResult->GetInteger(1), 0, 1000);
 
-void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
-{
-	if (pGameContext->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	int Emote = -1;
+	if (str_comp_nocase(pEmoteName, "normal") == 0)
+		Emote = EMOTE_NORMAL;
+	else if (str_comp_nocase(pEmoteName, "pain") == 0)
+		Emote = EMOTE_PAIN;
+	else if (str_comp_nocase(pEmoteName, "happy") == 0)
+		Emote = EMOTE_HAPPY;
+	else if (str_comp_nocase(pEmoteName, "surprise") == 0)
+		Emote = EMOTE_SURPRISE;
+	else if (str_comp_nocase(pEmoteName, "angry") == 0)
+		Emote = EMOTE_ANGRY;
+	else if (str_comp_nocase(pEmoteName, "blink") == 0)
+		Emote = EMOTE_BLINK;
+
+	if (Emote == -1)
 	{
-		pGameContext->SendChatTarget(ClientID, "You are not logged in.");
+		pGameServer->SendChatTarget(ClientID, "Invalid emote. Possible emotes are normal/pain/happy/surprise/angry/blink");
 		return;
 	}
 
-	pGameContext->AccountsHandler()->Logout(ClientID);
+	CCharacter *pChr = pGameServer->GetPlayerChar(ClientID);
+	if (pChr)
+		pChr->SetEmote(Emote, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * Time);
 }
 
-void CChatCommandsHandler::ComRegister(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	pGameContext->AccountsHandler()->Register(ClientID, pResult->GetString(0), pResult->GetString(1));
+	pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
 }
 
-void CChatCommandsHandler::ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameContext, int ClientID)
+void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	pGameContext->AccountsHandler()->ChangePassword(ClientID, pResult->GetString(0), pResult->GetString(1));
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in.");
+		return;
+	}
+
+	pGameServer->AccountsHandler()->Logout(ClientID);
+}
+
+void CChatCommandsHandler::ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	pGameServer->AccountsHandler()->Register(ClientID, pResult->GetString(0), pResult->GetString(1));
+}
+
+void CChatCommandsHandler::ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	pGameServer->AccountsHandler()->ChangePassword(ClientID, pResult->GetString(0), pResult->GetString(1));
 }
 
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
@@ -200,6 +235,7 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("pause", "", CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
 	Register("account", "", 0, ComAccount, "Sends you all information about the account system");
+	Register("emote", "s?si", 0, ComEmote, "Lets your tee show emotions (normal/pain/happy/surprise/angry/blink)");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
