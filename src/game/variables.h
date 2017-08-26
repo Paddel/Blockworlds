@@ -66,6 +66,8 @@ MACRO_CONFIG_INT(SvInactiveKickTime, sv_inactivekick_time, 0, 0, 1000, CFGFLAG_S
 MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 1, 0, 2, CFGFLAG_SERVER, "How to deal with inactive players (0=move to spectator, 1=kick)")
 
 MACRO_CONFIG_INT(SvScoreSystem, sv_score_system, 1, 0, 1, CFGFLAG_SERVER, "Enables the scoresystem for blocking")
+MACRO_CONFIG_INT(SvClanMaxMebers, sv_clan_max_members, 10, 0, 128, CFGFLAG_SERVER, "Maximum number of players in a clan")
+
 
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")

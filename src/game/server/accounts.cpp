@@ -11,7 +11,7 @@
 #define TABLE_CLANS "clans"
 
 #define COLUMN_NUM_ACCOUNT 10
-#define COLUMN_NUM_CLAN 4
+#define COLUMN_NUM_CLAN 5
 
 struct CResultData
 {
@@ -35,7 +35,7 @@ void CAccountsHandler::CreateTables()
 
 	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s"
 		"(name VARCHAR(32) BINARY NOT NULL, leader VARCHAR(32) BINARY NOT NULL"
-		", level INT DEFAULT 1, experience INT DEFAULT 0"
+		", level INT DEFAULT 1, experience INT DEFAULT 0, members INT DEFAULT 1"
 		", PRIMARY KEY(name)"
 		") CHARACTER SET utf8 COLLATE utf8_bin;", TABLE_CLANS);
 	m_Database.QueryOrderly(aQuery, 0x0, 0x0);
@@ -89,6 +89,8 @@ void CAccountsHandler::ResultLoadClans(void *pQueryData, bool Error, void *pUser
 		else
 			pThis->m_lpClans.add(pClan);
 	}
+
+	dbg_msg("Accounts", "All clans loaded");
 }
 
 void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData)
@@ -162,7 +164,7 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 
 	const char *pClan = pRow->m_lpResultFields[9];
 	//link clan
-	if (pClan != '\0')
+	if (pClan[0] != '\0')
 	{
 		int Index = -1;
 		for (int i = 0; i < pThis->m_lpClans.size(); i++)
@@ -300,6 +302,7 @@ IServer::CClanData *CAccountsHandler::CreateClan(CDatabase::CResultRow *pRow)
 	str_copy(pClanData->m_aLeader, pRow->m_lpResultFields[1], sizeof(pClanData->m_aLeader));
 	pClanData->m_Level = str_toint(pRow->m_lpResultFields[2]);
 	pClanData->m_Experience = str_toint(pRow->m_lpResultFields[3]);
+	pClanData->m_Members = str_toint(pRow->m_lpResultFields[4]);
 	return pClanData;
 }
 
@@ -520,7 +523,6 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 		return;
 	}
 
-
 	char aQuery[QUERY_MAX_STR_LEN];
 	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET ", TABLE_ACCOUNTS);
 
@@ -537,6 +539,8 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 
 void CAccountsHandler::ClanCreate(int ClientID, const char *pName)
 {
+	int NameLength = str_length(pName);
+
 	if (g_Config.m_SvAccountsystem == 0 || m_ClanSystemError)
 	{
 		GameServer()->SendChatTarget(ClientID, "Clansystem disabled on this server!");
@@ -558,7 +562,7 @@ void CAccountsHandler::ClanCreate(int ClientID, const char *pName)
 	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < 20)
 	{
 		GameServer()->SendChatTarget(ClientID, "You need to be at least level 20 to create a clan!");
-		return;
+		//return;
 	}
 
 	for (int i = 0; i < m_lpClans.size(); i++)
@@ -568,6 +572,18 @@ void CAccountsHandler::ClanCreate(int ClientID, const char *pName)
 			GameServer()->SendChatTarget(ClientID, "Clan already exists");
 			return;
 		}
+	}
+
+	if (NameLength < 2)
+	{
+		GameServer()->SendChatTarget(ClientID, "Clanname must be at leat 2 characters long!");
+		return;
+	}
+
+	if (NameLength * sizeof(char) >= sizeof(IServer::CClanData::m_aName))
+	{
+		GameServer()->SendChatTarget(ClientID, "Clanname too long!");
+		return;
 	}
 
 	CResultData *pResultData = new CResultData();
@@ -592,13 +608,16 @@ void CAccountsHandler::ClanSave(IServer::CClanData *pClanData)
 		return;
 
 	char aQuery[QUERY_MAX_STR_LEN];
-	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET ", TABLE_ACCOUNTS);
+	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET ", TABLE_CLANS);
 
 	str_append(aQuery, "level=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pClanData->m_Level, sizeof(aQuery));
 
 	str_append(aQuery, ",experience=", sizeof(aQuery));
 	CDatabase::AddQueryInt(aQuery, pClanData->m_Experience, sizeof(aQuery));
+
+	str_append(aQuery, ",members=", sizeof(aQuery));
+	CDatabase::AddQueryInt(aQuery, pClanData->m_Members, sizeof(aQuery));
 
 	str_append(aQuery, " WHERE name=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pClanData->m_aName, sizeof(aQuery));
@@ -612,6 +631,125 @@ void CAccountsHandler::ClanSaveAll()
 
 	for (int i = 0; i < m_lpClans.size(); i++)
 		ClanSave(m_lpClans[i]);
+}
+
+void CAccountsHandler::ClanInvite(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	CAccountsHandler *pThis = pGameServer->AccountsHandler();
+
+	char aBuf[64];
+	IServer::CClanData *pClan = *((IServer::CClanData **)pData);
+	int LeaderID = (int)*(pData + sizeof(void *));
+
+	if (OptionID == -1 || pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(LeaderID, "No response to your claninvitation");
+	}
+	else if (OptionID == 0)
+	{
+		char aQuery[QUERY_MAX_STR_LEN];
+		str_format(aQuery, sizeof(aQuery), "UPDATE %s SET clan=", TABLE_ACCOUNTS);
+		CDatabase::AddQueryStr(aQuery, pClan->m_aName, sizeof(aQuery));
+		str_append(aQuery, " WHERE name=", sizeof(aQuery));
+		CDatabase::AddQueryStr(aQuery, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName, sizeof(aQuery));
+		str_append(aQuery, ";", sizeof(aQuery));
+		pThis->m_Database.Query(aQuery, 0x0, 0x0);
+
+		pGameServer->Server()->GetClientInfo(ClientID)->m_pClan = pClan;
+
+		str_format(aBuf, sizeof(aBuf), "%s joined your clan as '%s'", pGameServer->Server()->ClientName(ClientID),
+			pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName);
+		pGameServer->SendChatTarget(LeaderID, aBuf);
+
+		str_format(aBuf, sizeof(aBuf), "You joined the clan '%s'. Write /clan for more information", pClan->m_aName);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+
+		pClan->m_Members++;
+		pThis->ClanSave(pClan);
+	}
+	else if (OptionID == 1)
+	{
+		str_format(aBuf, sizeof(aBuf), "%s declined your claninvitation", pGameServer->Server()->ClientName(ClientID));
+		pGameServer->SendChatTarget(LeaderID, aBuf);
+		pGameServer->SendChatTarget(ClientID, "Claninvitation declined!");
+	}
+}
+
+void CAccountsHandler::ClanClose(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	CAccountsHandler *pThis = pGameServer->AccountsHandler();
+	IServer::CClanData *pClan = *((IServer::CClanData **)pData);
+
+	if (OptionID == 0)
+	{
+		char aQuery[QUERY_MAX_STR_LEN];
+		str_format(aQuery, sizeof(aQuery), "DELETE FROM %s WHERE name=", TABLE_CLANS);
+		CDatabase::AddQueryStr(aQuery, pClan->m_aName, sizeof(aQuery));
+		str_append(aQuery, ";", sizeof(aQuery));
+		pThis->m_Database.Query(aQuery, 0x0, 0x0);
+
+		//informate all online members
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (pGameServer->Server()->ClientIngame(i) == false ||
+				pGameServer->Server()->GetClientInfo(i)->m_LoggedIn == false ||
+				pGameServer->Server()->GetClientInfo(i)->m_pClan != pClan)
+				continue;
+
+			pGameServer->Server()->GetClientInfo(i)->m_pClan = 0x0;
+			pGameServer->SendChatTarget(i, "Your clan has been closed!");
+		}
+
+		//update saved clans
+		for (int i = 0; i < pThis->m_lpClans.size(); i++)
+		{
+			if (pThis->m_lpClans[i] == pClan)
+			{
+				pThis->m_lpClans.remove_index(i);
+				delete pClan;
+				break;
+			}
+		}
+	}
+	else
+		pGameServer->SendChatTarget(ClientID, "Closing clan aborted");
+}
+
+void CAccountsHandler::ClanLeave(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	CAccountsHandler *pThis = pGameServer->AccountsHandler();
+	IServer::CClanData *pClan = *((IServer::CClanData **)pData);
+	char aBuf[64];
+
+	if (OptionID == 0 && pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn)
+	{
+		char aQuery[QUERY_MAX_STR_LEN];
+		str_format(aQuery, sizeof(aQuery), "UPDATE %s SET clan=NULL WHERE name=", TABLE_ACCOUNTS);
+		CDatabase::AddQueryStr(aQuery, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName, sizeof(aQuery));
+		str_append(aQuery, ";", sizeof(aQuery));
+		pThis->m_Database.Query(aQuery, 0x0, 0x0);
+
+		str_format(aBuf, sizeof(aBuf), "%s left the clan!", pGameServer->Server()->ClientName(ClientID));
+
+		//informate all online members
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (pGameServer->Server()->ClientIngame(i) == false ||
+				pGameServer->Server()->GetClientInfo(i)->m_LoggedIn == false ||
+				pGameServer->Server()->GetClientInfo(i)->m_pClan != pClan)
+				continue;
+
+			pGameServer->SendChatTarget(i, aBuf);
+		}
+
+		pGameServer->Server()->GetClientInfo(ClientID)->m_pClan = 0x0;
+
+		pClan->m_Members--;
+		pThis->ClanSave(pClan);
+
+	}
+	else
+		pGameServer->SendChatTarget(ClientID, "Leaving clan aborted");
 }
 
 bool CAccountsHandler::CanShutdown()

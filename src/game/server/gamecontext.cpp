@@ -442,6 +442,7 @@ void CGameContext::HandleBlockSystem()
 void CGameContext::OnTick()
 {
 	m_AccountsHandler.Tick();
+	m_InquiriesHandler.Tick();
 
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
 		Server()->GetGameMap(i)->Tick();
@@ -514,7 +515,6 @@ void CGameContext::SetClanLevel(int ClientID, int Level)
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false && Server()->GetClientInfo(ClientID)->m_pClan)
 	{
 		IServer::CClanData *pClanData = Server()->GetClientInfo(ClientID)->m_pClan;
-		CCharacter *pChr = GetPlayerChar(ClientID);
 		if (Level > pClanData->m_Level)
 		{
 			char aBuf[256];
@@ -1452,6 +1452,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	m_ChatCommandsHandler.Init(this);
 	m_AccountsHandler.Init(this);
+	m_InquiriesHandler.Init(this);
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));

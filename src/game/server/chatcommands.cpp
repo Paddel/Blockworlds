@@ -195,6 +195,15 @@ void CChatCommandsHandler::ComClan(CConsole::CResult *pResult, CGameContext *pGa
 	pGameServer->SendChatTarget(ClientID, "Write \"/clan_leader\" to see all commands for a clan leader");
 }
 
+void CChatCommandsHandler::ComRules(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	pGameServer->SendChatTarget(ClientID, "1. Do not abuse buggs");
+	pGameServer->SendChatTarget(ClientID, "2. Do not cheat");
+	pGameServer->SendChatTarget(ClientID, "3. Be fair at events");
+	pGameServer->SendChatTarget(ClientID, "4. Be an a**hole");
+	pGameServer->SendChatTarget(ClientID, "Violating these rules may result in a punishment");
+}
+
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
@@ -228,7 +237,130 @@ void CChatCommandsHandler::ComClanCreate(CConsole::CResult *pResult, CGameContex
 
 void CChatCommandsHandler::ComClanInvite(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	
+	const char *pMessage = pResult->GetString(0);
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in into an account");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan == 0x0 ||
+		str_comp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aLeader, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName) != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are currently not the leader of a clan");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_Members >= g_Config.m_SvClanMaxMebers)
+	{
+		pGameServer->SendChatTarget(ClientID, "Maximum number of members in a clan reached");
+		return;
+	}
+
+	int InvitingID = -1;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pGameServer->Server()->ClientIngame(i) == false || str_comp(pGameServer->Server()->ClientName(i), pMessage) != 0)
+			continue;
+
+		InvitingID = i;
+		break;
+	}
+
+	if (InvitingID == -1)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Player '%s' not found", pMessage);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (InvitingID == ClientID)
+	{
+		pGameServer->SendChatTarget(ClientID, "You cannot invite yourself");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(InvitingID)->m_LoggedIn == false)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s is not logged in into an account", pGameServer->Server()->ClientName(InvitingID));
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if(pGameServer->Server()->GetClientInfo(InvitingID)->m_AccountData.m_Level < 5)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s must be at least level 5 to join a clan!", pGameServer->Server()->ClientName(InvitingID));
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		//return;
+	}
+
+	if(pGameServer->Server()->GetClientInfo(InvitingID)->m_pClan != 0x0)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s is already in clan '%s'!", pGameServer->Server()->ClientName(InvitingID), pGameServer->Server()->GetClientInfo(InvitingID)->m_pClan->m_aName);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (pGameServer->InquieriesHandler()->NewInquieryPossible(InvitingID) == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "Claninvitation cannot be send right now. Try again in a few seconds");
+		return;
+	}
+
+	unsigned char aData[INQUIERY_DATA_SIZE];
+	mem_copy(aData, &pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, sizeof(void *));
+	mem_copy(aData + sizeof(void *), &ClientID, sizeof(int));
+
+	CInquiery *pInquiery = new CInquiery(CAccountsHandler::ClanInvite, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 15, aData);
+	pInquiery->AddOption("accept");
+	pInquiery->AddOption("decline");
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "%s invited you to his clan '%s'",
+		pGameServer->Server()->ClientName(ClientID), pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aName);
+	pGameServer->InquieriesHandler()->NewInquiery(InvitingID, pInquiery, aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "Claninvite has been sent to %s", pGameServer->Server()->ClientName(InvitingID));
+	pGameServer->SendChatTarget(ClientID, aBuf);
+}
+
+void CChatCommandsHandler::ComClanLeave(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in into an account");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan == 0x0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are currently in no clan");
+		return;
+	}
+
+	if (str_comp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aLeader, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName) == 0)
+	{
+		unsigned char aData[INQUIERY_DATA_SIZE];
+		mem_copy(aData, &pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, sizeof(void *));
+		CInquiery *pInquiery = new CInquiery(CAccountsHandler::ClanClose, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 10, aData);
+		pInquiery->AddOption("yes");
+		pInquiery->AddOption("no");
+		pGameServer->InquieriesHandler()->NewInquiery(ClientID, pInquiery, "Are you sure you want to close your clan");
+	}
+	else
+	{
+		unsigned char aData[INQUIERY_DATA_SIZE];
+		mem_copy(aData, &pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, sizeof(void *));
+		CInquiery *pInquiery = new CInquiery(CAccountsHandler::ClanLeave, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 10, aData);
+		pInquiery->AddOption("yes");
+		pInquiery->AddOption("no");
+		pGameServer->InquieriesHandler()->NewInquiery(ClientID, pInquiery, "Are you sure you want to leave your clan");
+	}
 }
 
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
@@ -255,6 +387,7 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("account", "", 0, ComAccount, "Sends you all information about the account system");
 	Register("emote", "s?si", 0, ComEmote, "Lets your tee show emotions (normal/pain/happy/surprise/angry/blink)");
 	Register("clan", "", 0, ComClan, "Sends you all information about the clan system");
+	Register("rules", "", 0, ComRules, "Informs you about the server rules");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
@@ -263,8 +396,9 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("logout", "", CHATCMDFLAG_HIDDEN, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
 	Register("register", "ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
 	Register("password", "ss", CHATCMDFLAG_HIDDEN, ComChangePassword, "Set a password to your Blockworlds account. For more informatino write /account");
-	Register("clan_create", "s", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
-	Register("clan_invite", "s", CHATCMDFLAG_HIDDEN, ComClanInvite, "Invite a player to your clan. For more informatino write /clan");
+	Register("clan_create", "r", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
+	Register("clan_invite", "r", CHATCMDFLAG_HIDDEN, ComClanInvite, "Invite a player to your clan. For more informatino write /clan");
+	Register("clan_leave", "", CHATCMDFLAG_HIDDEN, ComClanLeave, "Leave your clan. For more informatino write /clan");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
@@ -292,6 +426,9 @@ bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
 
 	if (pCommand == 0x0)
 	{
+		if (GameServer()->InquieriesHandler()->OnChatAnswer(ClientID, pMsg))
+			return true;
+
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "Chatcommand '%s' not found. Use /cmdlist to see all available commands", Result.m_pCommand);
 		GameServer()->SendChatTarget(ClientID, aBuf);

@@ -33,6 +33,7 @@ public:
 		char m_aLeader[32];
 		int m_Level;
 		int m_Experience;
+		int m_Members;
 	};
 
 	struct CAccountData

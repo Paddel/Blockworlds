@@ -40,6 +40,9 @@ public:
 	void ClanCreate(int ClientID, const char *pName);
 	void ClanSave(IServer::CClanData *pClanData);
 	void ClanSaveAll();
+	static void ClanInvite(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
+	static void ClanClose(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
+	static void ClanLeave(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 
 	bool CanShutdown();
 

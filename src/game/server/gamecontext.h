@@ -12,6 +12,7 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
+#include "inquiries.h"
 #include "accounts.h"
 #include "chatcommands.h"
 #include "player.h"
@@ -24,6 +25,7 @@ class CGameContext : public IGameServer
 	CTuningParams m_Tuning;
 	CChatCommandsHandler m_ChatCommandsHandler;
 	CAccountsHandler m_AccountsHandler;
+	CInquieriesHandler m_InquiriesHandler;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
@@ -54,6 +56,7 @@ public:
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CChatCommandsHandler *ChatCommandsHandler() { return &m_ChatCommandsHandler; }
 	CAccountsHandler *AccountsHandler() { return &m_AccountsHandler; }
+	CInquieriesHandler *InquieriesHandler() { return &m_InquiriesHandler; }
 
 	CGameContext();
 	~CGameContext();
