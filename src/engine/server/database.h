@@ -26,6 +26,7 @@ class CDatabase
 			//thread writes
 			bool m_Error;
 			array<CResultRow *>m_lpResultRows;
+			int64 m_AffectedRows;
 			
 			//both write
 			bool m_Working;

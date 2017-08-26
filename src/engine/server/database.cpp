@@ -51,6 +51,8 @@ void CDatabase::ExecuteQuery(void *pData)
 	if(g_Config.m_Debug)
 		dbg_msg("Database", pThreadData->m_aCommand);
 
+	pThreadData->m_AffectedRows = mysql_affected_rows(pConn);
+
 	{//error
 		int err = mysql_errno(pConn);
 		if(err)

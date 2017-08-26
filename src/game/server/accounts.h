@@ -23,6 +23,8 @@ private:
 	static void ResultRegister(void *pQueryData, bool Error, void *pUserData);
 	static void ResultClanCreate(void *pQueryData, bool Error, void *pUserData);
 	static void ResultAddClan(void *pQueryData, bool Error, void *pUserData);
+	static void ResultClanList(void *pQueryData, bool Error, void *pUserData);
+	static void ResultClanKick(void *pQueryData, bool Error, void *pUserData);
 
 	IServer::CClanData *CreateClan(CDatabase::CResultRow *pRow);
 public:
@@ -40,6 +42,8 @@ public:
 	void ClanCreate(int ClientID, const char *pName);
 	void ClanSave(IServer::CClanData *pClanData);
 	void ClanSaveAll();
+	void ClanList(int ClientID, IServer::CClanData *pClanData);
+	void ClanKick(int ClientID, IServer::CClanData *pClanData, const char *pName);
 	static void ClanInvite(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 	static void ClanClose(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 	static void ClanLeave(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);

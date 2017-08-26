@@ -49,6 +49,9 @@ private:
 	static void ComClanCreate(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanInvite(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanLeave(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClanLeader(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClanList(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClanKick(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 
 	void Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp);
 public:

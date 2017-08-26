@@ -192,6 +192,7 @@ void CChatCommandsHandler::ComClan(CConsole::CResult *pResult, CGameContext *pGa
 	pGameServer->SendChatTarget(ClientID, "Clan System V. 2.23");
 	pGameServer->SendChatTarget(ClientID, "By joining a clan your account gets linked to a clan.");
 	pGameServer->SendChatTarget(ClientID, "Use \"/clan_create name\" to create a clan and \"/clan_invite name\" to invite a player");
+	pGameServer->SendChatTarget(ClientID, "Use \"/clan_leave\" to leave your current clan. As a leader the clan will be closed!");
 	pGameServer->SendChatTarget(ClientID, "Write \"/clan_leader\" to see all commands for a clan leader");
 }
 
@@ -363,6 +364,63 @@ void CChatCommandsHandler::ComClanLeave(CConsole::CResult *pResult, CGameContext
 	}
 }
 
+void CChatCommandsHandler::ComClanLeader(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan == 0x0 ||
+		str_comp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aLeader, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName) != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are currently not the leader of a clan");
+		return;
+	}
+
+	pGameServer->SendChatTarget(ClientID, "Use \"/clan_list\" to see all members");
+	pGameServer->SendChatTarget(ClientID, "Use \"/clan_kick\" to kick a member");
+}
+
+void CChatCommandsHandler::ComClanList(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan == 0x0 ||
+		str_comp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aLeader, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName) != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are currently not the leader of a clan");
+		return;
+	}
+
+	pGameServer->AccountsHandler()->ClanList(ClientID, pGameServer->Server()->GetClientInfo(ClientID)->m_pClan);
+}
+
+void CChatCommandsHandler::ComClanKick(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	const char *pName = pResult->GetString(0);
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan == 0x0 ||
+		str_comp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aLeader, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName) != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are currently not the leader of a clan");
+		return;
+	}
+
+	pGameServer->AccountsHandler()->ClanKick(ClientID, pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, pName);
+}
+
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
 {
 	CChatCommand *pCommand = new CChatCommand();
@@ -399,6 +457,9 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("clan_create", "r", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
 	Register("clan_invite", "r", CHATCMDFLAG_HIDDEN, ComClanInvite, "Invite a player to your clan. For more informatino write /clan");
 	Register("clan_leave", "", CHATCMDFLAG_HIDDEN, ComClanLeave, "Leave your clan. For more informatino write /clan");
+	Register("clan_leader", "", CHATCMDFLAG_HIDDEN, ComClanLeader, "Sends you all information about being a clan leader");
+	Register("clan_list", "", CHATCMDFLAG_HIDDEN, ComClanList, "Sends a list of all clan members");
+	Register("clan_kick", "r", CHATCMDFLAG_HIDDEN, ComClanKick, "Kicks a member out of your clan");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)

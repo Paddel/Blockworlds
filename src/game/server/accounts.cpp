@@ -90,7 +90,7 @@ void CAccountsHandler::ResultLoadClans(void *pQueryData, bool Error, void *pUser
 			pThis->m_lpClans.add(pClan);
 	}
 
-	dbg_msg("Accounts", "All clans loaded");
+	dbg_msg("Accounts", "All clans have been loaded");
 }
 
 void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData)
@@ -291,6 +291,91 @@ void CAccountsHandler::ResultAddClan(void *pQueryData, bool Error, void *pUserDa
 	pThis->m_lpClans.add(pClanData);
 	pGameServer->Server()->GetClientInfo(pResultData->m_ClientID)->m_pClan = pClanData;
 }
+
+void CAccountsHandler::ResultClanList(void *pQueryData, bool Error, void *pUserData)
+{
+	CDatabase::CQueryData *pQueryResult = (CDatabase::CQueryData *)pQueryData;
+	CResultData *pResultData = (CResultData *)pUserData;
+	CGameContext *pGameServer = pResultData->m_pGameServer;
+	char aBuf[64];
+
+	if (Error)
+	{
+		pGameServer->SendChatTarget(pResultData->m_ClientID, "Internal Server Error. Please contact an admin. Code 0x00007");
+		delete pResultData;
+		return;
+	}
+
+	pGameServer->SendChatTarget(pResultData->m_ClientID, ">-- CLAN LIST --<");
+
+	for (int i = 0; i < pQueryResult->m_lpResultRows.size(); i++)
+	{
+		str_format(aBuf, sizeof(aBuf), "[%i] %s", i, pQueryResult->m_lpResultRows[i]->m_lpResultFields[0]);
+		pGameServer->SendChatTarget(pResultData->m_ClientID, aBuf);
+	}
+	delete pResultData;
+}
+
+void CAccountsHandler::ResultClanKick(void *pQueryData, bool Error, void *pUserData)
+{
+	CDatabase::CQueryData *pQueryResult = (CDatabase::CQueryData *)pQueryData;
+	CResultData *pResultData = (CResultData *)pUserData;
+	CGameContext *pGameServer = pResultData->m_pGameServer;
+	CAccountsHandler *pThis = pGameServer->AccountsHandler();
+	char aBuf[64];
+
+	if (Error)
+	{
+		pGameServer->SendChatTarget(pResultData->m_ClientID, "Internal Server Error. Please contact an admin. Code 0x00009");
+		delete pResultData;
+		return;
+	}
+
+	if (pQueryResult->m_AffectedRows <= 0)
+	{
+		pGameServer->SendChatTarget(pResultData->m_ClientID, "Player is not a member of the clan");
+		delete pResultData;
+		return;
+	}
+
+	IServer::CClanData *pClan = 0x0;
+	for (int i = 0; i < pThis->m_lpClans.size(); i++)
+	{
+		if (str_comp(pThis->m_lpClans[i]->m_aName, pResultData->m_aPassword) == 0)
+		{
+			pClan = pThis->m_lpClans[i];
+			break;
+		}
+	}
+
+	if(pClan == 0x0)
+	{
+		pGameServer->SendChatTarget(pResultData->m_ClientID, "Internal Server Error. Please contact an admin. Code 0x00008");
+		delete pResultData;
+		return;
+	}
+
+	pClan->m_Members--;
+	pThis->ClanSave(pClan);
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pGameServer->Server()->ClientIngame(i) == false ||
+			pGameServer->Server()->GetClientInfo(i)->m_LoggedIn == false ||
+			pGameServer->Server()->GetClientInfo(i)->m_pClan != pClan ||
+			str_comp(pGameServer->Server()->GetClientInfo(i)->m_AccountData.m_aName, pResultData->m_aName) != 0)
+			continue;
+
+		pGameServer->Server()->GetClientInfo(i)->m_pClan = 0x0;
+		pGameServer->SendChatTarget(i, "You have beed kicked out of your clan!");
+		break;
+	}
+
+	pGameServer->SendChatTarget(pResultData->m_ClientID, "Member has been kicked!");
+
+	delete pResultData;
+}
+
 
 IServer::CClanData *CAccountsHandler::CreateClan(CDatabase::CResultRow *pRow)
 {
@@ -559,10 +644,10 @@ void CAccountsHandler::ClanCreate(int ClientID, const char *pName)
 		return;
 	}
 
-	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < 20)
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < 25)
 	{
-		GameServer()->SendChatTarget(ClientID, "You need to be at least level 20 to create a clan!");
-		//return;
+		GameServer()->SendChatTarget(ClientID, "You need to be at least level 25 to create a clan!");
+		return;
 	}
 
 	for (int i = 0; i < m_lpClans.size(); i++)
@@ -631,6 +716,42 @@ void CAccountsHandler::ClanSaveAll()
 
 	for (int i = 0; i < m_lpClans.size(); i++)
 		ClanSave(m_lpClans[i]);
+}
+
+void CAccountsHandler::ClanList(int ClientID, IServer::CClanData *pClanData)
+{
+	CResultData *pResultData = new CResultData();
+	pResultData->m_pGameServer = GameServer();
+	pResultData->m_ClientID = ClientID;
+
+	char aQuery[QUERY_MAX_STR_LEN];
+	str_format(aQuery, sizeof(aQuery), "SELECT name FROM %s WHERE clan =", TABLE_ACCOUNTS);
+	CDatabase::AddQueryStr(aQuery, pClanData->m_aName, sizeof(aQuery));
+	str_append(aQuery, ";", sizeof(aQuery));
+	m_Database.Query(aQuery, ResultClanList, pResultData);
+}
+
+void CAccountsHandler::ClanKick(int ClientID, IServer::CClanData *pClanData, const char *pName)
+{
+	if (str_comp(pClanData->m_aLeader, pName) == 0)
+	{
+		GameServer()->SendChatTarget(ClientID, "You cannot kick yourself");
+		return;
+	}
+
+	CResultData *pResultData = new CResultData();
+	pResultData->m_pGameServer = GameServer();
+	pResultData->m_ClientID = ClientID;
+	str_copy(pResultData->m_aName, pName, sizeof(pResultData->m_aName));
+	str_copy(pResultData->m_aPassword, pClanData->m_aName, sizeof(pResultData->m_aPassword));
+	
+	char aQuery[QUERY_MAX_STR_LEN];
+	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET clan=NULL WHERE name=", TABLE_ACCOUNTS);
+	CDatabase::AddQueryStr(aQuery, pName, sizeof(aQuery));
+	str_append(aQuery, " AND clan=", sizeof(aQuery));
+	CDatabase::AddQueryStr(aQuery, pClanData->m_aName, sizeof(aQuery));
+	str_append(aQuery, ";", sizeof(aQuery));
+	m_Database.Query(aQuery, ResultClanKick, pResultData);
 }
 
 void CAccountsHandler::ClanInvite(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
