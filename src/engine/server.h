@@ -27,6 +27,14 @@ public:
 		AUTHED_ADMIN,
 	};
 
+	struct CClanData
+	{
+		char m_aName[32];
+		char m_aLeader[32];
+		int m_Level;
+		int m_Experience;
+	};
+
 	struct CAccountData
 	{
 		char m_aName[32];
@@ -44,6 +52,7 @@ public:
 	{//this data is shared by game and engine and does not get resettet on map change
 		bool m_LoggedIn;
 		CAccountData m_AccountData;
+		CClanData *m_pClan;
 	};
 
 	int Tick() const { return m_CurrentGameTick; }

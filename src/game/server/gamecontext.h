@@ -42,6 +42,7 @@ class CGameContext : public IGameServer
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAccountsystemupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAccountForceupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainShutdownupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -116,6 +117,8 @@ public:
 
 	void GiveExperience(int ClientID, int Amount);
 	void SetLevel(int ClientID, int Level);
+	void GiveClanExperience(int ClientID, int Amount);
+	void SetClanLevel(int ClientID, int Level);
 
 	// engine events
 	virtual void OnInit();

@@ -40,10 +40,13 @@ private:
 	static void ComWhisper(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComAccount(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComEmote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClan(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClanCreate(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClanInvite(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 
 	void Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp);
 public:

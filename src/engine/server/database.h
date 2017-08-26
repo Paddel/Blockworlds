@@ -53,6 +53,7 @@ class CDatabase
 		void Tick();
 		
 		void Query(const char *command, ResultFunction fResultCallback, void *pUserData);
+		void QueryOrderly(const char *pCommand, ResultFunction fResultCallback, void *pUserData);
 
 		int NumRunningThreads();
 

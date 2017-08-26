@@ -477,11 +477,17 @@ void CGameContext::SetLevel(int ClientID, int Level)
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		IServer::CAccountData *pAccountData = &Server()->GetClientInfo(ClientID)->m_AccountData;
-		if (Level > pAccountData->m_Level)
+		CCharacter *pChr = GetPlayerChar(ClientID);
+		if (Level > pAccountData->m_Level && pChr)
 		{
-			CCharacter *pChr = GetPlayerChar(ClientID);
-			if(pChr)
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "[LevelUp+]: You are now level %d!", Level);
+			SendChatTarget(ClientID, aBuf);
+			if (pChr)
+			{
 				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + 2 * Server()->TickSpeed());
+				CreateSound(pChr->GameMap(), pChr->m_Pos, SOUND_CTF_CAPTURE);
+			}
 		}
 
 		pAccountData->m_Experience = 0;
@@ -490,6 +496,36 @@ void CGameContext::SetLevel(int ClientID, int Level)
 	}
 	else
 		SendChatTarget(ClientID, "Login/Register an account to receive the levelup");
+}
+
+void CGameContext::GiveClanExperience(int ClientID, int Amount)
+{
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == true && Server()->GetClientInfo(ClientID)->m_pClan)
+	{
+		IServer::CClanData *pClanData = Server()->GetClientInfo(ClientID)->m_pClan;
+		pClanData->m_Experience += Amount;
+		if (pClanData->m_Experience >= NeededClanExp(pClanData->m_Level))
+			SetClanLevel(ClientID, pClanData->m_Level + 1);
+	}
+}
+
+void CGameContext::SetClanLevel(int ClientID, int Level)
+{
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false && Server()->GetClientInfo(ClientID)->m_pClan)
+	{
+		IServer::CClanData *pClanData = Server()->GetClientInfo(ClientID)->m_pClan;
+		CCharacter *pChr = GetPlayerChar(ClientID);
+		if (Level > pClanData->m_Level)
+		{
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), ">- Clan %s reached level %d! -<", pClanData->m_aName, Level);
+			SendChat(-1, CHAT_ALL, aBuf);
+		}
+
+		pClanData->m_Experience = 0;
+		pClanData->m_Level = Level;
+		m_AccountsHandler.ClanSave(pClanData);
+	}
 }
 
 // Server hooks
@@ -1372,6 +1408,15 @@ void CGameContext::ConchainAccountForceupdate(IConsole::IResult *pResult, void *
 	pfnCallback(pResult, pCallbackUserData);
 }
 
+void CGameContext::ConchainShutdownupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	CGameContext *pThis = static_cast<CGameContext *>(pUserData);
+	pThis->m_AccountsHandler.ClanSaveAll();
+
+	pfnCallback(pResult, pCallbackUserData);
+}
+
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -1397,6 +1442,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 	Console()->Chain("sv_accountsystem", ConchainAccountsystemupdate, this);
 	Console()->Chain("sv_account_force", ConchainAccountForceupdate, this);
+	Console()->Chain("shutdown", ConchainShutdownupdate, this);
 }
 
 void CGameContext::OnInit(/*class IKernel *pKernel*/)

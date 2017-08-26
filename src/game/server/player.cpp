@@ -141,7 +141,11 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
+	if (ClientInfo()->m_LoggedIn == true && ClientInfo()->m_pClan != 0)
+		StrToInts(&pClientInfo->m_Clan0, 3, ClientInfo()->m_pClan->m_aName);
+	else
+		StrToInts(&pClientInfo->m_Clan0, 3, "");
+
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
@@ -155,7 +159,9 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[TranslatedID];
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = TranslatedID;
-	pPlayerInfo->m_Score = ClientInfo()->m_LoggedIn ? ClientInfo()->m_AccountData.m_Level : 0;
+	pPlayerInfo->m_Score = 0;
+	if(ClientInfo()->m_LoggedIn == true)
+		pPlayerInfo->m_Score = ClientInfo()->m_AccountData.m_Level;
 	pPlayerInfo->m_Team = m_Team;
 
 	if(m_ClientID == SnappingClient)

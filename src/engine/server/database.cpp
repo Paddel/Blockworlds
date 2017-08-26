@@ -11,6 +11,7 @@
 #include "database.h"
 
 #define MAX_THREADS 2000
+#define USE_LOCK 0
 
 static LOCK s_QueryLock = 0x0;
 static int s_ReconnectVal = 0;
@@ -107,16 +108,19 @@ void CDatabase::QueryThreadFunction(void *pData)
 {
 	CQueryData *pThreadData = (CQueryData *)pData;
 
-	lock_wait(s_QueryLock);
+	if(USE_LOCK)
+		lock_wait(s_QueryLock);
 	ExecuteQuery(pThreadData);
-	lock_unlock(s_QueryLock);
+	if(USE_LOCK)
+		lock_unlock(s_QueryLock);
 }
 
 void CDatabase::QueryTestConnection(void *pData)
 {
 	CDatabase *pThis = (CDatabase *)pData;
 
-	lock_wait(s_QueryLock);
+	if (USE_LOCK)
+		lock_wait(s_QueryLock);
 
 	MYSQL *pConn = mysql_init(0x0);
 
@@ -124,7 +128,8 @@ void CDatabase::QueryTestConnection(void *pData)
 	{
 		dbg_msg("Database", "Initialing connection to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
-		lock_unlock(s_QueryLock);
+		if (USE_LOCK)
+			lock_unlock(s_QueryLock);
 		return;
 	}
 
@@ -133,7 +138,8 @@ void CDatabase::QueryTestConnection(void *pData)
 		dbg_msg("Database", "Connecting to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
 		mysql_close(pConn);
-		lock_unlock(s_QueryLock);
+		if (USE_LOCK)
+			lock_unlock(s_QueryLock);
 		return;
 	}
 
@@ -142,7 +148,8 @@ void CDatabase::QueryTestConnection(void *pData)
 	pThis->m_Connected = true;
 	mysql_close(pConn);
 
-	lock_unlock(s_QueryLock);
+	if (USE_LOCK)
+		lock_unlock(s_QueryLock);
 }
 
 CDatabase::CDatabase()
@@ -159,7 +166,7 @@ CDatabase::CDatabase()
 
 void CDatabase::Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema)
 {
-	if (s_QueryLock == 0x0)
+	if (s_QueryLock == 0x0 && USE_LOCK)
 		s_QueryLock = lock_create();
 
 	InitConnection(pAddr, pUserName, pPass, pSchema);
@@ -241,6 +248,31 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 
 	m_ThreadData.add(pThreadData);
 	thread_init(QueryThreadFunction, pThreadData);
+}
+
+void CDatabase::QueryOrderly(const char *pCommand, ResultFunction fResultCallback, void *pUserData)
+{
+	if (m_Connected == false)
+	{
+		if (fResultCallback != 0x0)
+			fResultCallback(0x0, true, pUserData);
+		return;
+	}
+
+	CQueryData *pThreadData = new CQueryData();
+	pThreadData->m_fResultCallback = fResultCallback;
+	pThreadData->m_pUserData = pUserData;
+	str_copy(pThreadData->m_aCommand, pCommand, sizeof(pThreadData->m_aCommand));
+	str_copy(pThreadData->m_aAddr, m_aAddr, sizeof(pThreadData->m_aAddr));
+	str_copy(pThreadData->m_aUserName, m_aUserName, sizeof(pThreadData->m_aUserName));
+	str_copy(pThreadData->m_aPass, m_aPass, sizeof(pThreadData->m_aPass));
+	str_copy(pThreadData->m_aSchema, m_aSchema, sizeof(pThreadData->m_aSchema));
+	pThreadData->m_Working = true;
+
+	ExecuteQuery(pThreadData);
+
+	if(fResultCallback)
+		fResultCallback(pThreadData, pThreadData->m_Error, pThreadData->m_pUserData);
 }
 
 int CDatabase::NumRunningThreads()

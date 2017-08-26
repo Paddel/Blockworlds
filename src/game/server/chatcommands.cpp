@@ -187,6 +187,14 @@ void CChatCommandsHandler::ComEmote(CConsole::CResult *pResult, CGameContext *pG
 		pChr->SetEmote(Emote, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * Time);
 }
 
+void CChatCommandsHandler::ComClan(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	pGameServer->SendChatTarget(ClientID, "Clan System V. 2.23");
+	pGameServer->SendChatTarget(ClientID, "By joining a clan your account gets linked to a clan.");
+	pGameServer->SendChatTarget(ClientID, "Use \"/clan_create name\" to create a clan and \"/clan_invite name\" to invite a player");
+	pGameServer->SendChatTarget(ClientID, "Write \"/clan_leader\" to see all commands for a clan leader");
+}
+
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
@@ -213,6 +221,16 @@ void CChatCommandsHandler::ComChangePassword(CConsole::CResult *pResult, CGameCo
 	pGameServer->AccountsHandler()->ChangePassword(ClientID, pResult->GetString(0), pResult->GetString(1));
 }
 
+void CChatCommandsHandler::ComClanCreate(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	pGameServer->AccountsHandler()->ClanCreate(ClientID, pResult->GetString(0));
+}
+
+void CChatCommandsHandler::ComClanInvite(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	
+}
+
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
 {
 	CChatCommand *pCommand = new CChatCommand();
@@ -236,6 +254,7 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
 	Register("account", "", 0, ComAccount, "Sends you all information about the account system");
 	Register("emote", "s?si", 0, ComEmote, "Lets your tee show emotions (normal/pain/happy/surprise/angry/blink)");
+	Register("clan", "", 0, ComClan, "Sends you all information about the clan system");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
@@ -244,6 +263,8 @@ void CChatCommandsHandler::Init(CGameContext *pGameServer)
 	Register("logout", "", CHATCMDFLAG_HIDDEN, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
 	Register("register", "ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
 	Register("password", "ss", CHATCMDFLAG_HIDDEN, ComChangePassword, "Set a password to your Blockworlds account. For more informatino write /account");
+	Register("clan_create", "s", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
+	Register("clan_invite", "s", CHATCMDFLAG_HIDDEN, ComClanInvite, "Invite a player to your clan. For more informatino write /clan");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
