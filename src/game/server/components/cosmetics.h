@@ -1,6 +1,7 @@
 #pragma once
 
 #include <base/vmath.h>
+#include <base/tl/array.h>
 #include <game/server/component.h>
 
 class CCosmeticsHandler : public CComponent
@@ -16,7 +17,20 @@ public:
 
 	static char *ms_KnockoutNames[NUM_KNOCKOUTS];
 
+	class CAnimation
+	{
+	private:
+		vec2 m_Pos;
+		int64 m_Tick;
+	public:
+
+		void Tick();
+		void Snap(int SnappingClient);
+	};
+
 private:
+	array<CAnimation *> m_lpAnimations;
+
 	void KnockoutExplosion(int ClientID, int Victim, vec2 Pos);
 	void KnockoutHammerhit(int ClientID, int Victim, vec2 Pos);
 

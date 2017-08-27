@@ -1,5 +1,6 @@
 
 #include <engine/server.h>
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/server/gamemap.h>
 #include <game/generated/protocol.h>
@@ -52,6 +53,9 @@ void CCosmeticsHandler::DoKnockoutEffect(int ClientID, int Victim, vec2 Pos)
 	int Effect = Server()->GetClientInfo(ClientID)->m_CurrentKnockout;
 	if (HasKnockoutEffect(ClientID, Effect) == false)
 		return;
+
+	if (g_Config.m_Debug)
+		dbg_msg("cosmetics", "Knockouteffect %s", ms_KnockoutNames[Effect]);
 
 	switch (Effect)
 	{

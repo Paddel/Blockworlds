@@ -1089,6 +1089,11 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
 
+	if (GetPlayer()->GetPause() == true)
+	{
+		pCharacter->m_Emote = EMOTE_BLINK;
+	}
+
 	if (IsFreezed())
 	{
 		pCharacter->m_Weapon = WEAPON_NINJA;
