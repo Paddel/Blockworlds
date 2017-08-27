@@ -60,6 +60,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ActiveWeapon = WEAPON_HAMMER;
 	m_LastWeapon = WEAPON_GUN;
 	m_QueuedWeapon = -1;
+	m_ProtectionTime = 1;
+
+	for (int i = 0; i < NUM_EXTRAIDS; i++)
+		m_aExtraIDs[i] = -1;
 
 	m_FreezeTime = 0;
 	m_DeepFreeze = false;
@@ -119,8 +123,15 @@ bool CCharacter::IsGrounded()
 
 void CCharacter::Push(vec2 Force, int From)
 {
-	if (GameMap()->IsBlockMap() == false)
+	if (GameMap()->IsBlockMap() == false || IsInviolable() == true)
 		return;
+
+	if (From >= 0 && From < MAX_CLIENTS)
+	{
+		CCharacter *pChr = GameServer()->GetPlayerChar(From);
+		if (pChr && pChr->IsInviolable() == true)
+			return;
+	}
 
 	m_Core.m_Vel += Force;
 	if(length(Force) > 10.0f && From != -1)
@@ -574,6 +585,13 @@ void CCharacter::SpeedUp(int Force, int MaxSpeed, int Angle)
 	}
 }
 
+bool CCharacter::IsInviolable()
+{
+	if (m_ProtectionTime > 1 && Server()->GetClientInfo(GetPlayer()->GetCID())->m_UseInviolable == true && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
+		return true;
+	return false;
+}
+
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
 	// check for changes
@@ -621,7 +639,6 @@ void CCharacter::ResetInput()
 
 void CCharacter::ResetZones()
 {
-	m_ZoneProtection = false;
 	m_ZoneBlock = false;
 }
 
@@ -669,6 +686,11 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_ZONE_BLOCK)
 		m_ZoneBlock = true;
+
+	if (Tile == EXTRAS_ZONE_PROTECTION && m_ProtectionTime != 0)//TODO: ugly
+		m_ProtectionTime = Server()->Tick() + Server()->TickSpeed() * 3;
+	else if (m_ProtectionTime > 1 && m_ProtectionTime < Server()->Tick())
+		m_ProtectionTime = 0;
 
 	return false;
 }
@@ -828,6 +850,9 @@ void CCharacter::HandleRace()
 
 		GameServer()->CreateDamageInd(GameMap(), m_Pos, 0, NumStars);
 	}
+
+	//gamecore inviolable
+	m_Core.m_Inviolable = IsInviolable();
 }
 
 void CCharacter::Tick()
@@ -871,7 +896,7 @@ void CCharacter::TickDefered()
 	{
 		CSrvWorldCore TempWorld;
 		m_ReckoningCore.Init(&TempWorld, GameMap()->Collision());
-		m_ReckoningCore.Tick(false);
+		m_ReckoningCore.TickPredict(false);
 		m_ReckoningCore.Move();
 		m_ReckoningCore.Quantize();
 	}
@@ -990,6 +1015,12 @@ void CCharacter::Die(int Killer, int Weapon)
 	// this is for auto respawn after 3 secs
 	m_pPlayer->m_DieTick = Server()->Tick();
 
+	for (int i = 0; i < NUM_EXTRAIDS; i++)
+	{
+		if (m_aExtraIDs[i] != -1)
+			Server()->SnapFreeID(m_aExtraIDs[i]);
+	}
+
 	m_Alive = false;
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
@@ -1070,4 +1101,29 @@ void CCharacter::Snap(int SnappingClient)
 		int HookingID = Server()->Translate(SnappingClient, pCharacter->m_HookedPlayer);
 		pCharacter->m_HookedPlayer = HookingID;
 	}
+
+	SnapExtras(SnappingClient);
+}
+
+
+void CCharacter::SnapExtras(int SnappingClient)
+{
+	if (IsInviolable())
+	{
+		CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetExtraID(EXTRAID_INVIOLABLE), sizeof(CNetObj_Pickup)));
+		if (pP)
+		{
+			pP->m_X = (int)m_Pos.x;
+			pP->m_Y = (int)m_Pos.y - 48.0f;
+			pP->m_Type = POWERUP_ARMOR;
+			pP->m_Subtype = 0;
+		}
+	}
+}
+
+int CCharacter::GetExtraID(int Index)
+{
+	if (m_aExtraIDs[Index] == -1)
+		m_aExtraIDs[Index] = Server()->SnapNewID();
+	return m_aExtraIDs[Index];
 }

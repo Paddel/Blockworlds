@@ -344,11 +344,11 @@ bool CGameMap::Init(CGameContext *pGameServer)
 	InitEntities();
 	InitExtras();
 
-	CNpc *pNpc = new CNpc(&m_World, FreeNpcSlot());
-	pNpc->Spawn(vec2(300, 300));
+	//CNpc *pNpc = new CNpc(&m_World, FreeNpcSlot());
+	//pNpc->Spawn(vec2(300, 300));
 
-	pNpc = new CNpc(&m_World, FreeNpcSlot());
-	pNpc->Spawn(vec2(300, 300));
+	//pNpc = new CNpc(&m_World, FreeNpcSlot());
+	//pNpc->Spawn(vec2(300, 300));
 
 	return true;
 }

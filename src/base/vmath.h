@@ -38,7 +38,8 @@ public:
 	const vector2_base &operator /=(const T v) { x /= v; y /= v; return *this;	}
 	const vector2_base &operator /=(const vector2_base &v) { x /= v.x; y /= v.y; return *this; }
 
-	bool operator ==(const vector2_base &v) const { return x == v.x && y == v.y; } //TODO: do this with an eps instead
+	bool operator ==(const vector2_base &v) const { return x == v.x && y == v.y; }
+	bool operator !=(const vector2_base &v) const { return x != v.x || y != v.y; }
 
 	operator const T* () { return &x; }
 };
@@ -54,6 +55,18 @@ template<typename T>
 inline T distance(const vector2_base<T> a, const vector2_base<T> &b)
 {
 	return length(a-b);
+}
+
+template<typename T>
+inline bool within_reach(const vector2_base<T> a, const vector2_base<T> &b, float dist, bool Equals = false)//make this as efficient as possible
+{
+	vector2_base<T> d = b - a;
+	if (fabs(d.x) > dist || fabs(d.y) > dist)//out of outer quad
+		return false;
+	if(Equals)
+		return length(d) <= dist;
+	else
+		return length(d) < dist;
 }
 
 template<typename T>

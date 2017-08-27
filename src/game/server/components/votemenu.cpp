@@ -12,6 +12,30 @@ static char SignBoxUnchecked[] = { '\xE2','\x98', '\x90', 0 };
 void CVoteMenu::Reset()
 {
 	m_lpKnockoutEffectsOptions.delete_all();
+	m_lpExtrasOptions.delete_all();
+}
+
+bool CVoteMenu::Compare(CVoteMenu *pCompare)
+{
+	if (m_lpKnockoutEffectsOptions.size() != pCompare->m_lpKnockoutEffectsOptions.size())
+		return true;
+
+	if (m_lpExtrasOptions.size() != pCompare->m_lpExtrasOptions.size())
+		return true;
+
+	for (int i = 0; i < m_lpKnockoutEffectsOptions.size(); i++)
+	{
+		if (mem_comp(m_lpKnockoutEffectsOptions[i], pCompare->m_lpKnockoutEffectsOptions[i], sizeof(CVoteOptionServer)) != 0)
+			return true;
+	}
+
+	for (int i = 0; i < m_lpExtrasOptions.size(); i++)
+	{
+		if (mem_comp(m_lpExtrasOptions[i], pCompare->m_lpExtrasOptions[i], sizeof(CVoteOptionServer)) != 0)
+			return true;
+	}
+
+	return false;
 }
 
 void CVoteMenuHandler::CreateStripline(char *pDst, int DstSize, const char *pTitle)
@@ -37,17 +61,7 @@ void CVoteMenuHandler::UpdateEveryone()
 	}
 }
 
-void CVoteMenuHandler::Init()
-{
-
-}
-
-void CVoteMenuHandler::Tick()
-{
-	
-}
-
-void CVoteMenuHandler::Construct(int ClientID)
+void CVoteMenuHandler::Construct(CVoteMenu *pFilling, int ClientID)
 {
 	for (int i = 0; i < CCosmeticsHandler::NUM_KNOCKOUTS; i++)
 	{
@@ -59,10 +73,47 @@ void CVoteMenuHandler::Construct(int ClientID)
 			Server()->GetClientInfo(ClientID)->m_CurrentKnockout == i ? SignBoxChecked : SignBoxUnchecked,
 			CCosmeticsHandler::ms_KnockoutNames[i]);
 		str_copy(pOption->m_aCommand, CCosmeticsHandler::ms_KnockoutNames[i], sizeof(pOption->m_aCommand));
-		m_Menus[ClientID].m_lpKnockoutEffectsOptions.add(pOption);
+		pFilling->m_lpKnockoutEffectsOptions.add(pOption);
 	}
+
+	//extras
+	if (Server()->GetClientInfo(ClientID)->m_InviolableTime > Server()->Tick())
+	{
+		CVoteOptionServer *pOption = new CVoteOptionServer();
+		str_format(pOption->m_aDescription, sizeof(pOption->m_aDescription), "%s %s",
+			Server()->GetClientInfo(ClientID)->m_UseInviolable == true ? SignBoxChecked : SignBoxUnchecked,
+			"Anti Wayblock");
+		str_copy(pOption->m_aCommand, "inviolable", sizeof(pOption->m_aCommand));
+		pFilling->m_lpExtrasOptions.add(pOption);
+	}
+}
+
+void CVoteMenuHandler::Init()
+{
+
+}
+
+void CVoteMenuHandler::Tick()
+{
 	
-	UpdateMenu(ClientID);
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (Server()->ClientIngame(i) == false)
+			continue;
+
+
+		//very unefficient
+		CVoteMenu OldMenu;
+		Construct(&OldMenu, i);
+		if (m_Menus[i].Compare(&OldMenu))
+		{
+			m_Menus[i].Reset();
+			Construct(&m_Menus[i], i);
+			UpdateMenu(i);
+		}
+
+		OldMenu.Reset();
+	}
 }
 
 void CVoteMenuHandler::Destruct(int ClientID)
@@ -194,8 +245,18 @@ void CVoteMenuHandler::CallVote(int ClientID, const char *pDescription, const ch
 
 		if (GameServer()->CosmeticsHandler()->ToggleKnockout(ClientID, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aCommand))
 		{
-			Destruct(ClientID);
-			Construct(ClientID);
+			pPlayer->m_LastVoteTry = Server()->Tick() - Server()->TickSpeed() * 2.25f;
+			return;
+		}
+	}
+
+	for (int i = 0; i < m_Menus[ClientID].m_lpExtrasOptions.size(); i++)
+	{
+		if (str_comp(pDescription, m_Menus[ClientID].m_lpExtrasOptions[i]->m_aDescription) != 0)
+			continue;
+
+		if(GameServer()->OnExtrasCallvote(ClientID, m_Menus[ClientID].m_lpExtrasOptions[i]->m_aCommand))
+		{
 			pPlayer->m_LastVoteTry = Server()->Tick() - Server()->TickSpeed() * 2.25f;
 			return;
 		}
@@ -236,6 +297,20 @@ void CVoteMenuHandler::UpdateMenu(int ClientID)
 		for (int i = 0; i < m_Menus[ClientID].m_lpKnockoutEffectsOptions.size(); i++)
 		{
 			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aDescription;
+			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+		}
+
+	}
+
+	if (m_Menus[ClientID].m_lpExtrasOptions.size() > 0)
+	{
+		CreateStripline(aBuf, VOTE_DESC_LENGTH, "Extras");
+		OptionMsg.m_pDescription = aBuf;
+		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+
+		for (int i = 0; i < m_Menus[ClientID].m_lpExtrasOptions.size(); i++)
+		{
+			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpExtrasOptions[i]->m_aDescription;
 			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 		}
 

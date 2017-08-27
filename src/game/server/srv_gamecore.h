@@ -37,6 +37,7 @@ public:
 	int m_HookTick;
 	int m_HookState;
 	int m_HookedPlayer;
+	bool m_Inviolable;
 
 	int m_Jumped;
 
@@ -49,6 +50,7 @@ public:
 	void Init(CSrvWorldCore *pWorld, CCollision *pCollision);
 	void Reset();
 	void Tick(bool UseInput);
+	void TickPredict(bool UseInput);
 	void Move();
 
 	void Read(const CNetObj_CharacterCore *pObjCore);

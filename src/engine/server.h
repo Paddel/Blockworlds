@@ -58,11 +58,14 @@ public:
 		CClanData *m_pClan;
 
 		int m_CurrentKnockout;
+		int64 m_InviolableTime;
+		bool m_UseInviolable;
 
 		void Reset()
 		{
 			mem_zero(this, sizeof(*this));
 			m_CurrentKnockout = -1;
+			m_UseInviolable = true;
 		}
 	};
 

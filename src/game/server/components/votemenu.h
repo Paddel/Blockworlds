@@ -8,8 +8,10 @@
 struct CVoteMenu
 {
 	array <CVoteOptionServer *> m_lpKnockoutEffectsOptions;
+	array <CVoteOptionServer *> m_lpExtrasOptions;
 
 	void Reset();
+	bool Compare(CVoteMenu *pCompare);
 };
 
 class CVoteMenuHandler : public CComponent
@@ -20,12 +22,12 @@ private:
 
 	void CreateStripline(char *pDst, int DstSize, const char *pTitle);
 	void UpdateEveryone();
+	void Construct(CVoteMenu *pFilling, int ClientID);
 public:
 
 	virtual void Init();
 	virtual void Tick();
 
-	void Construct(int ClientID);
 	void Destruct(int ClientID);
 
 	void AddVote(const char *pDescription, const char *pCommand);

@@ -278,22 +278,20 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
+void CGameContext::SpreadTuningParams()
+{
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		SendTuningParams(i);
+}
+
 void CGameContext::SendTuningParams(int ClientID)
 {
-	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
-	{
-		for (int i = 0; i < MAX_CLIENTS; i++)
-			SendTuningParams(i);
-		return;
-	}
-
-	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
-	if (pGameMap == 0x0)//TODO handle this somehow else
+	if (m_apPlayers[ClientID] == 0x0 || m_apPlayers[ClientID]->m_IsReady == false)
 		return;
 
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-	int *pParams = (int *)&pGameMap->World()->m_Core.m_Tuning;
-	for(unsigned i = 0; i < sizeof(pGameMap->World()->m_Core.m_Tuning)/sizeof(int); i++)
+	int *pParams = (int *)m_apPlayers[ClientID]->Tuning();
+	for(unsigned i = 0; i < sizeof(CTuningParams)/sizeof(int); i++)
 		Msg.AddInt(pParams[i]);
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
@@ -422,8 +420,16 @@ void CGameContext::HandleBlockSystem()
 	}
 }
 
+void CGameContext::DoGeneralTuning()
+{
+	m_Tuning.m_GunCurvature = 0.0f;
+	m_Tuning.m_GunSpeed = 1400.0f;
+}
+
 void CGameContext::OnTick()
 {
+	DoGeneralTuning();
+
 	for (int i = 0; i < m_NumComponents; i++)
 		m_apComponents[i]->Tick();
 
@@ -509,6 +515,17 @@ void CGameContext::SetClanLevel(int ClientID, int Level)
 		pClanData->m_Level = Level;
 		m_AccountsHandler.ClanSave(pClanData);
 	}
+}
+
+bool CGameContext::OnExtrasCallvote(int ClientID, const char *pCommand)
+{
+	if (str_comp(pCommand, "inviolable") == 0)
+	{
+		Server()->GetClientInfo(ClientID)->m_UseInviolable = !Server()->GetClientInfo(ClientID)->m_UseInviolable;
+		return true;
+	}
+
+	return false;
 }
 
 // Server hooks
@@ -893,10 +910,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 
-			m_VoteMenuHandler.Construct(ClientID);
-
-			// send tuning parameters to client
-			SendTuningParams(ClientID);
+			//m_VoteMenuHandler.Construct(ClientID);
 
 			// client is ready to enter
 			pPlayer->m_IsReady = true;
@@ -917,7 +931,7 @@ void CGameContext::ConTuneParam(IConsole::IResult *pResult, void *pUserData)
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "%s changed to %.2f", pParamName, NewValue);
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "tuning", aBuf);
-		pSelf->SendTuningParams(-1);
+		pSelf->SpreadTuningParams();
 	}
 	else
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "tuning", "No such tuning parameter");
@@ -928,7 +942,7 @@ void CGameContext::ConTuneReset(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	CTuningParams TuningParams;
 	*pSelf->Tuning() = TuningParams;
-	pSelf->SendTuningParams(-1);
+	pSelf->SpreadTuningParams();
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "tuning", "Tuning reset");
 }
 

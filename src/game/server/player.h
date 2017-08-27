@@ -35,6 +35,8 @@ public:
 	void OnPredictedInput(CNetObj_PlayerInput *NewInput);
 	void OnDisconnect(const char *pReason);
 
+	void DoPlayerTuning();
+
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
 
@@ -42,6 +44,8 @@ public:
 	bool GetPause() const { return m_Pause; }
 	void TogglePause() { m_Pause = !m_Pause; }
 	IServer::CClientInfo *ClientInfo() { return m_pClientInfo; }
+	CTuningParams *Tuning() { return &m_Tuning; }
+	CGameMap *GameMap() const { return m_pGameMap; }
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -111,12 +115,15 @@ public:
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
+	CGameMap *m_pGameMap;
 
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const;
-	CGameMap *GameMap() const;
 	CTranslateItem m_TranslateItem;
 	IServer::CClientInfo *m_pClientInfo;
+
+	CTuningParams m_Tuning;
+	CTuningParams m_LastTuning;
 
 	//
 	bool m_Spawning;

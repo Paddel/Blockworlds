@@ -20,6 +20,11 @@ class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
 
+	enum
+	{
+		EXTRAID_INVIOLABLE=0,
+		NUM_EXTRAIDS,
+	};
 public:
 	//character's size
 	static const int ms_PhysSize = 28;
@@ -33,6 +38,9 @@ public:
 	virtual void TickPaused();
 	virtual void Snap(int SnappingClient);
 	virtual void Push(vec2 Force, int From);
+
+	void SnapExtras(int SnappingClient);
+	int GetExtraID(int Index);
 
 	bool IsGrounded();
 
@@ -73,6 +81,7 @@ public:
 	bool TakeWeapons();
 	void RaceFinish();
 	void SpeedUp(int Force, int MaxSpeed, int Angle);
+	bool IsInviolable();
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
@@ -91,11 +100,12 @@ private:
 	bool m_DeepFreeze;
 	int64 m_RaceStart;
 	int64 m_FreezeCryTick;
+	int m_aExtraIDs[NUM_EXTRAIDS];
 
 	//zones
-	bool m_ZoneProtection;
 	bool m_ZoneBlock;
 
+	int64 m_ProtectionTime;
 
 	vec2 m_LastPos;
 

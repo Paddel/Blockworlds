@@ -49,7 +49,7 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 	int Num = 0;
 	for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
 	{
-		if(distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius)
+		if(within_reach(pEnt->m_Pos, Pos, Radius + pEnt->m_ProximityRadius) == true)
 		{
 			if(ppEnts)
 				ppEnts[Num] = pEnt;
@@ -67,7 +67,7 @@ int CGameWorld::FindTees(vec2 Pos, float Radius, CEntity **ppEnts, int Max)
 	int Num = 0;
 	for (CEntity *pEnt = m_apFirstEntityTypes[ENTTYPE_CHARACTER]; pEnt; pEnt = pEnt->m_pNextTypeEntity)
 	{
-		if (distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+		if (within_reach(pEnt->m_Pos, Pos, Radius + pEnt->m_ProximityRadius) == true)
 		{
 			if (ppEnts)
 				ppEnts[Num] = pEnt;
@@ -79,7 +79,7 @@ int CGameWorld::FindTees(vec2 Pos, float Radius, CEntity **ppEnts, int Max)
 
 	for (CEntity *pEnt = m_apFirstEntityTypes[ENTTYPE_NPC]; pEnt; pEnt = pEnt->m_pNextTypeEntity)
 	{
-		if (distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+		if (within_reach(pEnt->m_Pos, Pos, Radius + pEnt->m_ProximityRadius) == true)
 		{
 			if (ppEnts)
 				ppEnts[Num] = pEnt;
@@ -229,12 +229,11 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 			continue;
 
 		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
-		float Len = distance(p->m_Pos, IntersectPos);
-		if(Len < p->m_ProximityRadius+Radius)
+		if(within_reach(p->m_Pos, IntersectPos, p->m_ProximityRadius + Radius) == true)
 		{
-			Len = distance(Pos0, IntersectPos);
-			if(Len < ClosestLen)
+			if(within_reach(Pos0, IntersectPos, ClosestLen) == true)
 			{
+				float Len = distance(Pos0, IntersectPos);
 				NewPos = IntersectPos;
 				ClosestLen = Len;
 				pClosest = p;
@@ -257,12 +256,11 @@ CEntity *CGameWorld::IntersectTee(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewP
 			continue;
 
 		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
-		float Len = distance(p->m_Pos, IntersectPos);
-		if (Len < p->m_ProximityRadius + Radius)
+		if(within_reach(p->m_Pos, IntersectPos, p->m_ProximityRadius + Radius) == true)
 		{
-			Len = distance(Pos0, IntersectPos);
-			if (Len < ClosestLen)
+			if (within_reach(Pos0, IntersectPos, ClosestLen) == true)
 			{
+				float Len = distance(Pos0, IntersectPos);
 				NewPos = IntersectPos;
 				ClosestLen = Len;
 				pClosest = p;
@@ -276,12 +274,11 @@ CEntity *CGameWorld::IntersectTee(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewP
 			continue;
 
 		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
-		float Len = distance(p->m_Pos, IntersectPos);
-		if (Len < p->m_ProximityRadius + Radius)
+		if (within_reach(p->m_Pos, IntersectPos, p->m_ProximityRadius + Radius) == true)
 		{
-			Len = distance(Pos0, IntersectPos);
-			if (Len < ClosestLen)
+			if (within_reach(Pos0, IntersectPos, ClosestLen) == true)
 			{
+				float Len = distance(Pos0, IntersectPos);
 				NewPos = IntersectPos;
 				ClosestLen = Len;
 				pClosest = p;
@@ -305,11 +302,11 @@ CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotTh
 		if(p == pNotThis)
 			continue;
 
-		float Len = distance(Pos, p->m_Pos);
-		if(Len < p->m_ProximityRadius+Radius)
+		if(within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius))
 		{
-			if(Len < ClosestRange)
+			if (within_reach(Pos, p->m_Pos, ClosestRange) == true);
 			{
+				float Len = distance(Pos, p->m_Pos);
 				ClosestRange = Len;
 				pClosest = p;
 			}
@@ -330,9 +327,9 @@ CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis)
 		if (p == pNotThis)
 			continue;
 
-		float Len = distance(Pos, p->m_Pos);
-		if (Len < p->m_ProximityRadius + Radius)
+		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius))
 		{
+			float Len = distance(Pos, p->m_Pos);
 			if (Len < ClosestRange)
 			{
 				ClosestRange = Len;
@@ -346,11 +343,11 @@ CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis)
 		if (p == pNotThis)
 			continue;
 
-		float Len = distance(Pos, p->m_Pos);
-		if (Len < p->m_ProximityRadius + Radius)
+		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius))
 		{
-			if (Len < ClosestRange)
+			if (within_reach(Pos, p->m_Pos, ClosestRange) == true);
 			{
+				float Len = distance(Pos, p->m_Pos);
 				ClosestRange = Len;
 				pClosest = p;
 			}

@@ -10,7 +10,6 @@
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
-CGameMap *CPlayer::GameMap() const { return m_pGameServer->Server()->CurrentGameMap(m_ClientID); }
 
 CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 {
@@ -31,6 +30,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_AttackedByTick = 0;
 	m_Blocked = false;
 	m_UnblockedTick = Server()->Tick();//hast to be at least 60 seconds on server to give exp
+
+	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);;
 }
 
 CPlayer::~CPlayer()
@@ -43,6 +44,14 @@ void CPlayer::Tick()
 {
 	if(!Server()->ClientIngame(m_ClientID))
 		return;
+
+	mem_copy(&m_Tuning, &GameMap()->World()->m_Core.m_Tuning, sizeof(m_Tuning));
+	DoPlayerTuning();
+	if (mem_comp(&m_Tuning, &m_LastTuning, sizeof(m_Tuning)) != 0)
+	{
+		GameServer()->SendTuningParams(m_ClientID);
+		mem_copy(&m_LastTuning, &m_Tuning, sizeof(m_LastTuning));
+	}
 
 	Server()->SetClientScore(m_ClientID, m_Score);
 
@@ -185,6 +194,20 @@ void CPlayer::Snap(int SnappingClient)
 void CPlayer::OnDisconnect(const char *pReason)
 {
 	KillCharacter();
+}
+
+void CPlayer::DoPlayerTuning()
+{//this is only for client predictions
+	if (GetCharacter() && GetCharacter()->IsAlive())
+	{
+		CCharacter *pChr = GameMap()->World()->ClosestCharacter(GetCharacter()->m_Pos, 32.0f, GetCharacter());
+
+		if (GetCharacter()->IsInviolable() || (pChr != 0x0 && pChr->IsInviolable()))
+		{
+			m_Tuning.m_PlayerCollision = 0;
+			m_Tuning.m_PlayerHooking = 0;
+		}
+	}
 }
 
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)

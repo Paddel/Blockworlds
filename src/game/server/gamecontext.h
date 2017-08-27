@@ -118,11 +118,14 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendBroadcast(const char *pText, int ClientID);
 
+	void SpreadTuningParams();
 	void SendTuningParams(int ClientID);
 
 	//handles
 	void HandleInactive();
 	void HandleBlockSystem();
+
+	void DoGeneralTuning();
 
 	//score system
 	void BlockSystemFinish(int ClientID, vec2 Pos, bool Kill);
@@ -132,6 +135,8 @@ public:
 	void SetLevel(int ClientID, int Level);
 	void GiveClanExperience(int ClientID, int Amount);
 	void SetClanLevel(int ClientID, int Level);
+
+	bool OnExtrasCallvote(int ClientID, const char *pCommand);
 
 	// engine events
 	virtual void OnInit();
