@@ -409,7 +409,7 @@ int CServer::Init()
 		m_aClients[i].m_aClan[0] = 0;
 		m_aClients[i].m_Country = -1;
 		m_aClients[i].m_Snapshots.Init();
-		mem_zero(&m_aClients[i].m_ClientInfo, sizeof(IServer::CClientInfo));
+		m_aClients[i].m_ClientInfo.Reset();
 	}
 
 	m_CurrentGameTick = 0;
@@ -702,7 +702,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_MapitemUsage = 16;
 	pThis->m_aClients[ClientID].m_Online = false;
 	pThis->m_aClients[ClientID].Reset();
-	mem_zero(&pThis->m_aClients[ClientID].m_ClientInfo, sizeof(IServer::CClientInfo));
+	pThis->m_aClients[ClientID].m_ClientInfo.Reset();
 
 	pThis->SetMapOnConnect(ClientID);
 	return 0;
@@ -736,7 +736,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
-	mem_zero(&pThis->m_aClients[ClientID].m_ClientInfo, sizeof(IServer::CClientInfo));
+	pThis->m_aClients[ClientID].m_ClientInfo.Reset();
 	return 0;
 }
 
@@ -1649,6 +1649,8 @@ void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 				str_fcat(aBuf, sizeof(aBuf), " exp=%i", pAccountData->m_Experience);
 				str_fcat(aBuf, sizeof(aBuf), " weaponkits=%i", pAccountData->m_WeaponKits);
 				str_fcat(aBuf, sizeof(aBuf), " ranking=%i", pAccountData->m_Ranking);
+				str_fcat(aBuf, sizeof(aBuf), " blockpoints=%i", pAccountData->m_BlockPoints);
+				str_fcat(aBuf, sizeof(aBuf), " knockouts=%s", pAccountData->m_aKnockouts);
 			}
 			else
 				str_append(aBuf, "Not Logged In", sizeof(aBuf));

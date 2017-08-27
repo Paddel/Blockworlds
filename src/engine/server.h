@@ -40,13 +40,15 @@ public:
 	{
 		char m_aName[32];
 		char m_aPassword[32];
+		char m_aAddress[47];
 		bool m_Vip;
 		int m_Pages;
 		int m_Level;
 		int m_Experience;
-		char m_aAddress[47];
 		int m_WeaponKits;
 		int m_Ranking;
+		int m_BlockPoints;
+		char m_aKnockouts[256];
 	};
 
 	struct CClientInfo
@@ -54,6 +56,14 @@ public:
 		bool m_LoggedIn;
 		CAccountData m_AccountData;
 		CClanData *m_pClan;
+
+		int m_CurrentKnockout;
+
+		void Reset()
+		{
+			mem_zero(this, sizeof(*this));
+			m_CurrentKnockout = -1;
+		}
 	};
 
 	int Tick() const { return m_CurrentGameTick; }

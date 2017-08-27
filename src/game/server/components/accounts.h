@@ -2,16 +2,12 @@
 
 #include <base/tl/array.h>
 #include <engine/server/database.h>
+#include <game/server/component.h>
 
-class CGameContext;
-class IServer;
-
-class CAccountsHandler
+class CAccountsHandler : public CComponent
 {
 private:
 	CDatabase m_Database;
-	CGameContext *m_pGameServer;
-	IServer *m_pServer;
 	array<IServer::CClanData *> m_lpClans;
 	bool m_Inited;
 	bool m_ClanSystemError;
@@ -30,8 +26,8 @@ private:
 public:
 	CAccountsHandler();
 
-	void Init(CGameContext *pGameServer);
-	void Tick();
+	virtual void Init();
+	virtual void Tick();
 
 	void Login(int ClientID, const char *pName, const char *pPassword);
 	void Register(int ClientID, const char *pName, const char *pPassword);
@@ -49,7 +45,4 @@ public:
 	static void ClanLeave(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 
 	bool CanShutdown();
-
-	CGameContext *GameServer() const { return m_pGameServer; };
-	IServer *Server() const { return m_pServer; };
 };

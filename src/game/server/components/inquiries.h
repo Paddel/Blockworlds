@@ -1,5 +1,7 @@
 #pragma once
 
+#include <game/server/component.h>
+
 #define INQUIERY_MAX_OPTIONS 8
 
 class CGameContext;
@@ -24,22 +26,17 @@ public:
 	void AddOption(const char *pText);
 };
 
-class CInquieriesHandler
+class CInquieriesHandler : public CComponent
 {
 private:
 	CInquiery *m_apInquieries[MAX_CLIENTS];
-	CGameContext *m_pGameServer;
-	IServer *m_pServer;
 
 public:
 	CInquieriesHandler();
 
-	void Tick();
-	void Init(CGameContext *pGameServer);
+	virtual void Tick();
+
 	bool NewInquieryPossible(int ClientID);
 	void NewInquiery(int ClientID, CInquiery *pInquiery, const char *pText);
 	bool OnChatAnswer(int ClientID, const char *pText);
-
-	CGameContext *GameServer() const { return m_pGameServer; };
-	IServer *Server() const { return m_pServer; };
 };

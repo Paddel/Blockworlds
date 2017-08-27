@@ -70,6 +70,7 @@ private:
 	int m_aNumSpawnPoints[3];
 	int m_RoundStartTick;
 	bool m_BlockMap;
+	int m_NumPlayers;
 
 	//Voting
 	int m_VoteCreator;
@@ -136,6 +137,7 @@ public:
 	void UpdateVotes() { m_VoteUpdate = true; };
 	bool IsBlockMap() const { return m_BlockMap; }
 	void SetBlockMap(bool Value) { m_BlockMap = Value; }
+	int NumPlayers() { return m_NumPlayers; }
 
 	void Tick();
 	void SendChat(int ChatterClientID, int Team, const char *pText);

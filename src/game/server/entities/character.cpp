@@ -84,7 +84,6 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	mem_zero(&m_GotWeapon, sizeof(m_GotWeapon));
 	GiveWeapon(WEAPON_HAMMER);
 	GiveWeapon(WEAPON_GUN);
-	GiveWeapon(WEAPON_SHOTGUN);
 
 	return true;
 }
@@ -125,7 +124,7 @@ void CCharacter::Push(vec2 Force, int From)
 
 	m_Core.m_Vel += Force;
 	if(length(Force) > 10.0f && From != -1)
-		GameServer()->BlockSystemAttack(From, GetPlayer()->GetCID());
+		GameServer()->BlockSystemAttack(From, GetPlayer()->GetCID(), false);
 }
 
 void CCharacter::HandleNinja()
@@ -975,7 +974,7 @@ void CCharacter::Die(int Killer, int Weapon)
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	}
 
-	GameServer()->BlockSystemFinish(m_pPlayer->GetCID(), m_Pos);
+	GameServer()->BlockSystemFinish(m_pPlayer->GetCID(), m_Pos, true);
 
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;

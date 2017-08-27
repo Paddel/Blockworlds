@@ -12,9 +12,12 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
-#include "inquiries.h"
-#include "accounts.h"
-#include "chatcommands.h"
+#include <game/server/components/inquiries.h>
+#include <game/server/components/accounts.h>
+#include <game/server/components/chatcommands.h>
+#include <game/server/components/votemenu.h>
+#include <game/server/components/cosmetics.h>
+
 #include "player.h"
 
 class CGameContext : public IGameServer
@@ -26,6 +29,16 @@ class CGameContext : public IGameServer
 	CChatCommandsHandler m_ChatCommandsHandler;
 	CAccountsHandler m_AccountsHandler;
 	CInquieriesHandler m_InquiriesHandler;
+	CVoteMenuHandler m_VoteMenuHandler;
+	CCosmeticsHandler m_CosmeticsHandler;
+
+	enum
+	{
+		MAX_COMPONENTS = 16,
+	};
+
+	class CComponent *m_apComponents[MAX_COMPONENTS];
+	int m_NumComponents;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
@@ -46,8 +59,7 @@ class CGameContext : public IGameServer
 	static void ConchainAccountForceupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainShutdownupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
-	CGameContext(int Resetting);
-	void Construct(int Resetting);
+	void InitComponents();
 
 	bool m_Resetting;
 public:
@@ -57,11 +69,11 @@ public:
 	CChatCommandsHandler *ChatCommandsHandler() { return &m_ChatCommandsHandler; }
 	CAccountsHandler *AccountsHandler() { return &m_AccountsHandler; }
 	CInquieriesHandler *InquieriesHandler() { return &m_InquiriesHandler; }
+	CVoteMenuHandler *VoteMenuHandler() { return &m_VoteMenuHandler; }
+	CCosmeticsHandler *CosmeticsHandler() { return &m_CosmeticsHandler; }
 
 	CGameContext();
 	~CGameContext();
-
-	void Clear();
 
 	CPlayer *m_apPlayers[MAX_CLIENTS];
 
@@ -97,8 +109,6 @@ public:
 	{
 		CHAT_ALL=-2,
 		CHAT_SPEC=-1,
-		CHAT_RED=0,
-		CHAT_BLUE=1
 	};
 
 	// network
@@ -115,8 +125,8 @@ public:
 	void HandleBlockSystem();
 
 	//score system
-	void BlockSystemFinish(int ClientID, vec2 Pos);
-	void BlockSystemAttack(int Attacker, int Victim);
+	void BlockSystemFinish(int ClientID, vec2 Pos, bool Kill);
+	void BlockSystemAttack(int Attacker, int Victim, bool Hook);
 
 	void GiveExperience(int ClientID, int Amount);
 	void SetLevel(int ClientID, int Level);

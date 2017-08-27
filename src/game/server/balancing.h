@@ -4,12 +4,12 @@
 
 inline int NeededExp(int Level)
 {
-	return int(Level * 2.5f);
+	return int(Level * 0.420 + 15);
 }
 
 inline int NeededClanExp(int Level)
 {
-	return int(Level * 25.0f);
+	return int(Level * 2.10 + 30);
 }
 
 inline void NewRankings(int& Winner, int& Looser)//Age of Empires III ranking inc.
@@ -18,3 +18,7 @@ inline void NewRankings(int& Winner, int& Looser)//Age of Empires III ranking in
 	Winner += Points;
 	Looser -= Points;
 }
+
+inline int NeededClanCreateLevel() { return 35; }
+
+inline int NeededClanJoinLevel() { return 10; }

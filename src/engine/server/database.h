@@ -2,7 +2,7 @@
 
 #include <base/tl/array.h>
 
-#define QUERY_MAX_STR_LEN 512
+#define QUERY_MAX_STR_LEN 1024
 #define QUERY_MAX_RESULT_LEN 256
 
 class CDatabase

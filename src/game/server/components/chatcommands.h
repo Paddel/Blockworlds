@@ -2,11 +2,12 @@
 
 #include <base/tl/array.h>
 #include <engine/shared/console.h>
+#include <game/server/component.h>
 
 class CGameContext;
 class IServer;
 
-class CChatCommandsHandler
+class CChatCommandsHandler : public CComponent
 {
 	typedef void(*FChatCommandCallback)(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	
@@ -28,8 +29,6 @@ class CChatCommandsHandler
 	};
 
 private:
-	CGameContext *m_pGameServer;
-	IServer *m_pServer;
 	IConsole *m_pConsole;
 	array<CChatCommand *> m_lpChatCommands;
 
@@ -58,10 +57,8 @@ public:
 	CChatCommandsHandler();
 	~CChatCommandsHandler();
 
-	void Init(CGameContext *pGameServer);
+	virtual void Init();
 	bool ProcessMessage(const char *pMsg, int ClientID);
 
-	CGameContext *GameServer() const { return m_pGameServer; };
 	IConsole *Console() const { return m_pConsole; };
-	IServer *Server() const { return m_pServer; };
 };

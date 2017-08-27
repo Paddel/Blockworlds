@@ -26,12 +26,6 @@ CInquieriesHandler::CInquieriesHandler()
 	mem_zero(m_apInquieries, sizeof(m_apInquieries));
 }
 
-void CInquieriesHandler::Init(CGameContext *pGameServer)
-{
-	m_pGameServer = pGameServer;
-	m_pServer = pGameServer->Server();
-}
-
 void CInquieriesHandler::Tick()
 {
 	for (int i = 0; i < MAX_CLIENTS; i++)
@@ -41,7 +35,7 @@ void CInquieriesHandler::Tick()
 
 		if (m_apInquieries[i] != 0x0 && Server()->Tick() > m_apInquieries[i]->m_TimeLimit)
 		{
-			m_apInquieries[i]->m_fResultCallback(-1, m_apInquieries[i]->m_aData, i, m_pGameServer);
+			m_apInquieries[i]->m_fResultCallback(-1, m_apInquieries[i]->m_aData, i, GameServer());
 			delete m_apInquieries[i];
 			m_apInquieries[i] = 0x0;
 		}
@@ -78,7 +72,7 @@ bool CInquieriesHandler::OnChatAnswer(int ClientID, const char *pText)
 	{
 		if (str_comp_nocase(m_apInquieries[ClientID]->m_aaOptions[i], pText) == 0)
 		{
-			m_apInquieries[ClientID]->m_fResultCallback(i, m_apInquieries[ClientID]->m_aData, ClientID, m_pGameServer);
+			m_apInquieries[ClientID]->m_fResultCallback(i, m_apInquieries[ClientID]->m_aData, ClientID, GameServer());
 			delete m_apInquieries[ClientID];
 			m_apInquieries[ClientID] = 0x0;
 			return true;

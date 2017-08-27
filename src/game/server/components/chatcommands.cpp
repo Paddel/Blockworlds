@@ -2,6 +2,8 @@
 #include <engine/shared/config.h>
 #include <game/version.h>
 #include <game/server/gamecontext.h>
+#include <game/server/balancing.h>
+
 
 #include "chatcommands.h"
 
@@ -10,8 +12,7 @@ static char SignArrowRight[] = { '\xE2','\x86', '\x92', 0 };
 
 CChatCommandsHandler::CChatCommandsHandler()
 {
-	m_pGameServer = 0x0;
-	m_pConsole = 0x0;
+	
 }
 
 CChatCommandsHandler::~CChatCommandsHandler()
@@ -26,7 +27,7 @@ void CChatCommandsHandler::ComHelp(CConsole::CResult *pResult, CGameContext *pGa
 
 	if (pResult->NumArguments() == 0)
 	{
-		pGameServer->SendChatTarget(ClientID, "Use this command to get help to a chatcommand. Possible input: /help cmdlist");
+		pGameServer->SendChatTarget(ClientID, "Use this command to get assistance to a chatcommand. Possible input: /help cmdlist");
 		return;
 	}
 
@@ -291,12 +292,12 @@ void CChatCommandsHandler::ComClanInvite(CConsole::CResult *pResult, CGameContex
 		return;
 	}
 
-	if(pGameServer->Server()->GetClientInfo(InvitingID)->m_AccountData.m_Level < 5)
+	if(pGameServer->Server()->GetClientInfo(InvitingID)->m_AccountData.m_Level < NeededClanJoinLevel())
 	{
 		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "%s must be at least level 5 to join a clan!", pGameServer->Server()->ClientName(InvitingID));
+		str_format(aBuf, sizeof(aBuf), "%s must be at least level %i to join a clan!", pGameServer->Server()->ClientName(InvitingID), NeededClanJoinLevel());
 		pGameServer->SendChatTarget(ClientID, aBuf);
-		//return;
+		return;
 	}
 
 	if(pGameServer->Server()->GetClientInfo(InvitingID)->m_pClan != 0x0)
@@ -432,11 +433,9 @@ void CChatCommandsHandler::Register(const char *pName, const char *pParams, int 
 	m_lpChatCommands.add(pCommand);
 }
 
-void CChatCommandsHandler::Init(CGameContext *pGameServer)
+void CChatCommandsHandler::Init()
 {
-	m_pGameServer = pGameServer;
-	m_pServer = pGameServer->Server();
-	m_pConsole = pGameServer->Console();
+	m_pConsole = GameServer()->Console();
 
 	Register("help", "?s", 0, ComHelp,">--- BOOOM ---<");
 	Register("info", "", 0, ComInfo, "Gamemode BW364 made by 13x37");

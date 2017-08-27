@@ -11,22 +11,17 @@
 #include <game/gamecore.h>
 #include <game/server/entities/experience.h>
 
+#include "component.h"
 #include "balancing.h"
 #include "gamemap.h"
 #include "gamecontext.h"
 
-enum
-{
-	RESET,
-	NO_RESET
-};
-
-void CGameContext::Construct(int Resetting)
+CGameContext::CGameContext()
 {
 	m_Resetting = 0;
 	m_pServer = 0;
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for (int i = 0; i < MAX_CLIENTS; i++)
 		m_apPlayers[i] = 0;
 
 	m_pVoteOptionFirst = 0;
@@ -34,18 +29,7 @@ void CGameContext::Construct(int Resetting)
 	m_NumVoteOptions = 0;
 	m_LockTeams = 0;
 
-	if(Resetting==NO_RESET)
-		m_pVoteOptionHeap = new CHeap();
-}
-
-CGameContext::CGameContext(int Resetting)
-{
-	Construct(Resetting);
-}
-
-CGameContext::CGameContext()
-{
-	Construct(NO_RESET);
+	m_pVoteOptionHeap = new CHeap();
 }
 
 CGameContext::~CGameContext()
@@ -56,26 +40,25 @@ CGameContext::~CGameContext()
 		delete m_pVoteOptionHeap;
 }
 
-void CGameContext::Clear()
+void CGameContext::InitComponents()
 {
-	CHeap *pVoteOptionHeap = m_pVoteOptionHeap;
-	CVoteOptionServer *pVoteOptionFirst = m_pVoteOptionFirst;
-	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
-	int NumVoteOptions = m_NumVoteOptions;
-	CTuningParams Tuning = m_Tuning;
+	m_NumComponents = 0;
 
-	m_Resetting = true;
-	this->~CGameContext();
-	mem_zero(this, sizeof(*this));
-	new (this) CGameContext(RESET);
+	m_apComponents[m_NumComponents++] = &m_ChatCommandsHandler;
+	m_apComponents[m_NumComponents++] = &m_AccountsHandler;
+	m_apComponents[m_NumComponents++] = &m_InquiriesHandler;
+	m_apComponents[m_NumComponents++] = &m_VoteMenuHandler;
+	m_apComponents[m_NumComponents++] = &m_CosmeticsHandler;
 
-	m_pVoteOptionHeap = pVoteOptionHeap;
-	m_pVoteOptionFirst = pVoteOptionFirst;
-	m_pVoteOptionLast = pVoteOptionLast;
-	m_NumVoteOptions = NumVoteOptions;
-	m_Tuning = Tuning;
+	for (int i = 0; i < m_NumComponents; i++)
+	{
+		m_apComponents[i]->m_pGameServer = this;
+		m_apComponents[i]->m_pServer = Server();
+	}
+
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Init();
 }
-
 
 class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 {
@@ -165,18 +148,6 @@ void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner, int 
 		}
 	}
 }
-
-/*
-void create_smoke(vec2 Pos)
-{
-	// create the event
-	EV_EXPLOSION *pEvent = (EV_EXPLOSION *)events.create(EVENT_SMOKE, sizeof(EV_EXPLOSION));
-	if(pEvent)
-	{
-		pEvent->x = (int)Pos.x;
-		pEvent->y = (int)Pos.y;
-	}
-}*/
 
 void CGameContext::CreatePlayerSpawn(CGameMap *pGameMap, vec2 Pos)
 {
@@ -358,14 +329,14 @@ void CGameContext::HandleInactive()
 	}
 }
 
-void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos)
+void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 {
 	CPlayer *pPlayer = m_apPlayers[ClientID];
 	CCharacter *pChr = GetPlayerChar(ClientID);
 	if (pPlayer == 0x0 || pChr == 0x0 || pChr->IsAlive() == false || pPlayer->m_AttackedBy == ClientID)
 		return;
 
-	if (pPlayer->m_AttackedBy != -1 && pPlayer->m_AttackedByTick + Server()->TickSpeed() * 6.5f > Server()->Tick() &&// if getting attacked more than 5.5 seconds ago does not count
+	if (pPlayer->m_AttackedBy != -1 && pPlayer->m_AttackedByTick + Server()->TickSpeed() * 6.5f > Server()->Tick() &&// if getting attacked more than 6.5 seconds ago does not count
 		pChr->IsFreezed())
 	{
 		CCharacter *pChrAttacker = GetPlayerChar(pPlayer->m_AttackedBy);
@@ -373,10 +344,13 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos)
 			return;
 
 		int ExperienceAmount = 0;
-		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick() && pChr->InBlockZone())
+		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick() && pChr->InBlockZone() && pChr->GameMap()->NumPlayers() >= 8)
 		{
 			pPlayer->m_UnblockedTick = Server()->Tick();
 			ExperienceAmount = 3;
+
+			if (Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_LoggedIn == true)
+				Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_AccountData.m_BlockPoints++;
 		}
 
 		//ranking
@@ -389,21 +363,30 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos)
 			m_AccountsHandler.Save(pPlayer->m_AttackedBy);
 		}
 
+		//exp
 		if (g_Config.m_SvScoreSystem == 1)
 			new CExperience(pChrAttacker->GameWorld(), Pos, ExperienceAmount, pPlayer->m_AttackedBy);
+
+		//knockout effect
+		if(Kill)
+			m_CosmeticsHandler.DoKnockoutEffect(pPlayer->m_AttackedBy, ClientID, Pos);
 
 		pPlayer->m_AttackedBy = -1;
 	}
 }
 
-void CGameContext::BlockSystemAttack(int Attacker, int Victim)
+void CGameContext::BlockSystemAttack(int Attacker, int Victim, bool Hook)
 {
 	CPlayer *pPlayerVictim = m_apPlayers[Victim];
 	CCharacter *pChrVictim = GetPlayerChar(Victim);
 	if (pPlayerVictim == 0x0 || pChrVictim == 0x0 || pChrVictim->IsFreezed() == true || Attacker == Victim)
 		return;
 
-	if (pPlayerVictim->m_AttackedByTick + Server()->TickSpeed() * 1.5f < Server()->Tick())
+	float Renew = 2.0f;
+	if (Hook) // prefere Hooks 
+		Renew = 1.0f;
+
+	if (pPlayerVictim->m_AttackedByTick + Server()->TickSpeed() * Renew < Server()->Tick())
 	{
 		pPlayerVictim->m_AttackedBy = Attacker;
 		pPlayerVictim->m_AttackedByTick = Server()->Tick();
@@ -429,20 +412,20 @@ void CGameContext::HandleBlockSystem()
 		if (m_apPlayers[i]->m_Blocked == false && pChr->IsFreezed() == true && pChr->FreezeTick() + Server()->TickSpeed() * 3.7f < Server()->Tick())
 		{
 			m_apPlayers[i]->m_Blocked = true;
-			BlockSystemFinish(i, pChr->m_Pos);
+			BlockSystemFinish(i, pChr->m_Pos, false);
 		}
 
 		int HookedPlayer = pChr->Core()->m_HookedPlayer;
 		if (pChr->Core()->m_HookState == HOOK_GRABBED && pChr->Core()->m_HookTick >= Server()->TickSpeed() * 0.5f &&
 			HookedPlayer >= 0 && HookedPlayer < MAX_CLIENTS) //not bots
-			BlockSystemAttack(i, HookedPlayer);
+			BlockSystemAttack(i, HookedPlayer, true);
 	}
 }
 
 void CGameContext::OnTick()
 {
-	m_AccountsHandler.Tick();
-	m_InquiriesHandler.Tick();
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Tick();
 
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
 		Server()->GetGameMap(i)->Tick();
@@ -475,7 +458,7 @@ void CGameContext::GiveExperience(int ClientID, int Amount)
 
 void CGameContext::SetLevel(int ClientID, int Level)
 {
-	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
 	{
 		IServer::CAccountData *pAccountData = &Server()->GetClientInfo(ClientID)->m_AccountData;
 		CCharacter *pChr = GetPlayerChar(ClientID);
@@ -729,44 +712,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			if(str_comp_nocase(pMsg->m_Type, "option") == 0)
 			{
-				CVoteOptionServer *pOption = m_pVoteOptionFirst;
-				while(pOption)
-				{
-					if(str_comp_nocase(pMsg->m_Value, pOption->m_aDescription) == 0)
-					{
-						str_format(aChatmsg, sizeof(aChatmsg), "'%s' called vote to change server option '%s' (%s)", Server()->ClientName(ClientID),
-									pOption->m_aDescription, pReason);
-						str_format(aDesc, sizeof(aDesc), "%s", pOption->m_aDescription);
-						str_format(aCmd, sizeof(aCmd), "%s", pOption->m_aCommand);
-						break;
-					}
-
-					pOption = pOption->m_pNext;
-				}
-
-				if(!pOption)
-				{
-					str_format(aChatmsg, sizeof(aChatmsg), "'%s' isn't an option on this server", pMsg->m_Value);
-					SendChatTarget(ClientID, aChatmsg);
-					return;
-				}
+				m_VoteMenuHandler.CallVote(ClientID, pMsg->m_Value, pReason);
 			}
 			else if(str_comp_nocase(pMsg->m_Type, "kick") == 0)
 			{
 			}
 			else if(str_comp_nocase(pMsg->m_Type, "spectate") == 0)
 			{
-			}
-
-			if(aCmd[0])
-			{
-				pGameMap->SendChat(-1, CGameContext::CHAT_ALL, aChatmsg);
-				pGameMap->StartVote(aDesc, aCmd, pReason);
-				pPlayer->m_Vote = 1;
-				pPlayer->m_VotePos = 1;
-				pGameMap->SetVotePos(1);
-				pGameMap->SetVoteCreator(ClientID);
-				pPlayer->m_LastVoteCall = Now;
 			}
 		}
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
@@ -941,76 +893,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 
-			// send vote options
-			CNetMsg_Sv_VoteClearOptions ClearMsg;
-			Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
-
-			CNetMsg_Sv_VoteOptionListAdd OptionMsg;
-			int NumOptions = 0;
-			OptionMsg.m_pDescription0 = "";
-			OptionMsg.m_pDescription1 = "";
-			OptionMsg.m_pDescription2 = "";
-			OptionMsg.m_pDescription3 = "";
-			OptionMsg.m_pDescription4 = "";
-			OptionMsg.m_pDescription5 = "";
-			OptionMsg.m_pDescription6 = "";
-			OptionMsg.m_pDescription7 = "";
-			OptionMsg.m_pDescription8 = "";
-			OptionMsg.m_pDescription9 = "";
-			OptionMsg.m_pDescription10 = "";
-			OptionMsg.m_pDescription11 = "";
-			OptionMsg.m_pDescription12 = "";
-			OptionMsg.m_pDescription13 = "";
-			OptionMsg.m_pDescription14 = "";
-			CVoteOptionServer *pCurrent = m_pVoteOptionFirst;
-			while(pCurrent)
-			{
-				switch(NumOptions++)
-				{
-				case 0: OptionMsg.m_pDescription0 = pCurrent->m_aDescription; break;
-				case 1: OptionMsg.m_pDescription1 = pCurrent->m_aDescription; break;
-				case 2: OptionMsg.m_pDescription2 = pCurrent->m_aDescription; break;
-				case 3: OptionMsg.m_pDescription3 = pCurrent->m_aDescription; break;
-				case 4: OptionMsg.m_pDescription4 = pCurrent->m_aDescription; break;
-				case 5: OptionMsg.m_pDescription5 = pCurrent->m_aDescription; break;
-				case 6: OptionMsg.m_pDescription6 = pCurrent->m_aDescription; break;
-				case 7: OptionMsg.m_pDescription7 = pCurrent->m_aDescription; break;
-				case 8: OptionMsg.m_pDescription8 = pCurrent->m_aDescription; break;
-				case 9: OptionMsg.m_pDescription9 = pCurrent->m_aDescription; break;
-				case 10: OptionMsg.m_pDescription10 = pCurrent->m_aDescription; break;
-				case 11: OptionMsg.m_pDescription11 = pCurrent->m_aDescription; break;
-				case 12: OptionMsg.m_pDescription12 = pCurrent->m_aDescription; break;
-				case 13: OptionMsg.m_pDescription13 = pCurrent->m_aDescription; break;
-				case 14:
-					{
-						OptionMsg.m_pDescription14 = pCurrent->m_aDescription;
-						OptionMsg.m_NumOptions = NumOptions;
-						Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-						OptionMsg = CNetMsg_Sv_VoteOptionListAdd();
-						NumOptions = 0;
-						OptionMsg.m_pDescription1 = "";
-						OptionMsg.m_pDescription2 = "";
-						OptionMsg.m_pDescription3 = "";
-						OptionMsg.m_pDescription4 = "";
-						OptionMsg.m_pDescription5 = "";
-						OptionMsg.m_pDescription6 = "";
-						OptionMsg.m_pDescription7 = "";
-						OptionMsg.m_pDescription8 = "";
-						OptionMsg.m_pDescription9 = "";
-						OptionMsg.m_pDescription10 = "";
-						OptionMsg.m_pDescription11 = "";
-						OptionMsg.m_pDescription12 = "";
-						OptionMsg.m_pDescription13 = "";
-						OptionMsg.m_pDescription14 = "";
-					}
-				}
-				pCurrent = pCurrent->m_pNext;
-			}
-			if(NumOptions > 0)
-			{
-				OptionMsg.m_NumOptions = NumOptions;
-				Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-			}
+			m_VoteMenuHandler.Construct(ClientID);
 
 			// send tuning parameters to client
 			SendTuningParams(ClientID);
@@ -1154,13 +1037,7 @@ void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 	const char *pDescription = pResult->GetString(0);
 	const char *pCommand = pResult->GetString(1);
 
-	if(pSelf->m_NumVoteOptions == MAX_VOTE_OPTIONS)
-	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "maximum number of vote options reached");
-		return;
-	}
-
-	// check for valid option
+	//// check for valid option
 	if(!pSelf->Console()->LineIsValid(pCommand) || str_length(pCommand) >= VOTE_CMD_LENGTH)
 	{
 		char aBuf[256];
@@ -1168,8 +1045,10 @@ void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		return;
 	}
+
 	while(*pDescription && *pDescription == ' ')
 		pDescription++;
+
 	if(str_length(pDescription) >= VOTE_DESC_LENGTH || *pDescription == 0)
 	{
 		char aBuf[256];
@@ -1178,43 +1057,7 @@ void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	// check for duplicate entry
-	CVoteOptionServer *pOption = pSelf->m_pVoteOptionFirst;
-	while(pOption)
-	{
-		if(str_comp_nocase(pDescription, pOption->m_aDescription) == 0)
-		{
-			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "option '%s' already exists", pDescription);
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-			return;
-		}
-		pOption = pOption->m_pNext;
-	}
-
-	// add the option
-	++pSelf->m_NumVoteOptions;
-	int Len = str_length(pCommand);
-
-	pOption = (CVoteOptionServer *)pSelf->m_pVoteOptionHeap->Allocate(sizeof(CVoteOptionServer) + Len);
-	pOption->m_pNext = 0;
-	pOption->m_pPrev = pSelf->m_pVoteOptionLast;
-	if(pOption->m_pPrev)
-		pOption->m_pPrev->m_pNext = pOption;
-	pSelf->m_pVoteOptionLast = pOption;
-	if(!pSelf->m_pVoteOptionFirst)
-		pSelf->m_pVoteOptionFirst = pOption;
-
-	str_copy(pOption->m_aDescription, pDescription, sizeof(pOption->m_aDescription));
-	mem_copy(pOption->m_aCommand, pCommand, Len+1);
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "added option '%s' '%s'", pOption->m_aDescription, pOption->m_aCommand);
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-
-	// inform clients about added option
-	CNetMsg_Sv_VoteOptionAdd OptionMsg;
-	OptionMsg.m_pDescription = pOption->m_aDescription;
-	pSelf->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, -1);
+	pSelf->m_VoteMenuHandler.AddVote(pDescription, pCommand);
 }
 
 void CGameContext::ConRemoveVote(IConsole::IResult *pResult, void *pUserData)
@@ -1222,64 +1065,7 @@ void CGameContext::ConRemoveVote(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	const char *pDescription = pResult->GetString(0);
 
-	// check for valid option
-	CVoteOptionServer *pOption = pSelf->m_pVoteOptionFirst;
-	while(pOption)
-	{
-		if(str_comp_nocase(pDescription, pOption->m_aDescription) == 0)
-			break;
-		pOption = pOption->m_pNext;
-	}
-	if(!pOption)
-	{
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "option '%s' does not exist", pDescription);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-		return;
-	}
-
-	// inform clients about removed option
-	CNetMsg_Sv_VoteOptionRemove OptionMsg;
-	OptionMsg.m_pDescription = pOption->m_aDescription;
-	pSelf->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, -1);
-
-	// TODO: improve this
-	// remove the option
-	--pSelf->m_NumVoteOptions;
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "removed option '%s' '%s'", pOption->m_aDescription, pOption->m_aCommand);
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-
-	CHeap *pVoteOptionHeap = new CHeap();
-	CVoteOptionServer *pVoteOptionFirst = 0;
-	CVoteOptionServer *pVoteOptionLast = 0;
-	int NumVoteOptions = pSelf->m_NumVoteOptions;
-	for(CVoteOptionServer *pSrc = pSelf->m_pVoteOptionFirst; pSrc; pSrc = pSrc->m_pNext)
-	{
-		if(pSrc == pOption)
-			continue;
-
-		// copy option
-		int Len = str_length(pSrc->m_aCommand);
-		CVoteOptionServer *pDst = (CVoteOptionServer *)pVoteOptionHeap->Allocate(sizeof(CVoteOptionServer) + Len);
-		pDst->m_pNext = 0;
-		pDst->m_pPrev = pVoteOptionLast;
-		if(pDst->m_pPrev)
-			pDst->m_pPrev->m_pNext = pDst;
-		pVoteOptionLast = pDst;
-		if(!pVoteOptionFirst)
-			pVoteOptionFirst = pDst;
-
-		str_copy(pDst->m_aDescription, pSrc->m_aDescription, sizeof(pDst->m_aDescription));
-		mem_copy(pDst->m_aCommand, pSrc->m_aCommand, Len+1);
-	}
-
-	// clean up
-	delete pSelf->m_pVoteOptionHeap;
-	pSelf->m_pVoteOptionHeap = pVoteOptionHeap;
-	pSelf->m_pVoteOptionFirst = pVoteOptionFirst;
-	pSelf->m_pVoteOptionLast = pVoteOptionLast;
-	pSelf->m_NumVoteOptions = NumVoteOptions;
+	pSelf->m_VoteMenuHandler.RemoveVote(pDescription);
 }
 
 void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
@@ -1288,30 +1074,10 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	const char *pType = pResult->GetString(0);
 	const char *pValue = pResult->GetString(1);
 	const char *pReason = pResult->NumArguments() > 2 && pResult->GetString(2)[0] ? pResult->GetString(2) : "No reason given";
-	char aBuf[128] = {0};
 
 	if(str_comp_nocase(pType, "option") == 0)
 	{
-		CVoteOptionServer *pOption = pSelf->m_pVoteOptionFirst;
-		while(pOption)
-		{
-			if(str_comp_nocase(pValue, pOption->m_aDescription) == 0)
-			{
-				str_format(aBuf, sizeof(aBuf), "admin forced server option '%s' (%s)", pValue, pReason);
-				pSelf->SendChatTarget(-1, aBuf);
-				pSelf->Console()->ExecuteLine(pOption->m_aCommand);
-				break;
-			}
-
-			pOption = pOption->m_pNext;
-		}
-
-		if(!pOption)
-		{
-			str_format(aBuf, sizeof(aBuf), "'%s' isn't an option on this server", pValue);
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-			return;
-		}
+		pSelf->m_VoteMenuHandler.ForceVote(pValue, pReason);
 	}
 	else if(str_comp_nocase(pType, "kick") == 0)
 	{
@@ -1324,17 +1090,10 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConClearVotes(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "cleared votes");
-	CNetMsg_Sv_VoteClearOptions VoteClearOptionsMsg;
-	pSelf->Server()->SendPackMsg(&VoteClearOptionsMsg, MSGFLAG_VITAL, -1);
-	pSelf->m_pVoteOptionHeap->Reset();
-	pSelf->m_pVoteOptionFirst = 0;
-	pSelf->m_pVoteOptionLast = 0;
-	pSelf->m_NumVoteOptions = 0;
+	pSelf->m_VoteMenuHandler.ClearVotes();
 }
 
-void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)//TODO
+void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
@@ -1450,9 +1209,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
-	m_ChatCommandsHandler.Init(this);
-	m_AccountsHandler.Init(this);
-	m_InquiriesHandler.Init(this);
+	//init components
+	InitComponents();
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
@@ -1460,7 +1218,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 void CGameContext::OnShutdown()
 {
-	Clear();
+	
 }
 
 void CGameContext::OnSnap(int ClientID)
