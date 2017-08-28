@@ -203,7 +203,7 @@ void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const c
 			CCharacter *pChr = GameServer()->GetPlayerChar(ClientID);
 			if (pChr != 0x0 && pChr->IsAlive())
 			{
-				GameServer()->CosmeticsHandler()->DoKnockoutEffect(ClientID, ClientID, pChr->m_Pos, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aCommand);
+				GameServer()->CosmeticsHandler()->DoKnockoutEffect(ClientID, pChr->m_Pos, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aCommand);
 				pChr->GetPlayer()->m_LastVoteTry = 0;
 			}
 			return;

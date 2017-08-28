@@ -30,6 +30,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_AttackedByTick = 0;
 	m_Blocked = false;
 	m_UnblockedTick = Server()->Tick();//hast to be at least 60 seconds on server to give exp
+	m_LastDeathnote = Server()->Tick();
 
 	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);;
 }
@@ -208,6 +209,11 @@ void CPlayer::DoPlayerTuning()
 			m_Tuning.m_PlayerHooking = 0;
 		}
 	}
+}
+
+bool CPlayer::CanBeDeathnoted()
+{
+	return true;
 }
 
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)

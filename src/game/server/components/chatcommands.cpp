@@ -206,6 +206,23 @@ void CChatCommandsHandler::ComRules(CConsole::CResult *pResult, CGameContext *pG
 	pGameServer->SendChatTarget(ClientID, "Violating these rules may result in a punishment");
 }
 
+void CChatCommandsHandler::ComPages(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	char aBuf[256];
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "Login to see your deathnote pages");
+		return;
+	}
+
+	int Pages = pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages;
+	str_format(aBuf, sizeof(aBuf), "You have %d pages in your Deathnote!", Pages);
+	if(Pages > 0)
+		str_fcat(aBuf, sizeof(aBuf), " Write \"/deathnote name\" to kill your enemies", Pages);
+
+	pGameServer->SendChatTarget(ClientID, aBuf);
+}
+
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
@@ -422,6 +439,76 @@ void CChatCommandsHandler::ComClanKick(CConsole::CResult *pResult, CGameContext 
 	pGameServer->AccountsHandler()->ClanKick(ClientID, pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, pName);
 }
 
+void CChatCommandsHandler::ComDeathnote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	const char *pName = pResult->GetString(0);
+	char aBuf[256];
+
+	if (pGameServer->m_apPlayers[ClientID] == 0x0)
+		return;
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages <= 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You don't have any Deathnote pages!");
+		return;
+	}
+	
+	int TicksLeft =  pGameServer->m_apPlayers[ClientID]->m_LastDeathnote + pGameServer->Server()->TickSpeed() * g_Config.m_SvDeathNoteCoolDown - pGameServer->Server()->Tick();
+	if (TicksLeft > 0)
+	{
+		str_format(aBuf, sizeof(aBuf), "You have to wait %d seconds until you can write down more players in your deathnote", TicksLeft / pGameServer->Server()->TickSpeed());
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	int KillingID = -1;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pGameServer->Server()->ClientIngame(i) == false || str_comp(pGameServer->Server()->ClientName(i), pName) != 0)
+			continue;
+
+		KillingID = i;
+		break;
+	}
+
+	if (KillingID == -1)
+	{
+		str_format(aBuf, sizeof(aBuf), "Player '%s' not found", pName);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	CCharacter *pChr = pGameServer->GetPlayerChar(KillingID);
+	if(pChr == 0x0 || pChr->IsAlive() == false)
+	{
+		str_format(aBuf, sizeof(aBuf), "Player '%s' is not alive", pName);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if(pChr->GetPlayer()->CanBeDeathnoted() == false)
+	{
+		str_format(aBuf, sizeof(aBuf), "Player '%s' cannot be killed rightnow", pName);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages--;
+	pChr->GetPlayer()->KillCharacter(WEAPON_WORLD);
+
+	str_format(aBuf, sizeof(aBuf), "%s used a deathnote to kill you!", pGameServer->Server()->ClientName(ClientID));
+	pGameServer->SendChatTarget(KillingID, aBuf);
+	str_format(aBuf, sizeof(aBuf), "Successfully killed %s. %d pages remaining", pName, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages);
+	pGameServer->SendChatTarget(ClientID, aBuf);
+	
+}
+
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
 {
 	CChatCommand *pCommand = new CChatCommand();
@@ -445,6 +532,7 @@ void CChatCommandsHandler::Init()
 	Register("emote", "s?si", 0, ComEmote, "Lets your tee show emotions (normal/pain/happy/surprise/angry/blink)");
 	Register("clan", "", 0, ComClan, "Sends you all information about the clan system");
 	Register("rules", "", 0, ComRules, "Informs you about the server rules");
+	Register("pages", "", 0, ComPages, "Informs you about the server rules");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
@@ -459,6 +547,7 @@ void CChatCommandsHandler::Init()
 	Register("clan_leader", "", CHATCMDFLAG_HIDDEN, ComClanLeader, "Sends you all information about being a clan leader");
 	Register("clan_list", "", CHATCMDFLAG_HIDDEN, ComClanList, "Sends a list of all clan members");
 	Register("clan_kick", "r", CHATCMDFLAG_HIDDEN, ComClanKick, "Kicks a member out of your clan");
+	Register("deathnote", "r", CHATCMDFLAG_HIDDEN, ComDeathnote, "Kill someone on your map via deathnote");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)

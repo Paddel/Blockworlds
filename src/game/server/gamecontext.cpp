@@ -381,7 +381,7 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 
 		//knockout effect
 		if(Kill)
-			m_CosmeticsHandler.DoKnockoutEffect(pPlayer->m_AttackedBy, ClientID, Pos);
+			m_CosmeticsHandler.DoKnockoutEffect(pPlayer->m_AttackedBy, Pos);
 
 		pPlayer->m_AttackedBy = -1;
 	}
@@ -941,7 +941,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 
-			//m_VoteMenuHandler.Construct(ClientID);
+			CNetMsg_Sv_VoteClearOptions ClearMsg;
+			Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
 
 			// client is ready to enter
 			pPlayer->m_IsReady = true;

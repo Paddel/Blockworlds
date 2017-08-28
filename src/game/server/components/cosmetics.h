@@ -14,6 +14,7 @@ public:
 		KNOCKOUT_HAMMERHIT,
 		KNOCKOUT_LOVE,
 		KNOCKOUT_THUNDERSTORM,
+		LETTER_TEST,
 		NUM_KNOCKOUTS,//Maximum sizeof(m_aKnockouts)/sizeof(char) = 256
 	};
 
@@ -45,18 +46,21 @@ public:
 private:
 	array<CCosAnim *> m_lpAnimations;
 
-	void KnockoutExplosion(int ClientID, int Victim, vec2 Pos, CGameMap *pGameMap);
-	void KnockoutHammerhit(int ClientID, int Victim, vec2 Pos, CGameMap *pGameMap);
+	void KnockoutExplosion(int ClientID, vec2 Pos, CGameMap *pGameMap);
+	void KnockoutHammerhit(int ClientID, vec2 Pos, CGameMap *pGameMap);
 
 public:
 
+	virtual void Init();
 	virtual void Tick();
 	void Snap(int SnappingClient);
 
+	void Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, CGameMap *pGameMap);
+
 	bool HasKnockoutEffect(int ClientID, int Index);
-	void DoKnockoutEffect(int ClientID, int Victim, vec2 Pos);
-	void DoKnockoutEffect(int ClientID, int Victim, vec2 Pos, const char *pName);
-	void DoKnockoutEffect(int ClientID, int Victim, vec2 Pos, int Effect);
+	void DoKnockoutEffect(int ClientID, vec2 Pos);
+	void DoKnockoutEffect(int ClientID, vec2 Pos, const char *pName);
+	void DoKnockoutEffect(int ClientID, vec2 Pos, int Effect);
 	bool ToggleKnockout(int ClientID, const char *pName);
 
 	void FillKnockout(IServer::CAccountData *pFillingData, const char *pValue);

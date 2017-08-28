@@ -36,6 +36,7 @@ public:
 	void OnDisconnect(const char *pReason);
 
 	void DoPlayerTuning();
+	bool CanBeDeathnoted();
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
@@ -111,6 +112,8 @@ public:
 	int64 m_AttackedByTick;
 	bool m_Blocked;
 	int64 m_UnblockedTick;
+
+	int64 m_LastDeathnote;
 
 private:
 	CCharacter *m_pCharacter;

@@ -41,6 +41,7 @@ private:
 	static void ComEmote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClan(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRules(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComPages(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
@@ -51,6 +52,7 @@ private:
 	static void ComClanLeader(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanList(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanKick(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComDeathnote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 
 	void Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp);
 public:

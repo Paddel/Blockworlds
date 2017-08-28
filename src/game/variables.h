@@ -67,7 +67,7 @@ MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 1, 0, 2, CFGFLAG_SERVER, "How 
 
 MACRO_CONFIG_INT(SvScoreSystem, sv_score_system, 1, 0, 1, CFGFLAG_SERVER, "Enables the scoresystem for blocking")
 MACRO_CONFIG_INT(SvClanMaxMebers, sv_clan_max_members, 10, 0, 128, CFGFLAG_SERVER, "Maximum number of players in a clan")
-
+MACRO_CONFIG_INT(SvDeathNoteCoolDown, sv_deathnote_cooldown, 180, 180, 1800, CFGFLAG_SERVER, "Time in seconds the player must wait before using the Deathnote again")
 
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
