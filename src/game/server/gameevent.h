@@ -46,6 +46,7 @@ protected:
 
 public:
 	CGameEvent(int Type, CGameMap *pGameMap);
+	virtual ~CGameEvent() {}
 
 	virtual void OnTick() {}
 	virtual void Snap(int SnappingClient) {}
