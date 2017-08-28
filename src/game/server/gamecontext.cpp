@@ -215,44 +215,58 @@ void CGameContext::SendChatTarget(int To, const char *pText)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
 }
 
+void CGameContext::SendChatClan(int ChatterClientID, const char *pText)
+{
+	if (Server()->GetClientInfo(ChatterClientID)->m_LoggedIn == false)
+	{
+		SendChatTarget(ChatterClientID, "Log in to use clan chat");
+		return;
+	}
 
-void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText)
+	if (Server()->GetClientInfo(ChatterClientID)->m_pClan == 0x0)
+	{
+		SendChatTarget(ChatterClientID, "You are currently not member of a clan");
+		return;
+	}
+
+
+	if (g_Config.m_Debug)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%d(clan):%s: %s", ChatterClientID, Server()->ClientName(ChatterClientID), pText);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "clanchat", aBuf);
+	}
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (Server()->GetClientInfo(i)->m_LoggedIn && Server()->GetClientInfo(ChatterClientID)->m_pClan == Server()->GetClientInfo(i)->m_pClan)
+		{
+			CNetMsg_Sv_Chat Msg;
+			Msg.m_Team = 1;
+			Msg.m_ClientID = ChatterClientID;
+			Msg.m_pMessage = pText;
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
+		}
+	}
+}
+
+void CGameContext::SendChat(int ChatterClientID, const char *pText)
 {
 	if (g_Config.m_Debug)
 	{
 		char aBuf[256];
 		if (ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-			str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), pText);
+			str_format(aBuf, sizeof(aBuf), "%d:%s: %s", ChatterClientID, Server()->ClientName(ChatterClientID), pText);
 		else
 			str_format(aBuf, sizeof(aBuf), "*** %s", pText);
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team != CHAT_ALL ? "teamchat" : "chat", aBuf);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "chat", aBuf);
 	}
 
-	if(Team == CHAT_ALL)
-	{
-		CNetMsg_Sv_Chat Msg;
-		Msg.m_Team = 0;
-		Msg.m_ClientID = ChatterClientID;
-		Msg.m_pMessage = pText;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
-	}
-	else
-	{
-		CNetMsg_Sv_Chat Msg;
-		Msg.m_Team = 1;
-		Msg.m_ClientID = ChatterClientID;
-		Msg.m_pMessage = pText;
-
-		// pack one for the recording only
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
-
-		// send to the clients
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() == Team)
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
-		}
-	}
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Team = 0;
+	Msg.m_ClientID = ChatterClientID;
+	Msg.m_pMessage = pText;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
 }
 
 void CGameContext::SendEmoticon(int ClientID, int Emoticon)
@@ -508,7 +522,7 @@ void CGameContext::SetClanLevel(int ClientID, int Level)
 		{
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), ">- Clan %s reached level %d! -<", pClanData->m_aName, Level);
-			SendChat(-1, CHAT_ALL, aBuf);
+			SendChat(-1, aBuf);
 		}
 
 		pClanData->m_Experience = 0;
@@ -556,7 +570,7 @@ void CGameContext::OnClientEnter(int ClientID, bool MapSwitching)
 	else
 		str_format(aBuf, sizeof(aBuf), "'%s' entered the map and joined the %s", Server()->ClientName(ClientID), GetTeamName(m_apPlayers[ClientID]->GetTeam()));
 	
-	pGameMap->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	pGameMap->SendChat(-1, aBuf);
 
 	if (g_Config.m_Debug)
 	{
@@ -592,21 +606,36 @@ void CGameContext::OnClientConnected(int ClientID)
 void CGameContext::OnClientLeave(int ClientID, const char *pReason)
 {
 	m_AccountsHandler.Save(ClientID);
+	m_VoteMenuHandler.Destruct(ClientID);
 }
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching)
 {
-	if (Server()->ClientIngame(ClientID) && MapSwitching == false)
+	if (Server()->ClientIngame(ClientID))
 	{
 		char aBuf[512];
-		if (pReason && *pReason)
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(ClientID), pReason);
-		else
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(ClientID));
-		SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
-		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+		if (MapSwitching == false)
+		{
+			if (pReason && *pReason)
+				str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(ClientID), pReason);
+			else
+				str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(ClientID));
+		}
+		else
+			str_format(aBuf, sizeof(aBuf), "'%s' has moved to %s", Server()->ClientName(ClientID), pGameMap->Map()->GetFileName());
+
+		pGameMap->SendChat(-1, aBuf);
+
+		if (g_Config.m_Debug)
+		{
+			if (MapSwitching == false)
+				str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+			else
+				str_format(aBuf, sizeof(aBuf), "move player='%d:%s' %s", ClientID, Server()->ClientName(ClientID), pGameMap->Map()->GetFileName());
+
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+		}
 	}
 
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
@@ -649,7 +678,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			CNetMsg_Cl_Say *pMsg = (CNetMsg_Cl_Say *)pRawMsg;
-			int Team = pMsg->m_Team ? pPlayer->GetTeam() : CGameContext::CHAT_ALL;
+			int Team = pMsg->m_Team;
 			
 			// trim right and set maximum length to 128 utf8-characters
 			int Length = 0;
@@ -691,7 +720,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					pPlayer->m_LastChat = 0;
 			}
 			else
-				pGameMap->SendChat(ClientID, Team, pMsg->m_pMessage);
+			{
+				if(Team)
+					SendChatClan(ClientID, pMsg->m_pMessage);
+				else
+					pGameMap->SendChat(ClientID, pMsg->m_pMessage);
+			}
 		}
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
@@ -721,9 +755,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
-			char aChatmsg[512] = {0};
-			char aDesc[VOTE_DESC_LENGTH] = {0};
-			char aCmd[VOTE_CMD_LENGTH] = {0};
 			CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
 			const char *pReason = pMsg->m_Reason[0] ? pMsg->m_Reason : "No reason given";
 
@@ -824,7 +855,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				char aChatText[256];
 				str_format(aChatText, sizeof(aChatText), "'%s' changed name to '%s'", aOldName, Server()->ClientName(ClientID));
-				pGameMap->SendChat(-1, CGameContext::CHAT_ALL, aChatText);
+				pGameMap->SendChat(-1, aChatText);
 			}
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
@@ -1001,7 +1032,7 @@ void CGameContext::ConBroadcast(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConSay(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	pSelf->SendChat(-1, CGameContext::CHAT_ALL, pResult->GetString(0));
+	pSelf->SendChat(-1, pResult->GetString(0));
 }
 
 void CGameContext::ConSetTeam(IConsole::IResult *pResult, void *pUserData)
@@ -1028,7 +1059,7 @@ void CGameContext::ConSetTeamAll(IConsole::IResult *pResult, void *pUserData)
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "All players were moved to the %s", pSelf->GetTeamName(Team));
-	pSelf->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	pSelf->SendChat(-1, aBuf);
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 		if(pSelf->m_apPlayers[i])
@@ -1040,9 +1071,9 @@ void CGameContext::ConLockTeams(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	pSelf->m_LockTeams ^= 1;
 	if(pSelf->m_LockTeams)
-		pSelf->SendChat(-1, CGameContext::CHAT_ALL, "Teams were locked");
+		pSelf->SendChat(-1, "Teams were locked");
 	else
-		pSelf->SendChat(-1, CGameContext::CHAT_ALL, "Teams were unlocked");
+		pSelf->SendChat(-1, "Teams were unlocked");
 }
 
 void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
@@ -1091,7 +1122,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 
 	if(str_comp_nocase(pType, "option") == 0)
 	{
-		pSelf->m_VoteMenuHandler.ForceVote(pValue, pReason);
+		pSelf->m_VoteMenuHandler.ForceVote(pSelf->Server()->RconClientID(), pValue, pReason);
 	}
 	else if(str_comp_nocase(pType, "kick") == 0)
 	{
@@ -1145,11 +1176,11 @@ void CGameContext::ConchainAccountsystemupdate(IConsole::IResult *pResult, void 
 				for (int i = 0; i < MAX_CLIENTS; i++)
 					pThis->m_AccountsHandler.Logout(i);
 
-				pThis->SendChat(-1, CHAT_ALL, "Accountsystem is disabled now!");
+				pThis->SendChat(-1, "Accountsystem is disabled now!");
 				g_Config.m_SvAccountForce = 0;
 			}
 			else
-				pThis->SendChat(-1, CHAT_ALL, "Accountsystem is enabled now!");
+				pThis->SendChat(-1, "Accountsystem is enabled now!");
 		}
 	}
 
@@ -1239,6 +1270,7 @@ void CGameContext::OnSnap(int ClientID)
 {
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
 	pGameMap->Snap(ClientID);
+	m_CosmeticsHandler.Snap(ClientID);
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{

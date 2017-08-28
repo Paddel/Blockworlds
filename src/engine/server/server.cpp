@@ -715,12 +715,9 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 	net_addr_str(pThis->m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 
-	if (g_Config.m_Debug)
-	{
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "client dropped. cid=%d addr=%s reason='%s'", ClientID, aAddrStr, pReason);
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
-	}
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "client dropped. cid=%d addr=%s reason='%s'", ClientID, aAddrStr, pReason);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
 	pThis->GameServer()->OnClientLeave(ClientID, pReason);
 
@@ -763,13 +760,6 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "'%s' has switched to %s", aName, pMap->GetFileName());
-	pCurrentMap->SendServerMsg(aBuf);
-
-	str_format(aBuf, sizeof(aBuf), "Player'%s has been moved to map '%s'", aName, pMap->GetFileName());
-	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
 	return true;
 }
@@ -1956,6 +1946,8 @@ int main(int argc, const char **argv) // ignore_convention
 
 	CServer *pServer = CreateServer();
 	IKernel *pKernel = IKernel::Create();
+
+	random_timeseet();
 
 	// create the components
 	IEngine *pEngine = CreateEngine("Teeworlds");

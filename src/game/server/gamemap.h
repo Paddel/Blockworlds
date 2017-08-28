@@ -140,7 +140,7 @@ public:
 	int NumPlayers() { return m_NumPlayers; }
 
 	void Tick();
-	void SendChat(int ChatterClientID, int Team, const char *pText);
+	void SendChat(int ChatterClientID, const char *pText);
 	void OnClientEnter(int ClientID);
 
 	CMap *Map() const { return m_pMap; };

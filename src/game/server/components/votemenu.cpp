@@ -98,11 +98,11 @@ void CVoteMenuHandler::Tick()
 	
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if (Server()->ClientIngame(i) == false)
+		if (Server()->ClientIngame(i) == false || GameServer()->m_apPlayers[i] == 0x0 ||
+			(GameServer()->m_apPlayers[i]->m_PlayerFlags&PLAYERFLAG_IN_MENU) == 0)
 			continue;
 
-
-		//very unefficient
+		//TODO: rework.. very unefficient
 		CVoteMenu OldMenu;
 		Construct(&OldMenu, i);
 		if (m_Menus[i].Compare(&OldMenu))
@@ -178,7 +178,7 @@ void CVoteMenuHandler::RemoveVote(const char *pDescription)
 	UpdateEveryone();
 }
 
-void CVoteMenuHandler::ForceVote(const char *pDescription, const char *pReason)
+void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const char *pReason)
 {
 	char aBuf[128];
 
@@ -188,9 +188,26 @@ void CVoteMenuHandler::ForceVote(const char *pDescription, const char *pReason)
 			continue;
 
 		str_format(aBuf, sizeof(aBuf), "admin forced server option '%s' (%s)", pDescription, pReason);
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+		GameServer()->SendChat(-1, aBuf);
 		GameServer()->Console()->ExecuteLine(m_lpServerOptions[i]->m_aCommand);
 		return;
+	}
+
+	if (ClientID >= 0 && ClientID < MAX_CLIENTS)
+	{
+		for (int i = 0; i < m_Menus[ClientID].m_lpKnockoutEffectsOptions.size(); i++)
+		{
+			if (str_comp(pDescription, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aDescription) != 0)
+				continue;
+
+			CCharacter *pChr = GameServer()->GetPlayerChar(ClientID);
+			if (pChr != 0x0 && pChr->IsAlive())
+			{
+				GameServer()->CosmeticsHandler()->DoKnockoutEffect(ClientID, ClientID, pChr->m_Pos, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aCommand);
+				pChr->GetPlayer()->m_LastVoteTry = 0;
+			}
+			return;
+		}
 	}
 
 	str_format(aBuf, sizeof(aBuf), "'%s' isn't an option on this server", pDescription);
@@ -227,7 +244,7 @@ void CVoteMenuHandler::CallVote(int ClientID, const char *pDescription, const ch
 		str_format(aChatmsg, sizeof(aChatmsg), "'%s' called vote to change server option '%s' (%s)", Server()->ClientName(ClientID),
 			pOption->m_aDescription, pReason);
 
-		pGameMap->SendChat(-1, CGameContext::CHAT_ALL, aChatmsg);
+		pGameMap->SendChat(-1, aChatmsg);
 		pGameMap->StartVote(pOption->m_aDescription, pOption->m_aCommand, pReason);
 		pPlayer->m_Vote = 1;
 		pPlayer->m_VotePos = 1;

@@ -123,7 +123,7 @@ bool CMap::HasFreePlayerSlot()
 
 void CMap::SendServerMsg(const char *pMsg)
 {
-	GameMap()->SendChat(-1, -2, pMsg);
+	GameMap()->SendChat(-1, pMsg);
 }
 
 bool CMap::HasNetSocket()

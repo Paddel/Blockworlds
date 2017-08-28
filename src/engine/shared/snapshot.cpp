@@ -525,6 +525,14 @@ int CSnapshotBuilder::Finish(void *pSpnapData)
 
 void *CSnapshotBuilder::NewItem(int Type, int ID, int Size)
 {
+	if (m_NumItems > 1000)
+	{
+		if (Type == 2 || //NETOBJTYPE_PROJECTILE
+			Type == 3 || //NETOBJTYPE_LASER
+			Type == 4) //NETOBJTYPE_PICKUP
+			return 0x0;
+	}
+
 	if(m_DataSize + sizeof(CSnapshotItem) + Size >= CSnapshot::MAX_SIZE ||
 		m_NumItems+1 >= MAX_ITEMS)
 	{

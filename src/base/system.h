@@ -1311,6 +1311,9 @@ int str_utf8_encode(char *ptr, int chr);
 */
 int str_utf8_check(const char *str);
 
+
+void random_timeseet();
+
 #ifdef __cplusplus
 }
 #endif

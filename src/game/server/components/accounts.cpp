@@ -334,8 +334,7 @@ void CAccountsHandler::ResultClanKick(void *pQueryData, bool Error, void *pUserD
 	CResultData *pResultData = (CResultData *)pUserData;
 	CGameContext *pGameServer = pResultData->m_pGameServer;
 	CAccountsHandler *pThis = pGameServer->AccountsHandler();
-	char aBuf[64];
-
+	
 	if (Error)
 	{
 		pGameServer->SendChatTarget(pResultData->m_ClientID, "Internal Server Error. Please contact an admin. Code 0x00009");

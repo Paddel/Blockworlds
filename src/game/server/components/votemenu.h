@@ -32,7 +32,7 @@ public:
 
 	void AddVote(const char *pDescription, const char *pCommand);
 	void RemoveVote(const char *pDescription);
-	void ForceVote(const char *pDescription, const char *pReason);
+	void ForceVote(int ClientID, const char *pDescription, const char *pReason);
 	void ClearVotes();
 
 	void CallVote(int ClientID, const char *pDescription, const char *pReason);

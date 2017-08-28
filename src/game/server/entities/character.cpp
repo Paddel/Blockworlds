@@ -521,7 +521,7 @@ void CCharacter::RaceFinish()
 	str_fcat(aBuf, sizeof(aBuf), "%.2f Seconds", Seconds);
 
 	//TODO: Save time
-	GameMap()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	GameMap()->SendChat(-1, aBuf);
 	m_RaceStart = 0;
 }
 

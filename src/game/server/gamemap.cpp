@@ -143,7 +143,7 @@ void CGameMap::UpdateVote()
 		// abort the kick-vote on player-leave
 		if (m_VoteCloseTime == -1)
 		{
-			SendChat(-1, CGameContext::CHAT_ALL, "Vote aborted");
+			SendChat(-1, "Vote aborted");
 			EndVote();
 		}
 		else
@@ -198,7 +198,7 @@ void CGameMap::UpdateVote()
 				Console()->ExecuteLine(m_aVoteCommand);
 				Server()->SetRconCID(IServer::RCON_CID_SERV);
 				EndVote();
-				SendChat(-1, CGameContext::CHAT_ALL, "Vote passed");
+				SendChat(-1, "Vote passed");
 
 				if (m_apPlayers[m_VoteCreator])
 					m_apPlayers[m_VoteCreator]->m_LastVoteCall = 0;
@@ -206,7 +206,7 @@ void CGameMap::UpdateVote()
 			else if (m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
 			{
 				EndVote();
-				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed");
+				SendChat(-1, "Vote failed");
 			}
 			else if (m_VoteUpdate)
 			{
@@ -703,7 +703,7 @@ void CGameMap::VoteEnforce(const char *pVote)
 		m_VoteEnforce = CGameContext::VOTE_ENFORCE_NO;
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "admin forced vote %s", pVote);
-	SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	SendChat(-1, aBuf);
 	str_format(aBuf, sizeof(aBuf), "forcing vote %s", pVote);
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
@@ -717,45 +717,28 @@ void CGameMap::Tick()
 	UpdateVote();
 }
 
-void CGameMap::SendChat(int ChatterClientID, int Team, const char *pText)
+void CGameMap::SendChat(int ChatterClientID, const char *pText)
 {
 	if (g_Config.m_Debug)
 	{
 		char aBuf[256];
 		if (ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-			str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), pText);
+			str_format(aBuf, sizeof(aBuf), "%d:%s: %s", ChatterClientID, Server()->ClientName(ChatterClientID), pText);
 		else
 			str_format(aBuf, sizeof(aBuf), "*** %s", pText);
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team != CGameContext::CHAT_ALL ? "teamchat" : "chat", aBuf);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "chat", aBuf);
 	}
 
-	if (Team == CGameContext::CHAT_ALL)
+	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		for (int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if (m_apPlayers[i] == 0x0)
-				continue;
+		if (m_apPlayers[i] == 0x0)
+			continue;
 
-			CNetMsg_Sv_Chat Msg;
-			Msg.m_Team = 0;
-			Msg.m_ClientID = ChatterClientID;
-			Msg.m_pMessage = pText;
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_apPlayers[i]->GetCID());
-		}
-	}
-	else
-	{
 		CNetMsg_Sv_Chat Msg;
-		Msg.m_Team = 1;
+		Msg.m_Team = 0;
 		Msg.m_ClientID = ChatterClientID;
 		Msg.m_pMessage = pText;
-
-		// send to the clients
-		for (int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() == Team)
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, m_apPlayers[i]->GetCID());
-		}
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_apPlayers[i]->GetCID());
 	}
 }
 

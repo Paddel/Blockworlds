@@ -2046,6 +2046,10 @@ unsigned str_quickhash(const char *str)
 	return hash;
 }
 
+void random_timeseet()
+{
+	srand(time(0));
+}
 
 #if defined(__cplusplus)
 }
