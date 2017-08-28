@@ -116,9 +116,10 @@ void CVoteMenuHandler::Tick()
 	}
 }
 
-void CVoteMenuHandler::Destruct(int ClientID)
+void CVoteMenuHandler::OnClientJoin(int ClientID)
 {
 	m_Menus[ClientID].Reset();
+	UpdateMenu(ClientID);
 }
 
 void CVoteMenuHandler::AddVote(const char *pDescription, const char *pCommand)
@@ -241,6 +242,12 @@ void CVoteMenuHandler::CallVote(int ClientID, const char *pDescription, const ch
 
 	if (pOption != 0x0)
 	{
+		if (str_comp(pOption->m_aCommand, "%rand_event") == 0)
+		{
+			if(pGameMap->TryVoteRandomEvent(ClientID) == false)
+				return;
+		}
+
 		str_format(aChatmsg, sizeof(aChatmsg), "'%s' called vote to change server option '%s' (%s)", Server()->ClientName(ClientID),
 			pOption->m_aDescription, pReason);
 

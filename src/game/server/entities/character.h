@@ -82,6 +82,7 @@ public:
 	void RaceFinish();
 	void SpeedUp(int Force, int MaxSpeed, int Angle);
 	bool IsInviolable();
+	void SetActiveWeapon(int Weapon);
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
@@ -89,6 +90,8 @@ public:
 	int64 FreezeTick() const { return m_FreezeTick; }
 	int FreezeTime() const { return m_FreezeTime; }
 	bool InBlockZone() const { return m_ZoneBlock; }
+	bool *Weapons() { return m_aGotWeapon; }
+	int GetActiveWeapon() const { return m_ActiveWeapon; }
 
 private:
 	// player controlling this character
@@ -113,7 +116,7 @@ private:
 	CEntity *m_apHitObjects[10];
 	int m_NumObjectsHit;
 
-	bool m_GotWeapon[NUM_WEAPONS];
+	bool m_aGotWeapon[NUM_WEAPONS];
 
 	int m_ActiveWeapon;
 	int m_LastWeapon;

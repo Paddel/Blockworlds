@@ -21,6 +21,8 @@ public:
 
 	void Init(int CID);
 
+	void ForceSpawn(vec2 Pos);
+	bool TryRespawnEvent();
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
@@ -62,6 +64,7 @@ public:
 	int m_SpectatorID;
 
 	bool m_IsReady;
+	bool m_SubscribeEvent;
 
 	//
 	int m_Vote;

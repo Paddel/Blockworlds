@@ -236,6 +236,9 @@ void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *p
 		return;
 	}
 
+	if (pGameServer->m_apPlayers[ClientID] != 0x0)
+		pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent = false;
+
 	pGameServer->AccountsHandler()->Logout(ClientID);
 }
 
@@ -459,10 +462,11 @@ void CChatCommandsHandler::ComDeathnote(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 	
-	int TicksLeft =  pGameServer->m_apPlayers[ClientID]->m_LastDeathnote + pGameServer->Server()->TickSpeed() * g_Config.m_SvDeathNoteCoolDown - pGameServer->Server()->Tick();
-	if (TicksLeft > 0)
+	if (pGameServer->m_apPlayers[ClientID]->m_LastDeathnote + pGameServer->Server()->TickSpeed() * g_Config.m_SvDeathNoteCoolDown > pGameServer->Server()->Tick())
 	{
-		str_format(aBuf, sizeof(aBuf), "You have to wait %d seconds until you can write down more players in your deathnote", TicksLeft / pGameServer->Server()->TickSpeed());
+		str_copy(aBuf, "You have to wait ", sizeof(aBuf));
+		pGameServer->StringTime(pGameServer->m_apPlayers[ClientID]->m_LastDeathnote + pGameServer->Server()->TickSpeed() * g_Config.m_SvDeathNoteCoolDown, aBuf, sizeof(aBuf));
+		str_append(aBuf, " until you can write down a player in your deathnote", sizeof(aBuf));
 		pGameServer->SendChatTarget(ClientID, aBuf);
 		return;
 	}
@@ -509,6 +513,28 @@ void CChatCommandsHandler::ComDeathnote(CConsole::CResult *pResult, CGameContext
 	
 }
 
+void CChatCommandsHandler::ComSubscribe(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (pGameServer->m_apPlayers[ClientID] == 0x0)
+		return;
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	bool Before = pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent;
+	pGameServer->m_apPlayers[ClientID]->GameMap()->ClientSubscribeEvent(ClientID);
+	if (Before != pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent)
+	{
+		if(pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent == true)
+			pGameServer->SendChatTarget(ClientID, "Successfully subscribed to the event");
+		else
+			pGameServer->SendChatTarget(ClientID, "Successfully unsubscribed to the event");
+	}
+}
+
 void CChatCommandsHandler::Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp)
 {
 	CChatCommand *pCommand = new CChatCommand();
@@ -548,6 +574,8 @@ void CChatCommandsHandler::Init()
 	Register("clan_list", "", CHATCMDFLAG_HIDDEN, ComClanList, "Sends a list of all clan members");
 	Register("clan_kick", "r", CHATCMDFLAG_HIDDEN, ComClanKick, "Kicks a member out of your clan");
 	Register("deathnote", "r", CHATCMDFLAG_HIDDEN, ComDeathnote, "Kill someone on your map via deathnote");
+	Register("subscribe", "", CHATCMDFLAG_HIDDEN, ComSubscribe, "Subscribe to a event to take part");
+	Register("sub", "", CHATCMDFLAG_HIDDEN, ComSubscribe, "Subscribe to a event to take part");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)

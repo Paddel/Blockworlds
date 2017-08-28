@@ -85,7 +85,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	GameWorld()->InsertEntity(this);
 	m_Alive = true;
 
-	mem_zero(&m_GotWeapon, sizeof(m_GotWeapon));
+	mem_zero(&m_aGotWeapon, sizeof(m_aGotWeapon));
 	GiveWeapon(WEAPON_HAMMER);
 	GiveWeapon(WEAPON_GUN);
 
@@ -146,7 +146,7 @@ void CCharacter::HandleNinja()
 	if ((Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
 	{
 		// time's up, return
-		m_GotWeapon[WEAPON_NINJA] = false;
+		m_aGotWeapon[WEAPON_NINJA] = false;
 		m_ActiveWeapon = m_LastWeapon;
 
 		SetWeapon(m_ActiveWeapon);
@@ -225,7 +225,7 @@ void CCharacter::HandleNinja()
 void CCharacter::DoWeaponSwitch()
 {
 	// make sure we can switch
-	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_GotWeapon[WEAPON_NINJA])
+	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aGotWeapon[WEAPON_NINJA])
 		return;
 
 	// switch Weapon
@@ -247,7 +247,7 @@ void CCharacter::HandleWeaponSwitch()
 		while(Next) // Next Weapon selection
 		{
 			WantedWeapon = (WantedWeapon+1)%NUM_WEAPONS;
-			if(m_GotWeapon[WantedWeapon])
+			if(m_aGotWeapon[WantedWeapon])
 				Next--;
 		}
 	}
@@ -257,7 +257,7 @@ void CCharacter::HandleWeaponSwitch()
 		while(Prev) // Prev Weapon selection
 		{
 			WantedWeapon = (WantedWeapon-1)<0?NUM_WEAPONS-1:WantedWeapon-1;
-			if(m_GotWeapon[WantedWeapon])
+			if(m_aGotWeapon[WantedWeapon])
 				Prev--;
 		}
 	}
@@ -267,7 +267,7 @@ void CCharacter::HandleWeaponSwitch()
 		WantedWeapon = m_Input.m_WantedWeapon-1;
 
 	// check for insane values
-	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_ActiveWeapon && m_GotWeapon[WantedWeapon])
+	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_ActiveWeapon && m_aGotWeapon[WantedWeapon])
 		m_QueuedWeapon = WantedWeapon;
 
 	DoWeaponSwitch();
@@ -423,7 +423,7 @@ void CCharacter::HandleWeapons()
 		return;
 	}
 
-	if (m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS || m_GotWeapon[m_ActiveWeapon] == false)
+	if (m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS || m_aGotWeapon[m_ActiveWeapon] == false)
 		m_ActiveWeapon = WEAPON_HAMMER;
 
 	// fire Weapon, if wanted
@@ -433,9 +433,9 @@ void CCharacter::HandleWeapons()
 
 bool CCharacter::GiveWeapon(int Weapon)
 {
-	if(!m_GotWeapon[Weapon])
+	if(!m_aGotWeapon[Weapon])
 	{
-		m_GotWeapon[Weapon] = true;
+		m_aGotWeapon[Weapon] = true;
 		return true;
 	}
 	return false;
@@ -444,7 +444,7 @@ bool CCharacter::GiveWeapon(int Weapon)
 void CCharacter::GiveNinja(bool PlaySound)
 {
 	m_Ninja.m_ActivationTick = Server()->Tick();
-	m_GotWeapon[WEAPON_NINJA] = true;
+	m_aGotWeapon[WEAPON_NINJA] = true;
 	if (m_ActiveWeapon != WEAPON_NINJA)
 		m_LastWeapon = m_ActiveWeapon;
 	m_ActiveWeapon = WEAPON_NINJA;
@@ -493,9 +493,9 @@ bool CCharacter::TakeWeapons()
 		if (i == WEAPON_GUN || i == WEAPON_HAMMER)
 			continue;
 
-		if (m_GotWeapon[i] == true)
+		if (m_aGotWeapon[i] == true)
 		{
-			m_GotWeapon[i] = false;
+			m_aGotWeapon[i] = false;
 			Found = true;
 		}
 	}
@@ -513,12 +513,7 @@ void CCharacter::RaceFinish()
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "%s finished in: ", Server()->ClientName(m_pPlayer->GetCID()));
-	int64 DeltaTime = Server()->Tick() - m_RaceStart;
-	int Minutes = DeltaTime / Server()->TickSpeed() / 60;
-	float Seconds = DeltaTime / (float)Server()->TickSpeed() - Minutes * 60;
-	if (Minutes > 0)
-		str_fcat(aBuf, sizeof(aBuf), "%i Minute%s and ", Minutes, Minutes > 1 ? "s" : "");
-	str_fcat(aBuf, sizeof(aBuf), "%.2f Seconds", Seconds);
+	GameServer()->StringTime(m_RaceStart, aBuf, sizeof(aBuf));
 
 	//TODO: Save time
 	GameMap()->SendChat(-1, aBuf);
@@ -590,6 +585,12 @@ bool CCharacter::IsInviolable()
 	if (m_ProtectionTime > 1 && Server()->GetClientInfo(GetPlayer()->GetCID())->m_UseInviolable == true && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
 		return true;
 	return false;
+}
+
+void CCharacter::SetActiveWeapon(int Weapon)
+{
+	if (m_aGotWeapon[Weapon] == true)
+		m_ActiveWeapon = Weapon;
 }
 
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
@@ -990,6 +991,9 @@ void CCharacter::TickPaused()
 
 void CCharacter::Die(int Killer, int Weapon)
 {
+	if (m_Alive == false)//already dead
+		return;
+
 	if (g_Config.m_Debug)
 	{
 		char aBuf[256];
@@ -1025,6 +1029,8 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(GameMap(), m_Pos, m_pPlayer->GetCID());
+
+	GameMap()->PlayerKilled(m_pPlayer->GetCID(), m_Pos);//for events
 }
 
 void CCharacter::Snap(int SnappingClient)

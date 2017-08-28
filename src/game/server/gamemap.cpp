@@ -2,10 +2,12 @@
 #include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/server/map.h>
+#include <game/extras.h>
 #include <game/server/gamecontext.h>
+#include <game/server/gameevent.h>
 #include <game/server/entities/npc.h>
 #include <game/server/entities/pickup.h>
-#include <game/extras.h>
+#include <game/server/gameevents/lastmanblocking.h>
 
 #include "gamemap.h"
 
@@ -22,6 +24,9 @@ CGameMap::CGameMap(CMap *pMap)
 
 	m_VoteCloseTime = 0;
 	m_BlockMap = false;
+
+	m_RandomEventTime = 0;
+	m_pGameEvent = 0x0;
 }
 
 CGameMap::~CGameMap()
@@ -96,9 +101,9 @@ bool CGameMap::OnEntity(int Index, vec2 Pos)
 
 	if (Index == ENTITY_SPAWN)
 		m_aaSpawnPoints[0][m_aNumSpawnPoints[0]++] = Pos;
-	else if (Index == ENTITY_SPAWN_RED)
+	else if (Index == ENTITY_SPAWN_EVENT)
 		m_aaSpawnPoints[1][m_aNumSpawnPoints[1]++] = Pos;
-	else if (Index == ENTITY_SPAWN_BLUE)
+	else if (Index == ENTITY_SPAWN_1ON1)
 		m_aaSpawnPoints[2][m_aNumSpawnPoints[2]++] = Pos;
 	else if (Index == ENTITY_ARMOR_1)
 		Type = POWERUP_ARMOR;
@@ -194,9 +199,16 @@ void CGameMap::UpdateVote()
 
 			if (m_VoteEnforce == VOTE_ENFORCE_YES)
 			{
-				Server()->SetRconCID(IServer::RCON_CID_VOTE);
-				Console()->ExecuteLine(m_aVoteCommand);
-				Server()->SetRconCID(IServer::RCON_CID_SERV);
+				if (str_comp(m_aVoteCommand, "%rand_event") == 0)
+				{
+					StartRandomEvent();
+				}
+				else
+				{
+					Server()->SetRconCID(IServer::RCON_CID_VOTE);
+					Console()->ExecuteLine(m_aVoteCommand);
+					Server()->SetRconCID(IServer::RCON_CID_SERV);
+				}
 				EndVote();
 				SendChat(-1, "Vote passed");
 
@@ -454,9 +466,7 @@ bool CGameMap::CanSpawn(int Team, vec2 *pOutPos)
 	if (Team == TEAM_SPECTATORS)
 		return false;
 
-	EvaluateSpawnType(&Eval, 0);
-	EvaluateSpawnType(&Eval, 1);
-	EvaluateSpawnType(&Eval, 2);
+	EvaluateSpawnType(&Eval, Team);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -602,10 +612,82 @@ void CGameMap::SnapGameInfo(int SnappingClient)
 
 void CGameMap::Snap(int SnappingClient)
 {
+	if (m_pGameEvent != 0x0)
+		m_pGameEvent->Snap(SnappingClient);
 	m_World.Snap(SnappingClient);
 	SnapDoors(SnappingClient);
 	SnapGameInfo(SnappingClient);
 	m_Events.Snap(SnappingClient);
+}
+
+CGameEvent *CGameMap::CreateGameEvent(int Index)
+{
+	switch (Index)
+	{
+	case CGameEvent::EVENT_LASTMANBLOCKING: return new CLastManBlocking(this);
+	};
+
+	return 0x0;
+}
+
+bool CGameMap::TryVoteRandomEvent(int ClientID)
+{
+	if (m_pGameEvent != 0x0)
+	{
+		GameServer()->SendChatTarget(ClientID, "You canno start a event, when there is alreay one running");
+		return false;
+	}
+
+	if (m_RandomEventTime + Server()->TickSpeed() * g_Config.m_SvEventCooldown > Server()->Tick())
+	{
+		char aBuf[128];
+		str_copy(aBuf, "You have to wait ", sizeof(aBuf));
+		GameServer()->StringTime(m_RandomEventTime + Server()->TickSpeed() * g_Config.m_SvEventCooldown, aBuf, sizeof(aBuf));
+		str_append(aBuf, " until you can start this vote.", sizeof(aBuf));
+		GameServer()->SendChatTarget(ClientID, aBuf);
+		return false;
+	}
+
+	return true;
+}
+
+void CGameMap::StartRandomEvent()
+{
+	if (m_pGameEvent != 0x0)
+		return;
+
+	int Index = rand() % CGameEvent::NUM_EVENTS;
+	m_pGameEvent = CreateGameEvent(Index);
+	m_RandomEventTime = Server()->Tick();
+}
+
+void CGameMap::EndEvent()
+{
+	if (m_pGameEvent == 0x0)
+		return;
+
+	delete m_pGameEvent;
+	m_pGameEvent = 0x0;
+
+	m_RandomEventTime = Server()->Tick();
+}
+
+void CGameMap::ClientSubscribeEvent(int ClientID)
+{
+	if (m_pGameEvent != 0x0)
+		m_pGameEvent->ClientSubscribe(ClientID);
+}
+
+void CGameMap::PlayerBlocked(int ClientID, bool Dead, vec2 Pos)
+{
+	if (m_pGameEvent != 0x0)
+		m_pGameEvent->PlayerBlocked(ClientID, Dead, Pos);
+}
+
+void CGameMap::PlayerKilled(int ClientID, vec2 Pos)
+{
+	if (m_pGameEvent != 0x0)
+		m_pGameEvent->PlayerKilled(ClientID, Pos);
 }
 
 void CGameMap::StartVote(const char *pDesc, const char *pCommand, const char *pReason)
@@ -713,6 +795,9 @@ void CGameMap::Tick()
 	mem_copy(&m_World.m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_World.m_Core.m_Tuning));
 	DoMapTunings();
 
+	if (m_pGameEvent != 0x0)
+		m_pGameEvent->Tick();
+
 	m_World.Tick();
 	UpdateVote();
 }
@@ -737,6 +822,19 @@ void CGameMap::SendChat(int ChatterClientID, const char *pText)
 		CNetMsg_Sv_Chat Msg;
 		Msg.m_Team = 0;
 		Msg.m_ClientID = ChatterClientID;
+		Msg.m_pMessage = pText;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_apPlayers[i]->GetCID());
+	}
+}
+
+void CGameMap::SendBroadcast(const char *pText)
+{
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_apPlayers[i] == 0x0)
+			continue;
+
+		CNetMsg_Sv_Broadcast Msg;
 		Msg.m_pMessage = pText;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_apPlayers[i]->GetCID());
 	}

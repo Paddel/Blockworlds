@@ -14,6 +14,7 @@ class CGameContext;
 class CPlayer;
 class CTranslateItem;
 class IConsole;
+class CGameEvent;
 
 class CGameMap
 {
@@ -63,7 +64,7 @@ private:
 	CCollision m_Collision;
 	CGameWorld m_World;
 	CEventHandler m_Events;
-	CPlayer *m_apPlayers[MAX_CLIENTS];
+	CGameEvent *m_pGameEvent;//current map event
 	array<CDoorTile *> m_lDoorTiles;
 	array<CTeleTo *> m_lTeleTo;
 	vec2 m_aaSpawnPoints[3][64];
@@ -71,6 +72,7 @@ private:
 	int m_RoundStartTick;
 	bool m_BlockMap;
 	int m_NumPlayers;
+	int64 m_RandomEventTime;
 
 	//Voting
 	int m_VoteCreator;
@@ -102,6 +104,8 @@ public:
 	CGameMap(CMap *pMap);
 	~CGameMap();
 
+	CPlayer *m_apPlayers[MAX_CLIENTS];
+
 	bool Init(CGameContext *pGameServer);
 	bool FreePlayerSlot();
 	bool PlayerJoin(int ClientID);
@@ -125,6 +129,14 @@ public:
 	void SnapGameInfo(int SnappingClient);
 	void Snap(int SnappingClient);
 
+	CGameEvent *CreateGameEvent(int Index);
+	bool TryVoteRandomEvent(int ClientID);
+	void StartRandomEvent();
+	void EndEvent();
+	void ClientSubscribeEvent(int ClientID);
+	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
+	void PlayerKilled(int ClientID, vec2 Pos);
+
 	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
 	void EndVote();
 	void SendVoteSet(int ClientID);
@@ -141,6 +153,7 @@ public:
 
 	void Tick();
 	void SendChat(int ChatterClientID, const char *pText);
+	void SendBroadcast(const char *pText);
 	void OnClientEnter(int ClientID);
 
 	CMap *Map() const { return m_pMap; };

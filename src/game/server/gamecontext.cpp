@@ -55,9 +55,6 @@ void CGameContext::InitComponents()
 		m_apComponents[i]->m_pGameServer = this;
 		m_apComponents[i]->m_pServer = Server();
 	}
-
-	for (int i = 0; i < m_NumComponents; i++)
-		m_apComponents[i]->Init();
 }
 
 class CCharacter *CGameContext::GetPlayerChar(int ClientID)
@@ -84,6 +81,19 @@ const char *CGameContext::GetTeamName(int Team)
 	if (Team == 0)
 		return "game";
 	return "spectators";
+}
+
+void CGameContext::StringTime(int64 Tick, char *pSrc, int SrcSize)
+{
+	int64 DeltaTime = Server()->Tick() - Tick;
+	if (Server()->Tick() < Tick)
+		DeltaTime = Tick - Server()->Tick();
+
+	int Minutes = DeltaTime / Server()->TickSpeed() / 60;
+	float Seconds = DeltaTime / (float)Server()->TickSpeed() - Minutes * 60;
+	if (Minutes > 0)
+		str_fcat(pSrc, SrcSize, "%i minute%s and ", Minutes, Minutes > 1 ? "s" : "");
+	str_fcat(pSrc, SrcSize, "%.2f seconds", Seconds);
 }
 
 void CGameContext::CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float Angle, int Amount)
@@ -383,6 +393,9 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 		if(Kill)
 			m_CosmeticsHandler.DoKnockoutEffect(pPlayer->m_AttackedBy, Pos);
 
+		//for events
+		pChr->GameMap()->PlayerBlocked(ClientID, Kill, Pos);
+
 		pPlayer->m_AttackedBy = -1;
 	}
 }
@@ -606,7 +619,8 @@ void CGameContext::OnClientConnected(int ClientID)
 void CGameContext::OnClientLeave(int ClientID, const char *pReason)
 {
 	m_AccountsHandler.Save(ClientID);
-	m_VoteMenuHandler.Destruct(ClientID);
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == true && Server()->GetClientInfo(ClientID)->m_pClan != 0x0)
+		m_AccountsHandler.ClanSave(Server()->GetClientInfo(ClientID)->m_pClan);
 }
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching)
@@ -941,8 +955,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 
-			CNetMsg_Sv_VoteClearOptions ClearMsg;
-			Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
+			m_VoteMenuHandler.OnClientJoin(ClientID);
 
 			// client is ready to enter
 			pPlayer->m_IsReady = true;
@@ -1084,7 +1097,7 @@ void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 	const char *pCommand = pResult->GetString(1);
 
 	//// check for valid option
-	if(!pSelf->Console()->LineIsValid(pCommand) || str_length(pCommand) >= VOTE_CMD_LENGTH)
+	if((!pSelf->Console()->LineIsValid(pCommand) && pCommand[0] != '%') || str_length(pCommand) >= VOTE_CMD_LENGTH)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "skipped invalid command '%s'", pCommand);
@@ -1227,6 +1240,9 @@ void CGameContext::OnConsoleInit()
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
+	//init components
+	InitComponents();
+
 	Console()->Register("tune", "si", CFGFLAG_SERVER, ConTuneParam, this, "Tune variable to value");
 	Console()->Register("tune_reset", "", CFGFLAG_SERVER, ConTuneReset, this, "Reset tuning");
 	Console()->Register("tune_dump", "", CFGFLAG_SERVER, ConTuneDump, this, "Dump tuning");
@@ -1255,8 +1271,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
-	//init components
-	InitComponents();
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Init();
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
@@ -1304,7 +1320,7 @@ bool CGameContext::CanShutdown()
 	return true;
 }
 
-const char *CGameContext::GameType() { return g_Config.m_SvFakeGametype ? "DDRaceNetwork" : "BW564"; }
+const char *CGameContext::GameType() { return g_Config.m_SvFakeGametype ? "DDRaceNetwork" : "BW"; }
 const char *CGameContext::Version() { return GAME_VERSION; }
 const char *CGameContext::FakeVersion() { return GAME_FAKEVERSION; }
 const char *CGameContext::NetVersion() { return GAME_NETVERSION; }

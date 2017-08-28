@@ -53,6 +53,7 @@ private:
 	static void ComClanList(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanKick(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComDeathnote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComSubscribe(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 
 	void Register(const char *pName, const char *pParams, int Flags, FChatCommandCallback pfnFunc, const char *pHelp);
 public:

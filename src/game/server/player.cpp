@@ -31,8 +31,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_Blocked = false;
 	m_UnblockedTick = Server()->Tick();//hast to be at least 60 seconds on server to give exp
 	m_LastDeathnote = Server()->Tick();
-
-	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);;
+	m_SubscribeEvent = false;
+	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);
 }
 
 CPlayer::~CPlayer()
@@ -321,16 +321,49 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	}
 }
 
+void CPlayer::ForceSpawn(vec2 Pos)
+{
+	if (GetCharacter())
+		GetCharacter()->Core()->m_Pos = Pos;
+	else
+	{
+		KillCharacter();
+		m_Spawning = false;
+		m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
+		m_pCharacter->Spawn(this, Pos);
+	}
+
+	GameServer()->CreatePlayerSpawn(GameMap(), Pos);
+}
+
+bool CPlayer::TryRespawnEvent()
+{
+	vec2 SpawnPos;
+
+	if (!GameMap()->CanSpawn(1, &SpawnPos))
+		return false;
+
+	if (m_pCharacter != 0x0 && m_pCharacter->IsAlive() == false)
+		return false;
+
+	KillCharacter();
+
+	m_Spawning = false;
+	m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
+	m_pCharacter->Spawn(this, SpawnPos);
+	GameServer()->CreatePlayerSpawn(GameMap(), SpawnPos);
+	return true;
+}
+
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
-	CGameMap *pGameMap = GameMap();
 
-	if(!pGameMap->CanSpawn(m_Team, &SpawnPos))
+	if(!GameMap()->CanSpawn(0, &SpawnPos))
 		return;
 
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientID) CCharacter(pGameMap->World());
+	m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(pGameMap, SpawnPos);
+	GameServer()->CreatePlayerSpawn(GameMap(), SpawnPos);
 }

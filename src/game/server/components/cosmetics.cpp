@@ -16,7 +16,6 @@ const char *CCosmeticsHandler::ms_KnockoutNames[NUM_KNOCKOUTS] = {
 	"Hammerhit",
 	"Love",
 	"Thunderstorm",
-	"Lettesttest",
 };
 
 void CCosmeticsHandler::KnockoutExplosion(int ClientID, vec2 Pos, CGameMap *pGameMap)
@@ -117,6 +116,7 @@ void CCosmeticsHandler::Init()
 	mem_copy(gs_LetterBits['<'], gs_LetterSM, sizeof(gs_LetterBits[0]));
 	mem_copy(gs_LetterBits['>'], gs_LetterBI, sizeof(gs_LetterBits[0]));
 	mem_copy(gs_LetterBits['='], gs_LetterEQ, sizeof(gs_LetterBits[0]));
+	mem_copy(gs_LetterBits['|'], gs_LetterLV, sizeof(gs_LetterBits[0]));
 }
 
 void CCosmeticsHandler::Tick()

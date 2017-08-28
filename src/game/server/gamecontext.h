@@ -81,6 +81,7 @@ public:
 	class CCharacter *GetPlayerChar(int ClientID);
 	bool TryJoinTeam(int Team, int ClientID);
 	const char *GetTeamName(int Team);
+	void StringTime(int64 Tick, char *pSrc, int SrcSize);
 
 	int m_LockTeams;
 

@@ -1199,7 +1199,22 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 	p.AddString(pMap->GetFileName(), 32);
 
 	// gametype
-	p.AddString(GameServer()->GameType(), 16);
+	mem_zero(&aBuf, sizeof(aBuf));
+	str_copy(aBuf, GameServer()->GameType(), sizeof(aBuf));
+	if(Info64 == false)
+	{//add hidden 64
+		for (int i = 0; i < 16; i++)
+			if (aBuf[i] == '\0')
+				aBuf[i] = ' ';
+		aBuf[9] = 'V';
+		aBuf[10] = '1';
+		aBuf[11] = '.';
+		aBuf[12] = '3';
+		aBuf[13] = '6';
+		aBuf[14] = '4';
+	}
+	p.AddString(aBuf, 16);
+
 
 	// flags
 	int i = 0;

@@ -14,7 +14,6 @@ public:
 		KNOCKOUT_HAMMERHIT,
 		KNOCKOUT_LOVE,
 		KNOCKOUT_THUNDERSTORM,
-		LETTER_TEST,
 		NUM_KNOCKOUTS,//Maximum sizeof(m_aKnockouts)/sizeof(char) = 256
 	};
 

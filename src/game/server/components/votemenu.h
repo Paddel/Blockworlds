@@ -28,7 +28,7 @@ public:
 	virtual void Init();
 	virtual void Tick();
 
-	void Destruct(int ClientID);
+	void OnClientJoin(int ClientID);
 
 	void AddVote(const char *pDescription, const char *pCommand);
 	void RemoveVote(const char *pDescription);
