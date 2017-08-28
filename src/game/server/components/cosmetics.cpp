@@ -162,7 +162,7 @@ void CCosmeticsHandler::Laserwrite(const char *pText, vec2 StartPos, float Size,
 	vec2 Pos = StartPos;
 	for (int i = 0; i < Length; i++)
 	{
-		CCosChar *pChar = new CCosChar(Pos, Server()->Tick(), pGameMap, Ticks, gs_LetterBits[pText[i]], Size);
+		CCosChar *pChar = new CCosChar(Pos, Server()->Tick(), pGameMap, Ticks, gs_LetterBits[(unsigned char)pText[i]], Size);
 		m_lpAnimations.add(pChar);
 		Pos.x += pChar->Width() + Size;
 	}
