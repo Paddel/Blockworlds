@@ -313,7 +313,20 @@ int CServer::TrySetClientName(int ClientID, const char *pName)
 	return 0;
 }
 
+void CServer::HandleMutes()
+{
+	for (int i = 0; i < m_lMutes.size(); i++)
+	{
+		m_lMutes[i]->m_Ticks--;
+		if (m_lMutes[i]->m_Ticks > 0)
+			continue;
 
+		CMute *pMute = m_lMutes[i];
+		m_lMutes.remove_index(i);
+		delete pMute;
+		i--;
+	}
+}
 
 void CServer::SetClientName(int ClientID, const char *pName)
 {
@@ -667,7 +680,7 @@ void CServer::SetMapOnConnect(int ClientID)
 		NETADDR OwnAddr = *m_NetServer.ClientAddr(ClientID);
 		OtherAddr.port = 0;
 		OwnAddr.port = 0;
-		if (!net_addr_comp(&OwnAddr, &OtherAddr))
+		if (net_addr_comp(&OwnAddr, &OtherAddr) == 0)
 		{
 			m_aClients[ClientID].m_pMap = m_aClients[i].m_pMap;
 			return;
@@ -1509,6 +1522,8 @@ int CServer::Run()
 				m_CurrentGameTick++;
 				NewTicks++;
 
+				HandleMutes();
+
 				// apply new input
 				for(int c = 0; c < MAX_CLIENTS; c++)
 				{
@@ -1942,6 +1957,72 @@ int CServer::GetNumMaps()
 CGameMap *CServer::GetGameMap(int Index)
 {
 	return m_lpMaps[Index]->GameMap();
+}
+
+int64 CServer::IsMuted(int ClientID)
+{
+	if (m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
+		return 0;
+
+	NETADDR Addr = *m_NetServer.ClientAddr(ClientID);
+	Addr.port = 0;
+
+	for (int i = 0; i < m_lMutes.size(); i++)
+	{
+		if (net_addr_comp(&m_lMutes[i]->m_Address, &Addr) == 0)
+			return m_lMutes[i]->m_Ticks;
+	}
+	
+	return 0;
+}
+
+void CServer::MuteID(int ClientID, int64 Ticks)
+{
+	if (m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
+		return;
+
+	NETADDR Addr = *m_NetServer.ClientAddr(ClientID);
+	Addr.port = 0;
+
+	bool Found = false;
+	for (int i = 0; i < m_lMutes.size() && Found == false; i++)
+	{
+		if (net_addr_comp(&m_lMutes[i]->m_Address, &Addr) != 0)
+			continue;
+
+		m_lMutes[i]->m_Ticks = max(m_lMutes[i]->m_Ticks, Ticks);
+		Found = true;
+	}
+
+	if (Found == true)
+		return;
+
+	CMute *pMute = new CMute();
+	pMute->m_Address = Addr;
+	pMute->m_Ticks = Ticks;
+	m_lMutes.add(pMute);
+}
+
+bool CServer::UnmuteID(int ClientID)
+{
+	if (m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
+		return false;
+
+	NETADDR Addr = *m_NetServer.ClientAddr(ClientID);
+	Addr.port = 0;
+
+	for (int i = 0; i < m_lMutes.size(); i++)
+	{
+		if (net_addr_comp(&m_lMutes[i]->m_Address, &Addr) != 0)
+			continue;
+
+		CMute *pMute = m_lMutes[i];
+		m_lMutes.remove_index(i);
+		delete pMute;
+		return true;
+	}
+
+	return false;
 }
 
 static CServer *CreateServer() { return new CServer(); }

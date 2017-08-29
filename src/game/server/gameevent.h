@@ -2,6 +2,7 @@
 
 #include <base/system.h>
 #include <base/vmath.h>
+#include <game/server/player.h>
 
 class CGameMap;
 class CGameContext;
@@ -14,14 +15,6 @@ public:
 	{
 		EVENT_LASTMANBLOCKING,
 		NUM_EVENTS,
-	};
-
-	struct CCharState
-	{
-		bool m_Alive;
-		vec2 m_Pos;
-		bool m_aWeapons[NUM_WEAPONS];
-		int m_ActiveWeapon;
 	};
 
 private:
@@ -53,7 +46,7 @@ public:
 	virtual const char *EventName() = 0;
 
 	virtual void OnPlayerBlocked(int ClientID, bool Dead, vec2 Pos) {}
-	virtual void OnPlayerKilled(int ClientID, vec2 Pos) {}
+	virtual void OnPlayerKilled(int ClientID) {}
 
 	
 	void Tick();
@@ -62,7 +55,7 @@ public:
 	void ClientSubscribe(int ClientID);
 	void ResumeClient(int ClientID);
 	void EndEvent();
-	void PlayerKilled(int ClientID, vec2 Pos);
+	void PlayerKilled(int ClientID);
 	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
 
 	CGameMap *GameMap() const { return m_pGameMap; }

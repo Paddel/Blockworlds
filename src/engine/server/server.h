@@ -16,6 +16,11 @@
 #include "translator.h"
 #include "map.h"
 
+struct CMute
+{
+	NETADDR m_Address;
+	int64 m_Ticks;
+};
 
 class CSnapIDPool
 {
@@ -161,11 +166,14 @@ public:
 	int64 m_Lastheartbeat;
 
 	array<CMap *> m_lpMaps;
+	array<CMute *> m_lMutes;
 	CMap *m_pDefaultMap;
 
 	CServer();
 
 	int TrySetClientName(int ClientID, const char *pName);
+	
+	void HandleMutes();
 
 	virtual void SetClientName(int ClientID, const char *pName);
 	virtual void SetClientClan(int ClientID, char const *pClan);
@@ -236,6 +244,7 @@ public:
 	static void ConListMaps(IConsole::IResult *pResult, void *pUser);
 	static void ConMovePlayer(IConsole::IResult *pResult, void *pUser);
 	static void ConReconnectDatabases(IConsole::IResult *pResult, void *pUser);
+	static void ConMutePlayer(IConsole::IResult *pResult, void *pUser);
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -257,6 +266,10 @@ public:
 	virtual CGameMap *CurrentGameMap(int ClientID);
 	virtual int GetNumMaps();
 	virtual CGameMap *GetGameMap(int Index);
+
+	virtual int64 IsMuted(int ClientID);
+	virtual void MuteID(int ClientID, int64 Ticks);
+	virtual bool UnmuteID(int ClientID);
 
 
 	virtual int Translate(int For, int ClientID) { return m_Translator.Translate(For, ClientID); };

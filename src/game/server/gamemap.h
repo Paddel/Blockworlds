@@ -135,7 +135,7 @@ public:
 	void EndEvent();
 	void ClientSubscribeEvent(int ClientID);
 	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
-	void PlayerKilled(int ClientID, vec2 Pos);
+	void PlayerKilled(int ClientID);
 
 	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
 	void EndVote();
@@ -150,6 +150,7 @@ public:
 	bool IsBlockMap() const { return m_BlockMap; }
 	void SetBlockMap(bool Value) { m_BlockMap = Value; }
 	int NumPlayers() { return m_NumPlayers; }
+	CGameEvent *GetEvent() { return m_pGameEvent; }
 
 	void Tick();
 	void SendChat(int ChatterClientID, const char *pText);

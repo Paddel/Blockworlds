@@ -76,7 +76,7 @@ void CProjectile::Tick()
 		if(m_Explosive)
 			GameServer()->CreateExplosion(GameMap(), CurPos, m_Owner, m_Weapon, false);
 
-		if(m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN)
+		if(m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN && GameServer()->CosmeticsHandler()->DoGundesign(m_Owner, CurPos) == false)
 			GameServer()->CreateDamageInd(GameMap(), CurPos, -atan2(m_Direction.x, m_Direction.y), 10);
 
 		GameWorld()->DestroyEntity(this);
@@ -103,6 +103,9 @@ void CProjectile::Snap(int SnappingClient)
 	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 
 	if(NetworkClipped(SnappingClient, GetPos(Ct)))
+		return;
+
+	if (GameServer()->CosmeticsHandler()->SnapGundesign(m_Owner, GetPos((Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed()), m_ID) == true)
 		return;
 
 	CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_ID, sizeof(CNetObj_Projectile)));

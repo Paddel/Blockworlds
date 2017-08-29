@@ -8,6 +8,8 @@
 struct CVoteMenu
 {
 	array <CVoteOptionServer *> m_lpKnockoutEffectsOptions;
+	array <CVoteOptionServer *> m_lpGundesignOptions;
+	array <CVoteOptionServer *> m_lpSkinmaniOptions;
 	array <CVoteOptionServer *> m_lpExtrasOptions;
 
 	void Reset();

@@ -4,6 +4,7 @@
 #include <engine/shared/config.h>
 #include <game/server/gamemap.h>
 #include <game/server/entities/npc.h>
+#include <game/server/gameevent.h>
 #include "player.h"
 
 
@@ -33,12 +34,15 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_LastDeathnote = Server()->Tick();
 	m_SubscribeEvent = false;
 	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);
+	m_UseSpawnState = false;
+	m_CreateTick = Server()->Tick();
 }
 
 CPlayer::~CPlayer()
 {
 	delete m_pCharacter;
 	m_pCharacter = 0;
+	OnCharacterDead();
 }
 
 void CPlayer::Tick()
@@ -94,10 +98,14 @@ void CPlayer::Tick()
 		{
 			delete m_pCharacter;
 			m_pCharacter = 0;
+			OnCharacterDead();
 		}
 	}
 	else if(m_Spawning)
 		TryRespawn();
+
+	//automute score
+	m_AutomuteScore *= 0.995f;
 }
 
 void CPlayer::PostTick()
@@ -150,17 +158,32 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+	char *pClan = "";
 	if (ClientInfo()->m_LoggedIn == true && ClientInfo()->m_pClan != 0)
-		StrToInts(&pClientInfo->m_Clan0, 3, ClientInfo()->m_pClan->m_aName);
-	else
-		StrToInts(&pClientInfo->m_Clan0, 3, "");
+		pClan = ClientInfo()->m_pClan->m_aName;
+
+	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
 
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
 	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
 	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
+
+	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo);
+
+	if (HideIdentity() && Server()->GetClientAuthed(SnappingClient) <= IServer::AUTHED_NO)
+	{
+		StrToInts(&pClientInfo->m_Name0, 4, "");
+		StrToInts(&pClientInfo->m_Clan0, 3, "");
+
+		pClientInfo->m_Country = -1;
+		StrToInts(&pClientInfo->m_Skin0, 6, "default");
+		pClientInfo->m_UseCustomColor = 0;
+		pClientInfo->m_ColorBody = 0;
+		pClientInfo->m_ColorFeet = 0;
+	}
 
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, TranslatedID, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
@@ -213,7 +236,17 @@ void CPlayer::DoPlayerTuning()
 
 bool CPlayer::CanBeDeathnoted()
 {
+	if (m_SubscribeEvent == true && GameMap()->GetEvent() != 0x0)
+		return false;
+
 	return true;
+}
+
+bool CPlayer::HideIdentity()
+{
+	if (m_SubscribeEvent == true && GameMap()->GetEvent() != 0x0 && GameMap()->GetEvent()->OnCountdown() == false)
+		return true;
+	return false;
 }
 
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)
@@ -268,6 +301,11 @@ CCharacter *CPlayer::GetCharacter()
 	return 0;
 }
 
+void CPlayer::OnCharacterDead()
+{
+	GameMap()->PlayerKilled(m_ClientID);
+}
+
 void CPlayer::KillCharacter(int Weapon)
 {
 	if(m_pCharacter)
@@ -275,6 +313,7 @@ void CPlayer::KillCharacter(int Weapon)
 		m_pCharacter->Die(m_ClientID, Weapon);
 		delete m_pCharacter;
 		m_pCharacter = 0;
+		OnCharacterDead();
 	}
 }
 
@@ -321,21 +360,6 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	}
 }
 
-void CPlayer::ForceSpawn(vec2 Pos)
-{
-	if (GetCharacter())
-		GetCharacter()->Core()->m_Pos = Pos;
-	else
-	{
-		KillCharacter();
-		m_Spawning = false;
-		m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
-		m_pCharacter->Spawn(this, Pos);
-	}
-
-	GameServer()->CreatePlayerSpawn(GameMap(), Pos);
-}
-
 bool CPlayer::TryRespawnEvent()
 {
 	vec2 SpawnPos;
@@ -359,11 +383,26 @@ void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
 
-	if(!GameMap()->CanSpawn(0, &SpawnPos))
+	if (!GameMap()->CanSpawn(0, &SpawnPos))
 		return;
+
 
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(GameMap(), SpawnPos);
+
+	if (m_UseSpawnState == true)
+	{
+		if (m_SpawnState.m_Alive == true)
+		{
+			mem_copy(m_pCharacter->Weapons(), &m_SpawnState.m_aWeapons, sizeof(m_SpawnState.m_aWeapons));
+			m_pCharacter->SetActiveWeapon(m_SpawnState.m_ActiveWeapon);
+			m_pCharacter->Core()->m_Pos = m_SpawnState.m_Pos;
+			m_pCharacter->m_Pos = m_SpawnState.m_Pos;
+			m_pCharacter->Unfreeze();
+		}
+		m_UseSpawnState = false;
+	}
+
+	GameServer()->CreatePlayerSpawn(GameMap(), m_pCharacter->Core()->m_Pos);
 }

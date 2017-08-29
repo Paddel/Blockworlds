@@ -89,11 +89,39 @@ void CGameContext::StringTime(int64 Tick, char *pSrc, int SrcSize)
 	if (Server()->Tick() < Tick)
 		DeltaTime = Tick - Server()->Tick();
 
-	int Minutes = DeltaTime / Server()->TickSpeed() / 60;
-	float Seconds = DeltaTime / (float)Server()->TickSpeed() - Minutes * 60;
+	int Days = DeltaTime / Server()->TickSpeed() / 60 / 60 / 24;
+	int Hours = DeltaTime / Server()->TickSpeed() / 60 / 60 - Days * 24;
+	int Minutes = DeltaTime / Server()->TickSpeed() / 60 - Hours * 60 - Days * 60 * 24;
+	int Seconds = DeltaTime / Server()->TickSpeed() - Minutes * 60 - Hours * 60 * 60 - Days * 60 * 60 * 24;
+	int ConnectCount = 0 + (Days > 0 ? 1 : 0) + (Hours > 0 ? 1 : 0) + (Minutes > 0 ? 1 : 0) + (Seconds > 0 ? 1 : 0);
+
+	if (Days > 0)
+	{
+		str_fcat(pSrc, SrcSize, "%i day%s", Days, Days > 1 ? "s" : "");
+		ConnectCount--;
+	}
+
+	if (Hours > 0)
+	{
+		if(Days > 0)
+			str_fcat(pSrc, SrcSize, "%s", ConnectCount == 1 ? " and " : ", ");
+		str_fcat(pSrc, SrcSize, "%i hour%s", Hours, Hours > 1 ? "s" : "");
+		ConnectCount--;
+	}
 	if (Minutes > 0)
-		str_fcat(pSrc, SrcSize, "%i minute%s and ", Minutes, Minutes > 1 ? "s" : "");
-	str_fcat(pSrc, SrcSize, "%.2f seconds", Seconds);
+	{
+		if (Days > 0 || Hours > 0)
+			str_fcat(pSrc, SrcSize, "%s", ConnectCount == 1 ? " and " : ", ");
+		str_fcat(pSrc, SrcSize, "%i minute%s",Minutes, Minutes > 1 ? "s" : "");
+		ConnectCount--;
+	}
+	if (Seconds > 0)
+	{
+		if (Days > 0 || Hours > 0 || Minutes > 0)
+			str_fcat(pSrc, SrcSize, "%s", ConnectCount == 1 ? " and " : ", ");
+		str_fcat(pSrc, SrcSize, "%i second%s", Seconds, Seconds > 1 ? "s" : "");
+		ConnectCount--;
+	}
 }
 
 void CGameContext::CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float Angle, int Amount)
@@ -735,6 +763,28 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 			else
 			{
+				int64 Ticks = Server()->IsMuted(ClientID);
+				if (Ticks > 0)
+				{
+					char aBuf[512];
+					str_copy(aBuf, "You are muted for ", sizeof(aBuf));
+					StringTime(Server()->Tick() + Ticks, aBuf, sizeof(aBuf));
+					SendChatTarget(ClientID, aBuf);
+					return;
+				}
+
+				pPlayer->m_AutomuteScore += 175 + pPlayer->m_AutomuteScore;
+				if (pPlayer->m_AutomuteScore > 1200 && g_Config.m_SvMuteSpam > 0)
+				{
+					char aBuf[512];
+					str_format(aBuf, sizeof(aBuf), "%s has been muted for ", Server()->ClientName(ClientID));
+					StringTime(Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvMuteSpam, aBuf, sizeof(aBuf));
+					str_append(aBuf, " due to spamming", sizeof(aBuf));
+					pGameMap->SendChat(-1, aBuf);
+					Server()->MuteID(ClientID, Server()->TickSpeed() * g_Config.m_SvMuteSpam);
+					return;
+				}
+
 				if(Team)
 					SendChatClan(ClientID, pMsg->m_pMessage);
 				else
@@ -1164,6 +1214,117 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 	pGameMap->VoteEnforce(pResult->GetString(0));
 }
 
+void CGameContext::ConMutePlayer(IConsole::IResult *pResult, void *pUser)
+{
+	char aBuf[256];
+	CGameContext *pThis = (CGameContext *)pUser;
+	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
+	int64 Ticks = pThis->Server()->TickSpeed() * pResult->GetInteger(1);
+	bool Silent = pResult->NumArguments() == 3 && pResult->GetInteger(2) == 0;
+
+	if (Ticks == 0)
+	{
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Use 'unmute id' to unmute a player");
+		return;
+	}
+
+	CGameMap *pGameMap = pThis->Server()->CurrentGameMap(ClientID);
+	if (pThis->Server()->ClientIngame(ClientID) == false || pGameMap == 0x0)
+	{
+		str_format(aBuf, sizeof(aBuf), "Client %i not online", ClientID);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	pThis->Server()->MuteID(ClientID, Ticks);
+
+	str_format(aBuf, sizeof(aBuf), "%s has been muted for ", pThis->Server()->ClientName(ClientID), pResult->GetInteger(1));
+	pThis->StringTime(pThis->Server()->Tick() + Ticks, aBuf, sizeof(aBuf));
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+
+	if (Silent == false)
+		pGameMap->SendChat(-1, aBuf);
+}
+
+void CGameContext::ConUnmutePlayer(IConsole::IResult *pResult, void *pUser)
+{
+	char aBuf[256];
+	CGameContext *pThis = (CGameContext *)pUser;
+	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
+
+	if (pThis->Server()->ClientIngame(ClientID) == false)
+	{
+		str_format(aBuf, sizeof(aBuf), "Client %i not online", ClientID);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+
+	if (pThis->Server()->UnmuteID(ClientID) == true)
+	{
+		str_format(aBuf, sizeof(aBuf), "%s has been unmuted", pThis->Server()->ClientName(ClientID));
+		pThis->SendChatTarget(ClientID, "Your chatmute has been removed");
+	}
+	else
+		str_format(aBuf, sizeof(aBuf), "%s is not muted", pThis->Server()->ClientName(ClientID));
+
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+}
+
+void CGameContext::ConPassivePlayer(IConsole::IResult *pResult, void *pUser)
+{
+	char aBuf[256];
+	CGameContext *pThis = (CGameContext *)pUser;
+	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
+	int Time = pResult->GetInteger(1);
+
+	if (pThis->Server()->ClientIngame(ClientID) == false)
+	{
+		str_format(aBuf, sizeof(aBuf), "Client %i not online", ClientID);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	pThis->Server()->GetClientInfo(ClientID)->m_InviolableTime = pThis->Server()->Tick() + pThis->Server()->TickSpeed() * Time;
+
+	str_format(aBuf, sizeof(aBuf), "Passive time has bee set for %s for %i seconds", pThis->Server()->ClientName(ClientID), Time);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+}
+
+void CGameContext::ConVIPSet(IConsole::IResult *pResult, void *pUser)
+{
+	char aBuf[256];
+	CGameContext *pThis = (CGameContext *)pUser;
+	int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS);
+	bool Vip = (bool)pResult->GetInteger(1);
+
+	if (pThis->Server()->ClientIngame(ClientID) == false)
+	{
+		str_format(aBuf, sizeof(aBuf), "Client %i not online", ClientID);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	if(pThis->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Client has to be logged in");
+		return;
+	}
+
+	if (pThis->Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == Vip)
+	{
+		str_format(aBuf, sizeof(aBuf), "%s is already %s vip", pThis->Server()->ClientName(ClientID), Vip ? "a" : "no");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	str_format(aBuf, sizeof(aBuf), "%s is now %s vip", pThis->Server()->ClientName(ClientID), Vip ? "a" : "no");
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+
+	pThis->Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip = Vip;
+	pThis->m_AccountsHandler.Save(ClientID);
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -1259,6 +1420,10 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
+	Console()->Register("mute_player", "ii?iii", CFGFLAG_SERVER, ConMutePlayer, this, "Forbids a player to chat");
+	Console()->Register("unmute_player", "i", CFGFLAG_SERVER, ConUnmutePlayer, this, "Unmutes a player to chat");
+	Console()->Register("passive_player", "ii", CFGFLAG_SERVER, ConPassivePlayer, this, "Forbids a player to chat");
+	Console()->Register("vip_player", "ii", CFGFLAG_SERVER, ConVIPSet, this, "Sets vip status for a player");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 	Console()->Chain("sv_accountsystem", ConchainAccountsystemupdate, this);

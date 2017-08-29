@@ -10,6 +10,6 @@ public:
 	CLastManBlocking(CGameMap *pGameMap);
 
 	virtual void DoWinCheck();
-	virtual void OnPlayerKilled(int ClientID, vec2 Pos);
+	virtual void OnPlayerKilled(int ClientID);
 	virtual const char *EventName() { return "LMB"; }
 };

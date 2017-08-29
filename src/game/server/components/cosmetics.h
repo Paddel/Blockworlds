@@ -14,11 +14,24 @@ public:
 		KNOCKOUT_HAMMERHIT,
 		KNOCKOUT_LOVE,
 		KNOCKOUT_THUNDERSTORM,
+		LETTER_TEST,
 		NUM_KNOCKOUTS,//Maximum sizeof(m_aKnockouts)/sizeof(char) = 256
+
+		GUNDESIGN_HEART=0,
+		GUNDESIGN_PEW,
+		NUM_GUNDESIGNS,
+
+		SKINMANI_RAINBOW=0,
+		SKINMANI_RAINBOW_EPI,
+		SKINMANI_COOLDOWN,
+		SKINMANI_NIGHTBLUE,
+		NUM_SKINMANIS,
 	};
 
 
 	static const char *ms_KnockoutNames[NUM_KNOCKOUTS];
+	static const char *ms_GundesignNames[NUM_GUNDESIGNS];
+	static const char *ms_SkinmaniNames[NUM_SKINMANIS];
 
 	class CCosAnim
 	{
@@ -57,10 +70,23 @@ public:
 	void Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, CGameMap *pGameMap);
 
 	bool HasKnockoutEffect(int ClientID, int Index);
-	void DoKnockoutEffect(int ClientID, vec2 Pos);
-	void DoKnockoutEffect(int ClientID, vec2 Pos, const char *pName);
-	void DoKnockoutEffect(int ClientID, vec2 Pos, int Effect);
+	bool DoKnockoutEffect(int ClientID, vec2 Pos);
+	bool DoKnockoutEffect(int ClientID, vec2 Pos, const char *pName);
+	bool DoKnockoutEffect(int ClientID, vec2 Pos, int Effect);
 	bool ToggleKnockout(int ClientID, const char *pName);
-
 	void FillKnockout(IServer::CAccountData *pFillingData, const char *pValue);
+
+
+	bool HasGundesign(int ClientID, int Index);
+	bool DoGundesign(int ClientID, vec2 Pos);
+	bool DoGundesign(int ClientID, vec2 Pos, const char *pName);
+	bool DoGundesign(int ClientID, vec2 Pos, int Effect);
+	bool ToggleGundesign(int ClientID, const char *pName);
+	bool SnapGundesign(int ClientID, vec2 Pos, int EntityID);
+	void FillGundesign(IServer::CAccountData *pFillingData, const char *pValue);
+
+	bool HasSkinmani(int ClientID, int Index);
+	bool ToggleSkinmani(int ClientID, const char *pName);
+	void SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo);
+	void FillSkinmani(IServer::CAccountData *pFillingData, const char *pValue);
 };

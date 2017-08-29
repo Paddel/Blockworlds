@@ -13,6 +13,8 @@ void CVoteMenu::Reset()
 {
 	m_lpKnockoutEffectsOptions.delete_all();
 	m_lpExtrasOptions.delete_all();
+	m_lpGundesignOptions.delete_all();
+	m_lpSkinmaniOptions.delete_all();
 }
 
 bool CVoteMenu::Compare(CVoteMenu *pCompare)
@@ -21,6 +23,12 @@ bool CVoteMenu::Compare(CVoteMenu *pCompare)
 		return true;
 
 	if (m_lpExtrasOptions.size() != pCompare->m_lpExtrasOptions.size())
+		return true;
+
+	if (m_lpGundesignOptions.size() != pCompare->m_lpGundesignOptions.size())
+		return true;
+
+	if (m_lpSkinmaniOptions.size() != pCompare->m_lpSkinmaniOptions.size())
 		return true;
 
 	for (int i = 0; i < m_lpKnockoutEffectsOptions.size(); i++)
@@ -35,12 +43,24 @@ bool CVoteMenu::Compare(CVoteMenu *pCompare)
 			return true;
 	}
 
+	for (int i = 0; i < m_lpGundesignOptions.size(); i++)
+	{
+		if (mem_comp(m_lpGundesignOptions[i], pCompare->m_lpGundesignOptions[i], sizeof(CVoteOptionServer)) != 0)
+			return true;
+	}
+
+	for (int i = 0; i < m_lpSkinmaniOptions.size(); i++)
+	{
+		if (mem_comp(m_lpSkinmaniOptions[i], pCompare->m_lpSkinmaniOptions[i], sizeof(CVoteOptionServer)) != 0)
+			return true;
+	}
+
 	return false;
 }
 
 void CVoteMenuHandler::CreateStripline(char *pDst, int DstSize, const char *pTitle)
 {
-	int StripSideLen = DstSize / 2 - str_length(pTitle) - 3;
+	int StripSideLen = min(15, DstSize / 2 - str_length(pTitle) - 3);
 	mem_zero(pDst, DstSize);
 	for (int i = 0; i < StripSideLen; i++)
 		str_append(pDst, "#", DstSize);
@@ -74,6 +94,32 @@ void CVoteMenuHandler::Construct(CVoteMenu *pFilling, int ClientID)
 			CCosmeticsHandler::ms_KnockoutNames[i]);
 		str_copy(pOption->m_aCommand, CCosmeticsHandler::ms_KnockoutNames[i], sizeof(pOption->m_aCommand));
 		pFilling->m_lpKnockoutEffectsOptions.add(pOption);
+	}
+
+	for (int i = 0; i < CCosmeticsHandler::NUM_SKINMANIS; i++)
+	{
+		if (GameServer()->CosmeticsHandler()->HasSkinmani(ClientID, i) == false)
+			continue;
+
+		CVoteOptionServer *pOption = new CVoteOptionServer();
+		str_format(pOption->m_aDescription, sizeof(pOption->m_aDescription), "%s %s",
+			Server()->GetClientInfo(ClientID)->m_CurrentSkinmani == i ? SignBoxChecked : SignBoxUnchecked,
+			CCosmeticsHandler::ms_SkinmaniNames[i]);
+		str_copy(pOption->m_aCommand, CCosmeticsHandler::ms_SkinmaniNames[i], sizeof(pOption->m_aCommand));
+		pFilling->m_lpSkinmaniOptions.add(pOption);
+	}
+
+	for (int i = 0; i < CCosmeticsHandler::NUM_GUNDESIGNS; i++)
+	{
+		if (GameServer()->CosmeticsHandler()->HasGundesign(ClientID, i) == false)
+			continue;
+
+		CVoteOptionServer *pOption = new CVoteOptionServer();
+		str_format(pOption->m_aDescription, sizeof(pOption->m_aDescription), "%s %s",
+			Server()->GetClientInfo(ClientID)->m_CurrentGundesign == i ? SignBoxChecked : SignBoxUnchecked,
+			CCosmeticsHandler::ms_GundesignNames[i]);
+		str_copy(pOption->m_aCommand, CCosmeticsHandler::ms_GundesignNames[i], sizeof(pOption->m_aCommand));
+		pFilling->m_lpGundesignOptions.add(pOption);
 	}
 
 	//extras
@@ -188,6 +234,13 @@ void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const c
 		if (str_comp_nocase(m_lpServerOptions[i]->m_aDescription, pDescription) != 0)
 			continue;
 
+		if (str_comp(m_lpServerOptions[i]->m_aCommand, "%rand_event") == 0)
+		{
+			CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+			if (pGameMap != 0x0)
+				pGameMap->StartRandomEvent();
+		}
+
 		str_format(aBuf, sizeof(aBuf), "admin forced server option '%s' (%s)", pDescription, pReason);
 		GameServer()->SendChat(-1, aBuf);
 		GameServer()->Console()->ExecuteLine(m_lpServerOptions[i]->m_aCommand);
@@ -207,6 +260,27 @@ void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const c
 				GameServer()->CosmeticsHandler()->DoKnockoutEffect(ClientID, pChr->m_Pos, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aCommand);
 				pChr->GetPlayer()->m_LastVoteTry = 0;
 			}
+			return;
+		}
+
+		for (int i = 0; i < m_Menus[ClientID].m_lpGundesignOptions.size(); i++)
+		{
+			if (str_comp(pDescription, m_Menus[ClientID].m_lpGundesignOptions[i]->m_aDescription) != 0)
+				continue;
+
+			CCharacter *pChr = GameServer()->GetPlayerChar(ClientID);
+			if (pChr != 0x0 && pChr->IsAlive())
+			{
+				GameServer()->CosmeticsHandler()->DoGundesign(ClientID, pChr->m_Pos, m_Menus[ClientID].m_lpGundesignOptions[i]->m_aCommand);
+				pChr->GetPlayer()->m_LastVoteTry = 0;
+			}
+			return;
+		}
+
+		for (int i = 0; i < m_Menus[ClientID].m_lpSkinmaniOptions.size(); i++)
+		{
+			if (str_comp(pDescription, m_Menus[ClientID].m_lpSkinmaniOptions[i]->m_aDescription) != 0)
+				continue;
 			return;
 		}
 	}
@@ -274,6 +348,30 @@ void CVoteMenuHandler::CallVote(int ClientID, const char *pDescription, const ch
 		}
 	}
 
+	for (int i = 0; i < m_Menus[ClientID].m_lpGundesignOptions.size(); i++)
+	{
+		if (str_comp(pDescription, m_Menus[ClientID].m_lpGundesignOptions[i]->m_aDescription) != 0)
+			continue;
+
+		if (GameServer()->CosmeticsHandler()->ToggleGundesign(ClientID, m_Menus[ClientID].m_lpGundesignOptions[i]->m_aCommand))
+		{
+			pPlayer->m_LastVoteTry = Server()->Tick() - Server()->TickSpeed() * 2.25f;
+			return;
+		}
+	}
+
+	for (int i = 0; i < m_Menus[ClientID].m_lpSkinmaniOptions.size(); i++)
+	{
+		if (str_comp(pDescription, m_Menus[ClientID].m_lpSkinmaniOptions[i]->m_aDescription) != 0)
+			continue;
+
+		if (GameServer()->CosmeticsHandler()->ToggleSkinmani(ClientID, m_Menus[ClientID].m_lpSkinmaniOptions[i]->m_aCommand))
+		{
+			pPlayer->m_LastVoteTry = Server()->Tick() - Server()->TickSpeed() * 2.25f;
+			return;
+		}
+	}
+
 	for (int i = 0; i < m_Menus[ClientID].m_lpExtrasOptions.size(); i++)
 	{
 		if (str_comp(pDescription, m_Menus[ClientID].m_lpExtrasOptions[i]->m_aDescription) != 0)
@@ -312,20 +410,6 @@ void CVoteMenuHandler::UpdateMenu(int ClientID)
 		}
 	}
 
-	if (m_Menus[ClientID].m_lpKnockoutEffectsOptions.size() > 0)
-	{
-		CreateStripline(aBuf, VOTE_DESC_LENGTH, "Knockout Effects");
-		OptionMsg.m_pDescription = aBuf;
-		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-
-		for (int i = 0; i < m_Menus[ClientID].m_lpKnockoutEffectsOptions.size(); i++)
-		{
-			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aDescription;
-			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-		}
-
-	}
-
 	if (m_Menus[ClientID].m_lpExtrasOptions.size() > 0)
 	{
 		CreateStripline(aBuf, VOTE_DESC_LENGTH, "Extras");
@@ -335,6 +419,46 @@ void CVoteMenuHandler::UpdateMenu(int ClientID)
 		for (int i = 0; i < m_Menus[ClientID].m_lpExtrasOptions.size(); i++)
 		{
 			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpExtrasOptions[i]->m_aDescription;
+			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+		}
+
+	}
+
+	if (m_Menus[ClientID].m_lpSkinmaniOptions.size() > 0)
+	{
+		CreateStripline(aBuf, VOTE_DESC_LENGTH, " Skinmanipulation ");
+		OptionMsg.m_pDescription = aBuf;
+		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+
+		for (int i = 0; i < m_Menus[ClientID].m_lpSkinmaniOptions.size(); i++)
+		{
+			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpSkinmaniOptions[i]->m_aDescription;
+			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+		}
+	}
+
+	if (m_Menus[ClientID].m_lpGundesignOptions.size() > 0)
+	{
+		CreateStripline(aBuf, VOTE_DESC_LENGTH, " Gundesigns ");
+		OptionMsg.m_pDescription = aBuf;
+		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+
+		for (int i = 0; i < m_Menus[ClientID].m_lpGundesignOptions.size(); i++)
+		{
+			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpGundesignOptions[i]->m_aDescription;
+			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+		}
+	}
+
+	if (m_Menus[ClientID].m_lpKnockoutEffectsOptions.size() > 0)
+	{
+		CreateStripline(aBuf, VOTE_DESC_LENGTH, "Knockouteffects");
+		OptionMsg.m_pDescription = aBuf;
+		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+
+		for (int i = 0; i < m_Menus[ClientID].m_lpKnockoutEffectsOptions.size(); i++)
+		{
+			OptionMsg.m_pDescription = m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aDescription;
 			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 		}
 

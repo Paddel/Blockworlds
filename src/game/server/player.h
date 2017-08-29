@@ -10,6 +10,14 @@
 #include "entities/character.h"
 #include "gamecontext.h"
 
+struct CCharState
+{
+	bool m_Alive;
+	vec2 m_Pos;
+	bool m_aWeapons[NUM_WEAPONS];
+	int m_ActiveWeapon;
+};
+
 // player object
 class CPlayer
 {
@@ -21,7 +29,6 @@ public:
 
 	void Init(int CID);
 
-	void ForceSpawn(vec2 Pos);
 	bool TryRespawnEvent();
 	void TryRespawn();
 	void Respawn();
@@ -39,9 +46,11 @@ public:
 
 	void DoPlayerTuning();
 	bool CanBeDeathnoted();
+	bool HideIdentity();
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
+	void OnCharacterDead();
 
 	CTranslateItem *GetTranslateItem() { return &m_TranslateItem; };
 	bool GetPause() const { return m_Pause; }
@@ -116,7 +125,12 @@ public:
 	bool m_Blocked;
 	int64 m_UnblockedTick;
 
+	int64 m_CreateTick;
+
 	int64 m_LastDeathnote;
+	bool  m_UseSpawnState;
+	CCharState m_SpawnState;
+	int m_AutomuteScore;
 
 private:
 	CCharacter *m_pCharacter;

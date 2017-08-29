@@ -582,7 +582,8 @@ void CCharacter::SpeedUp(int Force, int MaxSpeed, int Angle)
 
 bool CCharacter::IsInviolable()
 {
-	if (m_ProtectionTime > 1 && Server()->GetClientInfo(GetPlayer()->GetCID())->m_UseInviolable == true && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
+	if (m_ProtectionTime > 1 && m_ProtectionTime > Server()->Tick() &&
+		Server()->GetClientInfo(GetPlayer()->GetCID())->m_UseInviolable == true && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
 		return true;
 	return false;
 }
@@ -641,6 +642,7 @@ void CCharacter::ResetInput()
 void CCharacter::ResetZones()
 {
 	m_ZoneBlock = false;
+	m_ZoneSpawn = false;
 }
 
 bool CCharacter::HandleExtrasLayer(int Layer)
@@ -653,7 +655,7 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	int NewTile = Tile != LastTile ? Tile : 0;
 	CExtrasData ExtrasData = pLayers->GetExtrasData(Layer)[Index];
 
-	if (Tile <= 0 || Tile >= NUM_EXTRAS)
+	if (/*Tile <= 0 || */Tile >= NUM_EXTRAS)
 		return false;
 
 	if (NewTile == EXTRAS_TELEPORT_FROM)
@@ -687,6 +689,14 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_ZONE_BLOCK)
 		m_ZoneBlock = true;
+
+	if (Tile == EXTRAS_ZONE_SPAWN)
+		m_ZoneSpawn = true;
+
+	if (m_ProtectionTime == 1 && Tile == EXTRAS_ZONE_PROTECTION && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
+		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Passive mode enabled");
+	if(LastTile == EXTRAS_ZONE_PROTECTION && Tile != EXTRAS_ZONE_PROTECTION && m_ProtectionTime != 0 && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
+		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Passive mode will be disabled in 3 seconds");
 
 	if (Tile == EXTRAS_ZONE_PROTECTION && m_ProtectionTime != 0)//TODO: ugly
 		m_ProtectionTime = Server()->Tick() + Server()->TickSpeed() * 3;
@@ -821,6 +831,16 @@ void CCharacter::HandleTiles()
 		{
 			m_Core.m_Pos = Pos;
 			m_Core.m_HookState = HOOK_RETRACTED;
+		}
+	}
+
+	if (Tile == TILE_VIP)
+	{
+		if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_LoggedIn == false || Server()->GetClientInfo(GetPlayer()->GetCID())->m_AccountData.m_Vip == false)
+		{
+			GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Only VIP can access!");
+			Die(m_pPlayer->GetCID(), WEAPON_WORLD);
+			return;
 		}
 	}
 }
@@ -991,9 +1011,6 @@ void CCharacter::TickPaused()
 
 void CCharacter::Die(int Killer, int Weapon)
 {
-	if (m_Alive == false)//already dead
-		return;
-
 	if (g_Config.m_Debug)
 	{
 		char aBuf[256];
@@ -1029,8 +1046,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(GameMap(), m_Pos, m_pPlayer->GetCID());
-
-	GameMap()->PlayerKilled(m_pPlayer->GetCID(), m_Pos);//for events
 }
 
 void CCharacter::Snap(int SnappingClient)

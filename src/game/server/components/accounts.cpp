@@ -11,7 +11,7 @@
 #define TABLE_ACCOUNTS "accounts"
 #define TABLE_CLANS "clans"
 
-#define COLUMN_NUM_ACCOUNT 13
+#define COLUMN_NUM_ACCOUNT 16
 #define COLUMN_NUM_CLAN 5
 
 struct CResultData
@@ -43,6 +43,7 @@ void CAccountsHandler::CreateTables()
 		", address VARCHAR(47), vip INT(2) DEFAULT 0, pages INT DEFAULT 0, level INT DEFAULT 1"
 		", experience INT DEFAULT 0, weaponkits INT DEFAULT 0, ranking INT DEFAULT 1000"
 		", clan VARCHAR(32), blockpoints INT DEFAULT 0, knockouts VARCHAR(256) DEFAULT NULL"
+		", gundesign VARCHAR(256) DEFAULT NULL, skinmani VARCHAR(256) DEFAULT NULL, extras VARCHAR(256) DEFAULT NULL"
 		", timestamp DATETIME"
 		", PRIMARY KEY(name)"
 		", CONSTRAINT fk_clan FOREIGN KEY (clan) REFERENCES %s(name) ON DELETE SET NULL ON UPDATE NO ACTION"
@@ -160,6 +161,9 @@ void CAccountsHandler::ResultLogin(void *pQueryData, bool Error, void *pUserData
 	//clan
 	pFillingData->m_BlockPoints = str_toint(pRow->m_lpResultFields[10]);
 	pGameServer->CosmeticsHandler()->FillKnockout(pFillingData, pRow->m_lpResultFields[11]);
+	pGameServer->CosmeticsHandler()->FillGundesign(pFillingData, pRow->m_lpResultFields[12]);
+	pGameServer->CosmeticsHandler()->FillSkinmani(pFillingData, pRow->m_lpResultFields[13]);
+	//pGameServer->CosmeticsHandler()->FillExtras(pFillingData, pRow->m_lpResultFields[14]);
 	//timestamp
 
 	char aBuf[128];
@@ -591,6 +595,15 @@ void CAccountsHandler::Save(int ClientID)
 
 	str_append(aQuery, ",knockouts=", sizeof(aQuery));
 	CDatabase::AddQueryStr(aQuery, pAccountData->m_aKnockouts, sizeof(aQuery));
+
+	str_append(aQuery, ",gundesign=", sizeof(aQuery));
+	CDatabase::AddQueryStr(aQuery, pAccountData->m_aGundesigns, sizeof(aQuery));
+
+	str_append(aQuery, ",skinmani=", sizeof(aQuery));
+	CDatabase::AddQueryStr(aQuery, pAccountData->m_aSkinmani, sizeof(aQuery));
+
+	str_append(aQuery, ",extras=", sizeof(aQuery));
+	CDatabase::AddQueryStr(aQuery, pAccountData->m_aExtras, sizeof(aQuery));
 
 	str_append(aQuery, ",timestamp=NOW()", sizeof(aQuery));
 

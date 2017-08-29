@@ -658,7 +658,6 @@ void CGameMap::StartRandomEvent()
 
 	int Index = rand() % CGameEvent::NUM_EVENTS;
 	m_pGameEvent = CreateGameEvent(Index);
-	m_RandomEventTime = Server()->Tick();
 }
 
 void CGameMap::EndEvent()
@@ -684,10 +683,10 @@ void CGameMap::PlayerBlocked(int ClientID, bool Dead, vec2 Pos)
 		m_pGameEvent->PlayerBlocked(ClientID, Dead, Pos);
 }
 
-void CGameMap::PlayerKilled(int ClientID, vec2 Pos)
+void CGameMap::PlayerKilled(int ClientID)
 {
 	if (m_pGameEvent != 0x0)
-		m_pGameEvent->PlayerKilled(ClientID, Pos);
+		m_pGameEvent->PlayerKilled(ClientID);
 }
 
 void CGameMap::StartVote(const char *pDesc, const char *pCommand, const char *pReason)

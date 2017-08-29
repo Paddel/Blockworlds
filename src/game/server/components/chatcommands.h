@@ -42,6 +42,7 @@ private:
 	static void ComClan(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRules(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComPages(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComWeaponkit(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);

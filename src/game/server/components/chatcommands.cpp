@@ -202,7 +202,6 @@ void CChatCommandsHandler::ComRules(CConsole::CResult *pResult, CGameContext *pG
 	pGameServer->SendChatTarget(ClientID, "1. Do not abuse buggs");
 	pGameServer->SendChatTarget(ClientID, "2. Do not cheat");
 	pGameServer->SendChatTarget(ClientID, "3. Be fair at events");
-	pGameServer->SendChatTarget(ClientID, "4. Be an a**hole");
 	pGameServer->SendChatTarget(ClientID, "Violating these rules may result in a punishment");
 }
 
@@ -217,11 +216,65 @@ void CChatCommandsHandler::ComPages(CConsole::CResult *pResult, CGameContext *pG
 
 	int Pages = pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages;
 	str_format(aBuf, sizeof(aBuf), "You have %d pages in your Deathnote!", Pages);
-	if(Pages > 0)
+	if (Pages > 0)
 		str_fcat(aBuf, sizeof(aBuf), " Write \"/deathnote name\" to kill your enemies", Pages);
 
 	pGameServer->SendChatTarget(ClientID, aBuf);
 }
+
+	void CChatCommandsHandler::ComWeaponkit(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+	{
+		char aBuf[256];
+		if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+		{
+			pGameServer->SendChatTarget(ClientID, "Login to use a weaponkit");
+			return;
+		}
+
+		if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits == 0)
+		{
+			pGameServer->SendChatTarget(ClientID, "You do not have any weaponkits");
+			return;
+		}
+
+
+		CCharacter *pChr = pGameServer->GetPlayerChar(ClientID);
+		if (pChr == 0x0 || pChr->IsAlive() == false)
+		{
+			pGameServer->SendChatTarget(ClientID, "You have to be alive to use a weaponkit");
+			return;
+		}
+
+		if(pChr->InSpawnZone() == false)
+		{
+			pGameServer->SendChatTarget(ClientID, "You have to be at the spawn to use a weaponkit");
+			return;
+		}
+
+		bool WeaponsGiven = false;
+		for (int i = 0; i < NUM_WEAPONS; i++)
+		{
+			if (i == WEAPON_NINJA || pChr->Weapons()[i] == true)
+				continue;
+
+			pChr->Weapons()[i] = true;
+			WeaponsGiven = true;
+		}
+
+		if (WeaponsGiven == false)
+		{
+			pGameServer->SendChatTarget(ClientID, "You already have all weapons");
+			return;
+		}
+
+
+		pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits--;
+
+		str_format(aBuf, sizeof(aBuf), "Successfully used a weaponkit! %i kit%s remaining",
+			pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits == 1 ? "" : "s");
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		pGameServer->AccountsHandler()->Save(ClientID);
+	}
 
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
@@ -521,7 +574,7 @@ void CChatCommandsHandler::ComSubscribe(CConsole::CResult *pResult, CGameContext
 	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You are not logged in");
-		return;
+		//return;
 	}
 
 	bool Before = pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent;
@@ -558,7 +611,8 @@ void CChatCommandsHandler::Init()
 	Register("emote", "s?si", 0, ComEmote, "Lets your tee show emotions (normal/pain/happy/surprise/angry/blink)");
 	Register("clan", "", 0, ComClan, "Sends you all information about the clan system");
 	Register("rules", "", 0, ComRules, "Informs you about the server rules");
-	Register("pages", "", 0, ComPages, "Informs you about the server rules");
+	Register("pages", "", 0, ComPages, "Informs you the use of your deathnote");
+	Register("weaponkit", "", 0, ComWeaponkit, "Use a weaponkit");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

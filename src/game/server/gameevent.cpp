@@ -59,7 +59,12 @@ void CGameEvent::Start()
 		}
 
 		if (GameMap()->m_apPlayers[i]->TryRespawnEvent() == false)
+		{
 			GameMap()->m_apPlayers[i]->m_SubscribeEvent = false;
+			continue;
+		}
+
+		GameMap()->m_apPlayers[i]->GetCharacter()->Freeze(3.0f);
 	}
 
 	m_Started = true;
@@ -86,22 +91,33 @@ void CGameEvent::Tick()
 		static int64 s_BroadcastUpdate = 0;
 		if (s_BroadcastUpdate < Server()->Tick())
 		{
-			char aBuf[128];
+			char aBuf[512];
 			str_format(aBuf, sizeof(aBuf), "Event %s starts in ", EventName());
 			GameServer()->StringTime(m_CreateTick + Server()->TickSpeed() * TIME_COUNTDOWN, aBuf, sizeof(aBuf));
-			str_fcat(aBuf, sizeof(aBuf), "\n                 %i/%i participants", m_NumParticipants, MINIMUM_PLAYERS);
-			str_fcat(aBuf, sizeof(aBuf), "\n        Write '/sub' to take part!");
+			str_fcat(aBuf, sizeof(aBuf), "\n%i/%i participants", m_NumParticipants, MINIMUM_PLAYERS);
+			str_fcat(aBuf, sizeof(aBuf), "\nWrite '/sub' to take part!");
+			str_fcat(aBuf, sizeof(aBuf), "                                                                           "
+				"                                                                                                    ");
+
 			GameMap()->SendBroadcast(aBuf);
 			s_BroadcastUpdate = Server()->Tick() + Server()->TickSpeed() * 0.4f;
 		}
 	}
 	else
 	{
-		if (m_Started == false)
-			Start();
+		if (m_Started == false && m_NumParticipants < MINIMUM_PLAYERS)
+		{
+			GameMap()->SendBroadcast("Not enough participants to start event");
+			EndEvent();
+		}
+		else
+		{
+			if (m_Started == false)
+				Start();
 
-		OnTick();
-		DoWinCheck();
+			OnTick();
+			DoWinCheck();
+		}
 	}
 
 	if (m_CreateTick + Server()->TickSpeed() * (MAXIMUM_TIME + TIME_COUNTDOWN) < Server()->Tick())
@@ -121,7 +137,7 @@ bool CGameEvent::OnCountdown()
 
 void CGameEvent::SetWinner(int ClientID)
 {
-	if (Server()->ClientIngame(ClientID) == false)
+	if (Server()->ClientIngame(ClientID) == false || GameMap()->m_apPlayers[ClientID] == 0x0)
 		return;
 
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
@@ -160,21 +176,18 @@ void CGameEvent::ResumeClient(int ClientID)
 	if (GameMap()->m_apPlayers[ClientID] == 0x0 || GameMap()->m_apPlayers[ClientID]->m_SubscribeEvent == false)
 		return;
 
-	//ForcePos
-	if (m_CharState[ClientID].m_Alive == true)
-	{
-		GameMap()->m_apPlayers[ClientID]->ForceSpawn(m_CharState[ClientID].m_Pos);
-		mem_copy(GameMap()->m_apPlayers[ClientID]->GetCharacter()->Weapons(), &m_CharState[ClientID].m_aWeapons, sizeof(m_CharState[ClientID].m_aWeapons));
-		GameMap()->m_apPlayers[ClientID]->GetCharacter()->SetActiveWeapon(m_CharState[ClientID].m_ActiveWeapon);
-	}
-	else
-		GameMap()->m_apPlayers[ClientID]->KillCharacter();
+	mem_copy(&GameMap()->m_apPlayers[ClientID]->m_SpawnState, &m_CharState[ClientID], sizeof(CCharState));
+	GameMap()->m_apPlayers[ClientID]->m_UseSpawnState = true;
+
+	GameMap()->m_apPlayers[ClientID]->KillCharacter();
 
 	GameMap()->m_apPlayers[ClientID]->m_SubscribeEvent = false;
 }
 
 void CGameEvent::EndEvent()
 {
+	m_Ending = true;
+
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if (GameMap()->m_apPlayers[i] == 0x0 || GameMap()->m_apPlayers[i]->m_SubscribeEvent == false)
@@ -182,18 +195,16 @@ void CGameEvent::EndEvent()
 
 		ResumeClient(i);
 	}
-
-	m_Ending = true;
 }
 
-void CGameEvent::PlayerKilled(int ClientID, vec2 Pos)
+void CGameEvent::PlayerKilled(int ClientID)
 {
-	if (m_Started == true)
-		OnPlayerKilled(ClientID, Pos);
+	if (m_Started == true && m_Ending == false)
+		OnPlayerKilled(ClientID);
 }
 
 void CGameEvent::PlayerBlocked(int ClientID, bool Dead, vec2 Pos)
 {
-	if (m_Started == true)
+	if (m_Started == true && m_Ending == false)
 		PlayerBlocked(ClientID, Dead, Pos);
 }

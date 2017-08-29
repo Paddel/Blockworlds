@@ -28,7 +28,7 @@ void CLastManBlocking::DoWinCheck()
 	}
 }
 
-void CLastManBlocking::OnPlayerKilled(int ClientID, vec2 Pos)
+void CLastManBlocking::OnPlayerKilled(int ClientID)
 {
 	if (GameMap()->m_apPlayers[ClientID] == 0x0 || GameMap()->m_apPlayers[ClientID]->m_SubscribeEvent == false)
 		return;

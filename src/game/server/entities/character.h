@@ -90,6 +90,7 @@ public:
 	int64 FreezeTick() const { return m_FreezeTick; }
 	int FreezeTime() const { return m_FreezeTime; }
 	bool InBlockZone() const { return m_ZoneBlock; }
+	bool InSpawnZone() const { return m_ZoneSpawn; }
 	bool *Weapons() { return m_aGotWeapon; }
 	int GetActiveWeapon() const { return m_ActiveWeapon; }
 
@@ -107,6 +108,7 @@ private:
 
 	//zones
 	bool m_ZoneBlock;
+	bool m_ZoneSpawn;
 
 	int64 m_ProtectionTime;
 

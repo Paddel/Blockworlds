@@ -1,16 +1,10 @@
-1on1 system
-event system
-
-mute spamming
-
-weaponkit
-
-admin commands
-
 unlock system
 maps update
 
 -- Release
+
+clan toplist
+1on1 system
 
 rcon stuff (global)
 

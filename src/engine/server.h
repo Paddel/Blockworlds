@@ -49,6 +49,9 @@ public:
 		int m_Ranking;
 		int m_BlockPoints;
 		char m_aKnockouts[256];
+		char m_aGundesigns[256];
+		char m_aSkinmani[256];
+		char m_aExtras[256];
 	};
 
 	struct CClientInfo
@@ -58,6 +61,8 @@ public:
 		CClanData *m_pClan;
 
 		int m_CurrentKnockout;
+		int m_CurrentGundesign;
+		int m_CurrentSkinmani;
 		int64 m_InviolableTime;
 		bool m_UseInviolable;
 
@@ -65,6 +70,8 @@ public:
 		{
 			mem_zero(this, sizeof(*this));
 			m_CurrentKnockout = -1;
+			m_CurrentGundesign = -1;
+			m_CurrentSkinmani = -1;
 			m_UseInviolable = true;
 		}
 	};
@@ -173,6 +180,10 @@ public:
 	virtual CGameMap *CurrentGameMap(int ClientID) = 0;
 	virtual int GetNumMaps() = 0;
 	virtual CGameMap *GetGameMap(int Index) = 0;
+
+	virtual int64 IsMuted(int ClientID) = 0;
+	virtual void MuteID(int ClientID, int64 Ticks) = 0;
+	virtual bool UnmuteID(int ClientID) = 0;
 
 	virtual int Translate(int For, int ClientID) = 0;
 	virtual int ReverseTranslate(int For, int ClientID) = 0;
