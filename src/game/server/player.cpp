@@ -158,7 +158,7 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	char *pClan = "";
+	const char *pClan = "";
 	if (ClientInfo()->m_LoggedIn == true && ClientInfo()->m_pClan != 0)
 		pClan = ClientInfo()->m_pClan->m_aName;
 

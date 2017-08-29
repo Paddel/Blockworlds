@@ -501,7 +501,7 @@ void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInf
 
 	int64 TickDef = Server()->Tick() - Tick;//only work with Tickdef
 	vec3 HSLBody = CcToHsl(pClientInfo->m_ColorBody);
-	vec3 HSLFeet = CcToHsl(pClientInfo->m_ColorFeet);
+	//vec3 HSLFeet = CcToHsl(pClientInfo->m_ColorFeet);
 
 	if (Effect == SKINMANI_RAINBOW)
 	{
