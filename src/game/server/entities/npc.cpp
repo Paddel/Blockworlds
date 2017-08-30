@@ -80,17 +80,6 @@ void CNpc::Snap(int SnappingClient)
 	pPlayerInfo->m_Score = 0;
 	pPlayerInfo->m_Team = 1;
 
-	/*if (TranslatedID == SnappingClient && m_Team == TEAM_SPECTATORS)
-	{
-		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, TranslatedID, sizeof(CNetObj_SpectatorInfo)));
-		if (!pSpectatorInfo)
-			return;
-
-		pSpectatorInfo->m_SpectatorID = m_SpectatorID;
-		pSpectatorInfo->m_X = m_ViewPos.x;
-		pSpectatorInfo->m_Y = m_ViewPos.y;
-	}*/
-
 	if (NetworkClipped(SnappingClient))
 		return;
 

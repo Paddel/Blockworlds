@@ -5,7 +5,7 @@
 
 #include <new>
 #include <base/vmath.h>
-#include <game/server/gameworld.h>
+#include <game/server/components_map/gameworld.h>
 
 #define MACRO_ALLOC_HEAP() \
 	public: \

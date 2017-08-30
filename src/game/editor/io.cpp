@@ -629,8 +629,8 @@ int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int Storag
 						pExtras->m_Game = 0;
 
 						// load layer name
-						if (pTilemapItem->m_Version >= 3)
-							IntsToStr(pTilemapItem->m_aName, sizeof(pExtras->m_aName) / sizeof(int), pExtras->m_aName);
+						//if (pTilemapItem->m_Version >= 3)
+							//IntsToStr(pTilemapItem->m_aName, sizeof(pExtras->m_aName) / sizeof(int), pExtras->m_aName);
 
 						mem_copy(pExtras->m_pTiles, pData, pExtras->m_Width*pExtras->m_Height * sizeof(CTile));
 						mem_copy(pExtras->m_pExtrasData, pDataExtras, pExtras->m_Width*pExtras->m_Height * sizeof(CExtrasData));

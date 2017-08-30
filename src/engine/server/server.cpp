@@ -758,6 +758,14 @@ CMap *CServer::FindMap(const char *pName)
 	return 0x0;
 }
 
+bool CServer::MovePlayer(int ClientID, const char *pMapName)
+{
+	CMap *pMap = FindMap(pMapName);
+	if (pMap == 0x0)
+		return false;
+	return MovePlayer(ClientID, pMap);
+}
+
 bool CServer::MovePlayer(int ClientID, CMap *pMap)
 {
 	char aName[64];
@@ -775,6 +783,11 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 
 	return true;
+}
+
+bool CServer::MoveLobby(int ClientID)
+{
+	return MovePlayer(ClientID, m_pDefaultMap);
 }
 
 void CServer::SendMap(int ClientID)

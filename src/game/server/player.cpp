@@ -173,18 +173,6 @@ void CPlayer::Snap(int SnappingClient)
 
 	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo);
 
-	if (HideIdentity() && Server()->GetClientAuthed(SnappingClient) <= IServer::AUTHED_NO)
-	{
-		StrToInts(&pClientInfo->m_Name0, 4, "");
-		StrToInts(&pClientInfo->m_Clan0, 3, "");
-
-		pClientInfo->m_Country = -1;
-		StrToInts(&pClientInfo->m_Skin0, 6, "default");
-		pClientInfo->m_UseCustomColor = 0;
-		pClientInfo->m_ColorBody = 0;
-		pClientInfo->m_ColorFeet = 0;
-	}
-
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, TranslatedID, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
 		return;
@@ -202,6 +190,21 @@ void CPlayer::Snap(int SnappingClient)
 
 	if (m_Pause && m_ClientID == SnappingClient)
 		pPlayerInfo->m_Team = TEAM_SPECTATORS;
+
+
+	if (HideIdentity() && Server()->GetClientAuthed(SnappingClient) <= IServer::AUTHED_NO)
+	{
+		StrToInts(&pClientInfo->m_Name0, 4, "");
+		StrToInts(&pClientInfo->m_Clan0, 3, "");
+
+		pClientInfo->m_Country = -1;
+		StrToInts(&pClientInfo->m_Skin0, 6, "default");
+		pClientInfo->m_UseCustomColor = 0;
+		pClientInfo->m_ColorBody = 0;
+		pClientInfo->m_ColorFeet = 0;
+
+		pPlayerInfo->m_Team = 1;
+	}
 
 	if(m_ClientID == SnappingClient && pPlayerInfo->m_Team == TEAM_SPECTATORS)
 	{

@@ -210,7 +210,9 @@ public:
 	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
 	CMap *FindMap(const char *pName);
+	bool MovePlayer(int ClientID, const char *pMapName);
 	bool MovePlayer(int ClientID, CMap *pMap);
+	bool MoveLobby(int ClientID);
 	void SendMap(int ClientID);
 	void SendConnectionReady(int ClientID);
 	void SendRconLine(int ClientID, const char *pLine);

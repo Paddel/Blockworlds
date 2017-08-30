@@ -109,6 +109,7 @@ private:
 	//zones
 	bool m_ZoneBlock;
 	bool m_ZoneSpawn;
+	bool m_ZoneUntouchable;
 
 	int64 m_ProtectionTime;
 

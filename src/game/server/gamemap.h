@@ -4,9 +4,10 @@
 #include <game/voting.h>
 #include <game/layers.h>
 #include <game/collision.h>
-
-#include "gameworld.h"
-#include "eventhandler.h"
+#include <game/server/components_map/eventhandler.h>
+#include <game/server/components_map/gameworld.h>
+#include <game/server/components_map/shop.h>
+#include <game/server/components_map/animations.h>
 
 class CMap;
 class IServer;
@@ -16,9 +17,11 @@ class CTranslateItem;
 class IConsole;
 class CGameEvent;
 
+//god class?
+
 class CGameMap
 {
-public:
+public:// TODO: clean this into an extra class. esp. vote spawn tele and doors
 	struct CSpawnEval
 	{
 		CSpawnEval()
@@ -65,8 +68,12 @@ private:
 	CGameWorld m_World;
 	CEventHandler m_Events;
 	CGameEvent *m_pGameEvent;//current map event
+	CShop m_Shop;
+	CAnimationHandler m_AnimationHandler;
 	array<CDoorTile *> m_lDoorTiles;
 	array<CTeleTo *> m_lTeleTo;
+	class CComponentMap *m_apComponents[16];
+	int m_NumComponents;
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 	int m_RoundStartTick;
@@ -98,8 +105,10 @@ private:
 	void InitEntities();
 	void InitDoorTile(CDoorTile *pTile);
 	void InitExtras();
+	void InitComponents();
 
 	void DoMapTunings();
+	void DoStoreAnimations();
 public:
 	CGameMap(CMap *pMap);
 	~CGameMap();
@@ -165,4 +174,5 @@ public:
 	CCollision *Collision() { return &m_Collision; };
 	CGameWorld *World() { return &m_World; };
 	CEventHandler *Events() { return &m_Events; }
+	CAnimationHandler *AnimationHandler() { return &m_AnimationHandler; }
 };

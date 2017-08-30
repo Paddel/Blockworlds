@@ -11,7 +11,15 @@ const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { "ID", "Delay", "Activate"},		//EXTRAS_DOOR_HANDLE
 {},									//EXTRAS_ZONE_BLOCK
 {},									//EXTRAS_ZONE_PROTECTION
+{},									//EXTRAS_ZONE_SPAWN
+{},									//EXTRAS_ZONE_UNTOUCHABLE
+{"Name"},							//EXTRAS_MAP
+{ "Name"},							//EXTRAS_SELL_SKINMANI
+{ "Name" },							//EXTRAS_SELL_GUNDESIGN
+{ "Name" },							//EXTRAS_SELL_KNOCKOUT
+{ "Name" },							//EXTRAS_SELL_EXTRAS
 };
+
 
 int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { 4 },			//EXTRAS_TELEPORT_FROM
@@ -23,6 +31,13 @@ int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { 4, 3, 3},		//EXTRAS_DOOR_HANDLE
 {},				//EXTRAS_ZONE_BLOCK
 {},				//EXTRAS_ZONE_PROTECTION
+{},				//EXTRAS_ZONE_SPAWN
+{},				//EXTRAS_ZONE_UNTOUCHABLE
+{ 19 },			//EXTRAS_MAP4
+{ 19 },			//EXTRAS_SELL_SKINMANI
+{ 19 },			//EXTRAS_SELL_GUNDESIGN
+{ 19 },			//EXTRAS_SELL_KNOCKOUT
+{ 19 },			//EXTRAS_SELL_EXTRAS
 };
 
 //TODO add angles
@@ -36,4 +51,11 @@ int gs_ExtrasColumntypes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {}, // 1 = integer,
 { 1, 1, 1},		//EXTRAS_DOOR_HANDLE
 {},				//EXTRAS_ZONE_BLOCK
 {},				//EXTRAS_ZONE_PROTECTION
+{},				//EXTRAS_ZONE_SPAWN
+{},				//EXTRAS_ZONE_UNTOUCHABLE
+{ 0 },			//EXTRAS_MAP
+{ 0 },			//EXTRAS_SELL_SKINMANI
+{ 0 },			//EXTRAS_SELL_GUNDESIGN
+{ 0 },			//EXTRAS_SELL_KNOCKOUT
+{ 0 },			//EXTRAS_SELL_EXTRAS
 };

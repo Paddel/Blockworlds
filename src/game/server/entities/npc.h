@@ -6,7 +6,7 @@
 
 class CNpc : public CEntity
 {
-private:
+protected:
 	static const int ms_PhysSize = 28;
 	int m_ClientID;
 	bool m_Alive;

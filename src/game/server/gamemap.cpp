@@ -300,12 +300,13 @@ void CGameMap::InitExtras()
 				int Index = y * Layers()->GetExtrasWidth(l) + x;
 				int Tile = Layers()->GetExtrasTile(l)[Index].m_Index;
 				CExtrasData ExtrasData = Layers()->GetExtrasData(l)[Index];
+				vec2 Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
 
 				if (Tile == EXTRAS_DOOR)
 				{
 					CDoorTile *pDoorTile = new CDoorTile();
 					pDoorTile->m_Index = Index;
-					pDoorTile->m_Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+					pDoorTile->m_Pos = Pos;
 					const char *pData = ExtrasData.m_aData;
 					pDoorTile->m_ID = str_toint(pData);
 					pData += +gs_ExtrasSizes[Tile][0];
@@ -319,7 +320,7 @@ void CGameMap::InitExtras()
 				else if (Tile == EXTRAS_TELEPORT_TO)
 				{
 					CTeleTo *pTeleTo = new CTeleTo();
-					pTeleTo->m_Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+					pTeleTo->m_Pos = Pos;
 					pTeleTo->m_ID = str_toint(ExtrasData.m_aData);
 					m_lTeleTo.add(pTeleTo);
 				}
@@ -328,6 +329,26 @@ void CGameMap::InitExtras()
 			}
 		}
 	}
+}
+
+void CGameMap::InitComponents()
+{
+	m_NumComponents = 0;
+
+	m_apComponents[m_NumComponents++] = &m_Events;
+	m_apComponents[m_NumComponents++] = &m_World;
+	m_apComponents[m_NumComponents++] = &m_Shop;
+	m_apComponents[m_NumComponents++] = &m_AnimationHandler;
+
+	for (int i = 0; i < m_NumComponents; i++)
+	{
+		m_apComponents[i]->m_pGameMap = this;
+		m_apComponents[i]->m_pGameServer = GameServer();
+		m_apComponents[i]->m_pServer = Server();
+	}
+
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Init();
 }
 
 void CGameMap::DoMapTunings()
@@ -348,11 +369,9 @@ bool CGameMap::Init(CGameContext *pGameServer)
 	m_Layers.Init(Map()->EngineMap());
 	m_Collision.Init(&m_Layers);
 
-	m_Events.SetGameServer(pGameServer);
-	m_World.SetGameMap(this);
-
 	m_RoundStartTick = Server()->Tick();
 
+	InitComponents();
 	InitEntities();
 	InitExtras();
 
@@ -614,10 +633,11 @@ void CGameMap::Snap(int SnappingClient)
 {
 	if (m_pGameEvent != 0x0)
 		m_pGameEvent->Snap(SnappingClient);
-	m_World.Snap(SnappingClient);
 	SnapDoors(SnappingClient);
 	SnapGameInfo(SnappingClient);
-	m_Events.Snap(SnappingClient);
+
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Snap(SnappingClient);
 }
 
 CGameEvent *CGameMap::CreateGameEvent(int Index)
@@ -632,9 +652,12 @@ CGameEvent *CGameMap::CreateGameEvent(int Index)
 
 bool CGameMap::TryVoteRandomEvent(int ClientID)
 {
+	if (IsBlockMap())
+		return false;
+
 	if (m_pGameEvent != 0x0)
 	{
-		GameServer()->SendChatTarget(ClientID, "You canno start a event, when there is alreay one running");
+		GameServer()->SendChatTarget(ClientID, "You cannot start a event, when there is alreay one running");
 		return false;
 	}
 
@@ -654,6 +677,9 @@ bool CGameMap::TryVoteRandomEvent(int ClientID)
 void CGameMap::StartRandomEvent()
 {
 	if (m_pGameEvent != 0x0)
+		return;
+
+	if (IsBlockMap())
 		return;
 
 	int Index = rand() % CGameEvent::NUM_EVENTS;
@@ -794,10 +820,12 @@ void CGameMap::Tick()
 	mem_copy(&m_World.m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_World.m_Core.m_Tuning));
 	DoMapTunings();
 
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Tick();
+
 	if (m_pGameEvent != 0x0)
 		m_pGameEvent->Tick();
 
-	m_World.Tick();
 	UpdateVote();
 }
 

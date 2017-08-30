@@ -70,6 +70,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	m_RaceStart = 0;
 
+	m_ZoneBlock = false;
+	m_ZoneSpawn = false;
+	m_ZoneUntouchable = false;
+
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
 
@@ -585,6 +589,8 @@ bool CCharacter::IsInviolable()
 	if (m_ProtectionTime > 1 && m_ProtectionTime > Server()->Tick() &&
 		Server()->GetClientInfo(GetPlayer()->GetCID())->m_UseInviolable == true && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
 		return true;
+	if (m_ZoneUntouchable)
+		return true;
 	return false;
 }
 
@@ -643,6 +649,7 @@ void CCharacter::ResetZones()
 {
 	m_ZoneBlock = false;
 	m_ZoneSpawn = false;
+	m_ZoneUntouchable = false;
 }
 
 bool CCharacter::HandleExtrasLayer(int Layer)
@@ -673,11 +680,11 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	{
 		const char *pData = ExtrasData.m_aData;
 		int ID = str_toint(pData);
-		pData += +gs_ExtrasSizes[Tile][0];
+		pData += gs_ExtrasSizes[Tile][0];
 		int Delay = str_toint(pData);
-		pData += +gs_ExtrasSizes[Tile][1];
+		pData += gs_ExtrasSizes[Tile][1];
 		bool Activate = (bool)str_toint(pData);
-		pData += +gs_ExtrasSizes[Tile][2];
+		pData += gs_ExtrasSizes[Tile][2];
 		GameMap()->OnDoorHandle(ID, Delay, Activate);
 	}
 
@@ -693,6 +700,9 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	if (Tile == EXTRAS_ZONE_SPAWN)
 		m_ZoneSpawn = true;
 
+	if (Tile == EXTRAS_ZONE_UNTOUCHABLE)
+		m_ZoneUntouchable = true;
+
 	if (m_ProtectionTime == 1 && Tile == EXTRAS_ZONE_PROTECTION && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
 		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Passive mode enabled");
 	if(LastTile == EXTRAS_ZONE_PROTECTION && Tile != EXTRAS_ZONE_PROTECTION && m_ProtectionTime != 0 && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
@@ -702,6 +712,14 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		m_ProtectionTime = Server()->Tick() + Server()->TickSpeed() * 3;
 	else if (m_ProtectionTime > 1 && m_ProtectionTime < Server()->Tick())
 		m_ProtectionTime = 0;
+
+	if (NewTile == EXTRAS_MAP)
+	{
+		if (Server()->MovePlayer(GetPlayer()->GetCID(), ExtrasData.m_aData) == true)
+			return true;
+		else
+			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Map will be available soon");
+	}
 
 	return false;
 }
@@ -847,6 +865,9 @@ void CCharacter::HandleTiles()
 
 void CCharacter::HandleRace()
 {
+	if (m_Alive == false)
+		return;
+
 	if (m_DeepFreeze)
 		Freeze(3.0f);
 

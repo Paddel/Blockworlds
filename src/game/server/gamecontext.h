@@ -12,11 +12,11 @@
 #include <game/layers.h>
 #include <game/voting.h>
 
-#include <game/server/components/inquiries.h>
-#include <game/server/components/accounts.h>
-#include <game/server/components/chatcommands.h>
-#include <game/server/components/votemenu.h>
-#include <game/server/components/cosmetics.h>
+#include <game/server/components_global/inquiries.h>
+#include <game/server/components_global/accounts.h>
+#include <game/server/components_global/chatcommands.h>
+#include <game/server/components_global/votemenu.h>
+#include <game/server/components_global/cosmetics.h>
 
 #include "player.h"
 
@@ -32,12 +32,7 @@ class CGameContext : public IGameServer
 	CVoteMenuHandler m_VoteMenuHandler;
 	CCosmeticsHandler m_CosmeticsHandler;
 
-	enum
-	{
-		MAX_COMPONENTS = 16,
-	};
-
-	class CComponent *m_apComponents[MAX_COMPONENTS];
+	class CComponentGlobal *m_apComponents[16];
 	int m_NumComponents;
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);

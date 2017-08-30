@@ -89,6 +89,10 @@ public:
 	virtual int GetClientAuthed(int ClientID) = 0;
 	virtual int GetClientLatency(int ClientID) = 0;
 
+	virtual bool MovePlayer(int ClientID, const char *pMapName) = 0;
+	virtual bool MovePlayer(int ClientID, class CMap *pMap) = 0;
+	virtual bool MoveLobby(int ClientID) = 0;
+
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
 
 	template<class T>
