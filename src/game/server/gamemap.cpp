@@ -326,6 +326,8 @@ void CGameMap::InitExtras()
 				}
 				else if (Tile == EXTRAS_ZONE_BLOCK)
 					m_BlockMap = true;
+				else if (Tile == EXTRAS_SELL_SKINMANI || Tile == EXTRAS_SELL_GUNDESIGN || Tile == EXTRAS_SELL_KNOCKOUT || Tile == EXTRAS_SELL_EXTRAS)
+					m_ShopMap = true;
 			}
 		}
 	}
@@ -357,6 +359,11 @@ void CGameMap::DoMapTunings()
 	{
 		m_World.m_Core.m_Tuning.m_PlayerCollision = 0;
 		m_World.m_Core.m_Tuning.m_PlayerHooking = 0;
+	}
+	if (m_ShopMap == true)
+	{
+		m_World.m_Core.m_Tuning.m_ShotgunSpeed = 0;
+		m_World.m_Core.m_Tuning.m_ShotgunLifetime = 100;
 	}
 }
 

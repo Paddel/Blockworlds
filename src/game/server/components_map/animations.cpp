@@ -98,16 +98,16 @@ CAnimationHandler::CAnimationHandler()
 	mem_copy(gs_LetterBits['|'], gs_LetterLV, sizeof(gs_LetterBits[0]));
 }
 
-void CAnimationHandler::Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, CGameMap *pGameMap)
+void CAnimationHandler::Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun)
 {
 	int Length = str_length(pText);
 
 	vec2 Pos = StartPos;
 	for (int i = 0; i < Length; i++)
 	{
-		CAnimLetter *pChar = new CAnimLetter(Pos, Server()->Tick(), pGameMap, Ticks, gs_LetterBits[(unsigned char)pText[i]], Size);
+		CAnimLetter *pChar = new CAnimLetter(Pos, Server()->Tick(), GameMap(), Ticks, gs_LetterBits[(unsigned char)pText[i]], Size, Shotgun);
 		m_lpAnimations.add(pChar);
-		Pos.x += pChar->Width() + Size + 8.0f;
+		Pos.x += pChar->Width() + Size + 4.0f;
 	}
 }
 

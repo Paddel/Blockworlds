@@ -13,13 +13,15 @@ protected:
 	float m_Size;
 	int *m_aIDs;
 	bool *m_pBitField;
+	bool m_Shotgun;
 
 public:
-	CAnimLetter(vec2 Pos, int64 Tick, CGameMap *pGameMap, int Ticks, bool *pBitField, float Size) : CMapAnimation(Pos, Tick, pGameMap)
+	CAnimLetter(vec2 Pos, int64 Tick, CGameMap *pGameMap, int Ticks, bool *pBitField, float Size, bool Shotgun) : CMapAnimation(Pos, Tick, pGameMap)
 	{
 		m_Ticks = Ticks;
 		m_pBitField = pBitField;
 		m_Size = Size;
+		m_Shotgun = Shotgun;
 
 		m_Width = 0.0f;
 		m_NumIds = 0;
@@ -50,23 +52,40 @@ public:
 	{
 		int IDIndex = 0;
 
-		for (int x = 0; x < 5; x++)
+		for (int x = 4; x >= 0; x--)
 		{
 			for (int y = 0; y < 7; y++)
 			{
 				if (m_pBitField[x + y * 5] == 0)
 					continue;
 
-				CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_aIDs[IDIndex], sizeof(CNetObj_Laser)));
-				if (!pObj)
-					return;
+				if (m_Shotgun == false)
+				{
+					CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_aIDs[IDIndex], sizeof(CNetObj_Laser)));
+					if (!pObj)
+						return;
 
-				vec2 Pos = GetPos() + vec2(x * m_Size, y * m_Size);
-				pObj->m_X = (int)Pos.x;
-				pObj->m_Y = (int)Pos.y;
-				pObj->m_FromX = (int)Pos.x;
-				pObj->m_FromY = (int)Pos.y;
-				pObj->m_StartTick = Server()->Tick() - 1;
+					vec2 Pos = GetPos() + vec2(x * m_Size, y * m_Size);
+					pObj->m_X = (int)Pos.x;
+					pObj->m_Y = (int)Pos.y;
+					pObj->m_FromX = (int)Pos.x;
+					pObj->m_FromY = (int)Pos.y;
+					pObj->m_StartTick = Server()->Tick() - 5;
+				}
+				else
+				{
+					CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_aIDs[IDIndex], sizeof(CNetObj_Projectile)));
+					if (pProj)
+					{
+						vec2 Pos = GetPos() + vec2(x * m_Size, y * m_Size);
+						pProj->m_X = (int)Pos.x;
+						pProj->m_Y = (int)Pos.y;
+						pProj->m_VelX = (int)(Pos.x*100.0f);
+						pProj->m_VelY = (int)(Pos.y*100.0f);
+						pProj->m_StartTick = Server()->Tick() - 5;
+						pProj->m_Type = WEAPON_SHOTGUN;
+					}
+				}
 
 				IDIndex++;
 			}

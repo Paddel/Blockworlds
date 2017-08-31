@@ -257,8 +257,12 @@ void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const c
 			CCharacter *pChr = GameServer()->GetPlayerChar(ClientID);
 			if (pChr != 0x0 && pChr->IsAlive())
 			{
-				GameServer()->CosmeticsHandler()->DoKnockoutEffect(pChr->m_Pos, m_Menus[ClientID].m_lpKnockoutEffectsOptions[i]->m_aCommand, pChr->GameMap());
-				pChr->GetPlayer()->m_LastVoteTry = 0;
+				int Effect = GameServer()->CosmeticsHandler()->FindKnockoutEffect(m_Menus[ClientID].m_lpGundesignOptions[i]->m_aCommand);
+				if (Effect != -1)
+				{
+					GameServer()->CosmeticsHandler()->DoKnockoutEffectRaw(pChr->m_Pos, Effect, pChr->GameMap());
+					pChr->GetPlayer()->m_LastVoteTry = 0;
+				}
 			}
 			return;
 		}
@@ -271,8 +275,12 @@ void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const c
 			CCharacter *pChr = GameServer()->GetPlayerChar(ClientID);
 			if (pChr != 0x0 && pChr->IsAlive())
 			{
-				GameServer()->CosmeticsHandler()->DoGundesign(pChr->m_Pos, m_Menus[ClientID].m_lpGundesignOptions[i]->m_aCommand, pChr->GameMap());
-				pChr->GetPlayer()->m_LastVoteTry = 0;
+				int Effect = GameServer()->CosmeticsHandler()->FindGundesign(m_Menus[ClientID].m_lpGundesignOptions[i]->m_aCommand);
+				if (Effect != -1)
+				{
+					GameServer()->CosmeticsHandler()->DoGundesignRaw(pChr->m_Pos, Effect, pChr->GameMap());
+					pChr->GetPlayer()->m_LastVoteTry = 0;
+				}
 			}
 			return;
 		}

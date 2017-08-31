@@ -13,6 +13,11 @@ CNpc::CNpc(CGameWorld *pGameWorld, int ClientID)
 	Reset();
 }
 
+CNpc::~CNpc()
+{
+	GameWorld()->RemoveEntity(this);
+}
+
 void CNpc::Spawn(vec2 Pos)
 {
 	m_Alive = true;

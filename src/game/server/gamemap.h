@@ -77,6 +77,7 @@ private:
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 	int m_RoundStartTick;
+	bool m_ShopMap;
 	bool m_BlockMap;
 	int m_NumPlayers;
 	int64 m_RandomEventTime;

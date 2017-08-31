@@ -15,6 +15,7 @@ protected:
 
 public:
 	CNpc(CGameWorld *pGameWorld, int ClientID);
+	virtual ~CNpc();
 
 	void Spawn(vec2 Pos);
 

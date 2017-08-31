@@ -3,12 +3,13 @@
 #include <game/layers.h>
 #include <game/server/gamemap.h>
 #include <game/server/gamecontext.h>
+#include <game/server/balancing.h>
 #include <game/server/entities/npcs/shop_npc.h>
 
 #include "shop.h"
 
-CShopItemGundesign::CShopItemGundesign(vec2 Pos, const char *pName, IServer *pServer)
-	: CShopItem(SHOPITEM_GUNDESIGN, Pos, pName)
+CShopItemGundesign::CShopItemGundesign(vec2 Pos, int Effect, IServer *pServer, int Price, int Level)
+	: CShopItem(SHOPITEM_GUNDESIGN, Pos, Effect, Price, Level)
 {
 	m_pServer = pServer;
 	m_ID = pServer->SnapNewID();
@@ -20,16 +21,22 @@ CShopItemGundesign::~CShopItemGundesign()
 		m_pServer->SnapFreeID(m_ID);
 }
 
-CShopItemSkinmani::CShopItemSkinmani(vec2 Pos, const char *pName, CGameMap *pGameMap)
-	: CShopItem(SHOPITEM_SKINMANI, Pos, pName)
+CShopItemSkinmani::CShopItemSkinmani(vec2 Pos, int Effect, CGameMap *pGameMap, int Price, int Level)
+	: CShopItem(SHOPITEM_SKINMANI, Pos, Effect, Price, Level)
 {
-	m_Npc = new CShopNpc(pGameMap->World(), pGameMap->FreeNpcSlot(), pName);
+	m_Npc = new CShopNpc(pGameMap->World(), pGameMap->FreeNpcSlot(), Effect);
 	m_Npc->Spawn(Pos - vec2(0, 192));
 }
 
 CShopItemSkinmani::~CShopItemSkinmani()
 {
 	delete m_Npc;
+}
+
+CShopItemExtra::CShopItemExtra(vec2 Pos, const char *pName, int Price, int Level)
+	: CShopItem(SHOPITEM_EXTRA, Pos, -1, Price, Level)
+{
+	str_copy(m_aName, pName, sizeof(m_aName));
 }
 
 CShop::~CShop()
@@ -40,6 +47,8 @@ CShop::~CShop()
 void CShop::Init()
 {
 	m_pLayers = GameMap()->Layers();
+	int Price = 0;
+	int Level = 0;
 
 	for (int l = 0; l < Layers()->GetNumExtrasLayer(); l++)
 	{
@@ -53,37 +62,99 @@ void CShop::Init()
 				vec2 Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
 
 				if (Tile == EXTRAS_SELL_SKINMANI)
-					m_lpShopItems.add(new CShopItemSkinmani(Pos, ExtrasData.m_aData, GameMap()));
+				{
+					int Effect = GameServer()->CosmeticsHandler()->FindSkinmani(ExtrasData.m_aData);
+					if (Effect == -1)
+					{
+						dbg_msg("shop", "Could not find Skinmanipulation effect '%s'", ExtrasData.m_aData);
+						continue;
+					}
+					if (ShopInfoSkinmani(Effect, Price, Level) == false)
+					{
+						dbg_msg("shop", "Could not find Shopinfo for Skinmanipulation effect '%s'", ExtrasData.m_aData);
+						continue;
+					}
+
+					m_lpShopItems.add(new CShopItemSkinmani(Pos, Effect, GameMap(), Price, Level));
+						
+				}
 				else if (Tile == EXTRAS_SELL_GUNDESIGN)
-					m_lpShopItems.add(new CShopItemGundesign(Pos, ExtrasData.m_aData, Server()));
+				{
+					int Effect = GameServer()->CosmeticsHandler()->FindGundesign(ExtrasData.m_aData);
+					if (Effect == -1)
+					{
+						dbg_msg("shop", "Could not find Gundesign effect '%s'", ExtrasData.m_aData);
+						continue;
+					}
+					if (ShopInfoGundesign(Effect, Price, Level) == false)
+					{
+						dbg_msg("shop", "Could not find Shopinfo for Gundesign effect '%s'", ExtrasData.m_aData);
+						continue;
+					}
+
+					//m_lpShopItems.add(new CShopItemGundesign(Pos, Effect, Server(), Price, Level));
+						
+				}
 				else if (Tile == EXTRAS_SELL_KNOCKOUT)
-					m_lpShopItems.add(new CShopItem(SHOPITEM_KNOCKOUT, Pos, ExtrasData.m_aData));
+				{
+					int Effect = GameServer()->CosmeticsHandler()->FindKnockoutEffect(ExtrasData.m_aData);
+					if (Effect == -1)
+					{
+						dbg_msg("shop", "Could not find Knockout effect '%s'", ExtrasData.m_aData);
+						continue;
+					}
+					if (ShopInfoKnockout(Effect, Price, Level) == false)
+					{
+						dbg_msg("shop", "Could not find Shopinfo for Knockout effect '%s'", ExtrasData.m_aData);
+						continue;
+					}
+
+					//m_lpShopItems.add(new CShopItem(SHOPITEM_KNOCKOUT, Pos, Effect, Price, Level));
+					
+				}
 				else if (Tile == EXTRAS_SELL_EXTRAS)
-					m_lpShopItems.add(new CShopItem(SHOPITEM_EXTRAS, Pos, ExtrasData.m_aData));
+				{
+					if (ShopInfoExtra(ExtrasData.m_aData, Price, Level) == false)
+					{
+						dbg_msg("shop", "Could not find Shopinfo for Extra '%s'", ExtrasData.m_aData);
+						continue;
+					}
+					
+					m_lpShopItems.add(new CShopItemExtra(Pos, ExtrasData.m_aData, Price, Level));
+				}
 			}
 		}
 	}
 }
 
-void CShop::RemoveShopItem(int Index, const char *pReson)
-{
-	dbg_msg("shop", "Removed shopitem type=%i name=%s (%s)", m_lpShopItems[Index]->m_Type, m_lpShopItems[Index]->m_aName, pReson);
-	delete m_lpShopItems[Index];
-	m_lpShopItems.remove_index(Index);
-}
-
 void CShop::TickGundesign(int Index)
 {
-	if (Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
-		if (GameServer()->CosmeticsHandler()->DoGundesign(m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), m_lpShopItems[Index]->m_aName, GameMap()) == false)
-			RemoveShopItem(Index, "Visualisation not possible");
+	if (Server()->Tick() % (Server()->TickSpeed()) == 0)
+		GameServer()->CosmeticsHandler()->DoGundesignRaw(m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), m_lpShopItems[Index]->m_Effect, GameMap());
 }
 
 void CShop::TickKnockout(int Index)
 {
 	if (Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
-		if (GameServer()->CosmeticsHandler()->DoKnockoutEffect(m_lpShopItems[Index]->m_Pos - vec2(0, 192.0f), m_lpShopItems[Index]->m_aName, GameMap()) == false)
-			RemoveShopItem(Index, "Visualisation not possible");
+		GameServer()->CosmeticsHandler()->DoKnockoutEffectRaw(m_lpShopItems[Index]->m_Pos - vec2(0, 192.0f), m_lpShopItems[Index]->m_Effect, GameMap());
+}
+
+void CShop::TickPrice(CShopItem *pItem)
+{
+	char aPrice[32];
+
+	if (Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
+	{
+		if (Server()->Tick() % (Server()->TickSpeed() * 6) >= Server()->TickSpeed() * 3)
+			str_format(aPrice, sizeof(aPrice), "BP:%i", pItem->m_Price);
+		else
+			str_format(aPrice, sizeof(aPrice), "LVL:%i", pItem->m_Level);
+
+		float Size = 5.0f;
+		int Length = str_length(aPrice);
+		GameMap()->AnimationHandler()->Laserwrite(aPrice, pItem->m_Pos - vec2(Size * Length * 5.5f  * 0.5f + 2.0f * Length, 96 + 7 * Size - 8), Size, Server()->TickSpeed() * 3, true);
+		GameMap()->AnimationHandler()->Laserwrite(aPrice, pItem->m_Pos - vec2(Size * Length * 5.5f  * 0.5f + 2.0f * Length, 96 + 7 * Size - 8), Size, Server()->TickSpeed() * 3, true);
+	}
 }
 
 void CShop::Tick()
@@ -95,13 +166,15 @@ void CShop::Tick()
 		case SHOPITEM_KNOCKOUT: TickKnockout(i); break;
 		case SHOPITEM_GUNDESIGN: TickGundesign(i); break;
 		}
+
+		TickPrice(m_lpShopItems[i]);
 	}
 }
 
 void CShop::SnapGundesign(int SnappingClient, int Index)
 {
 	CShopItemGundesign *pItem = (CShopItemGundesign *)m_lpShopItems[Index];
-	if (GameServer()->CosmeticsHandler()->SnapGundesign(pItem->m_Pos - vec2(64, 192.0f), pItem->m_aName, pItem->m_ID) == false && pItem->m_ID != -1)
+	if (pItem->m_ID != -1 && GameServer()->CosmeticsHandler()->SnapGundesignRaw(pItem->m_Pos - vec2(64, 192.0f), pItem->m_Effect, pItem->m_ID) == false)
 	{
 		Server()->SnapFreeID(pItem->m_ID);
 		pItem->m_ID = -1;

@@ -35,7 +35,7 @@ private:
 public:
 	CAnimationHandler();
 
-	void Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, CGameMap *pGameMap);
+	void Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun = false);
 	void DoAnimation(vec2 Pos, int Index);
 
 	virtual void Tick();

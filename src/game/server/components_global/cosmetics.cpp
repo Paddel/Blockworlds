@@ -17,6 +17,7 @@ const char *CCosmeticsHandler::ms_KnockoutNames[NUM_KNOCKOUTS] = {
 const char *CCosmeticsHandler::ms_GundesignNames[NUM_GUNDESIGNS] = {
 	"Heart",
 	"Pew",
+	"1337 gun",
 };
 
 const char *CCosmeticsHandler::ms_SkinmaniNames[NUM_SKINMANIS] = {
@@ -24,6 +25,7 @@ const char *CCosmeticsHandler::ms_SkinmaniNames[NUM_SKINMANIS] = {
 	"Epi Rainbow (VIP)",
 	"Cooldown",
 	"Nightblue",
+	"1337 skin",
 };
 
 inline int HslToCc(vec3 HSL)
@@ -48,14 +50,19 @@ void CCosmeticsHandler::KnockoutExplosion(vec2 Pos, CGameMap *pGameMap)
 	}
 }
 
-void CCosmeticsHandler::Tick()
+int CCosmeticsHandler::FindKnockoutEffect(const char *pName)
 {
-	
-}
+	int Effect = -1;
+	for (int i = 0; i < NUM_KNOCKOUTS; i++)
+	{
+		if (str_comp_nocase(ms_KnockoutNames[i], pName) == 0)
+		{
+			Effect = i;
+			break;
+		}
+	}
 
-void CCosmeticsHandler::Snap(int SnappingClient)
-{
-	
+	return Effect;
 }
 
 bool CCosmeticsHandler::HasKnockoutEffect(int ClientID, int Index)
@@ -86,25 +93,6 @@ bool CCosmeticsHandler::DoKnockoutEffect(int ClientID, vec2 Pos)
 
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
 	if (pGameMap == 0x0)
-		return false;
-
-	DoKnockoutEffectRaw(Pos, Effect, pGameMap);
-	return true;
-}
-
-bool CCosmeticsHandler::DoKnockoutEffect(vec2 Pos, const char *pName, CGameMap *pGameMap)
-{
-	int Effect = -1;
-	for (int i = 0; i < NUM_KNOCKOUTS; i++)
-	{
-		if (str_comp_nocase(ms_KnockoutNames[i], pName) == 0)
-		{
-			Effect = i;
-			break;
-		}
-	}
-
-	if (Effect == -1)
 		return false;
 
 	DoKnockoutEffectRaw(Pos, Effect, pGameMap);
@@ -166,6 +154,20 @@ void CCosmeticsHandler::FillKnockout(IServer::CAccountData *pFillingData, const 
 	pFillingData->m_aKnockouts[CCosmeticsHandler::NUM_KNOCKOUTS] = '\0';
 }
 
+int CCosmeticsHandler::FindGundesign(const char *pName)
+{
+	int Effect = -1;
+	for (int i = 0; i < NUM_GUNDESIGNS; i++)
+	{
+		if (str_comp_nocase(ms_GundesignNames[i], pName) == 0)
+		{
+			Effect = i;
+			break;
+		}
+	}
+
+	return Effect;
+}
 
 bool CCosmeticsHandler::HasGundesign(int ClientID, int Index)
 {
@@ -197,35 +199,20 @@ bool CCosmeticsHandler::DoGundesign(int ClientID, vec2 Pos)
 	if (pGameMap == 0x0)
 		return false;
 
-	DoGundesignRaw(Pos, Effect, pGameMap);
-	return true;
+	return DoGundesignRaw(Pos, Effect, pGameMap);
 }
 
-bool CCosmeticsHandler::DoGundesign(vec2 Pos, const char *pName, CGameMap *pGameMap)
-{
-	int Effect = -1;
-	for (int i = 0; i < NUM_GUNDESIGNS; i++)
-	{
-		if (str_comp_nocase(ms_GundesignNames[i], pName) == 0)
-		{
-			Effect = i;
-			break;
-		}
-	}
-	if (Effect == -1)
-		return false;
-
-	DoGundesignRaw(Pos, Effect, pGameMap);
-	return true;
-}
-
-void CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap)
+bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap)
 {
 	/*if (g_Config.m_Debug)
 		dbg_msg("cosmetics", "Gundesigneffect %s", ms_GundesignNames[Effect]);*/
 
-	if (Effect == GUNDESIGN_PEW)
-		pGameMap->AnimationHandler()->Laserwrite("PEW", Pos - vec2((5.0f * 15.0f + 5.0f) *0.5f, 5.0f * 3.5f), 5.0f, Server()->TickSpeed() * 0.2f, pGameMap);
+	switch (Effect)
+	{
+	case GUNDESIGN_PEW: pGameMap->AnimationHandler()->Laserwrite("PEW", Pos - vec2((5.0f * 15.0f + 5.0f) *0.5f, 5.0f * 3.5f), 5.0f, Server()->TickSpeed() * 0.2f); return true;
+	}
+
+	return false;
 }
 
 bool CCosmeticsHandler::ToggleGundesign(int ClientID, const char *pName)
@@ -265,23 +252,6 @@ bool CCosmeticsHandler::SnapGundesign(int ClientID, vec2 Pos, int EntityID)
 	return SnapGundesignRaw(Pos, Effect, EntityID);
 }
 
-bool CCosmeticsHandler::SnapGundesign(vec2 Pos, const char *pName, int EntityID)
-{
-	int Effect = -1;
-	for (int i = 0; i < NUM_GUNDESIGNS; i++)
-	{
-		if (str_comp_nocase(ms_GundesignNames[i], pName) == 0)
-		{
-			Effect = i;
-			break;
-		}
-	}
-	if (Effect == -1)
-		return false;
-
-	return SnapGundesignRaw(Pos, Effect, EntityID);
-}
-
 bool CCosmeticsHandler::SnapGundesignRaw(vec2 Pos, int Effect, int EntityID)
 {
 	if (Effect == GUNDESIGN_HEART)
@@ -292,6 +262,18 @@ bool CCosmeticsHandler::SnapGundesignRaw(vec2 Pos, int Effect, int EntityID)
 			pP->m_X = (int)Pos.x;
 			pP->m_Y = (int)Pos.y;
 			pP->m_Type = POWERUP_HEALTH;
+			pP->m_Subtype = 0;
+		}
+		return true;
+	}
+	else if (Effect == GUNDESIGN_1337)
+	{
+		CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, EntityID, sizeof(CNetObj_Pickup)));
+		if (pP != 0x0)
+		{
+			pP->m_X = (int)Pos.x;
+			pP->m_Y = (int)Pos.y;
+			pP->m_Type = 16;//53;
 			pP->m_Subtype = 0;
 		}
 		return true;
@@ -311,6 +293,20 @@ void CCosmeticsHandler::FillGundesign(IServer::CAccountData *pFillingData, const
 	}
 
 	pFillingData->m_aGundesigns[CCosmeticsHandler::NUM_GUNDESIGNS] = '\0';
+}
+
+int CCosmeticsHandler::FindSkinmani(const char *pName)
+{
+	int Effect = -1;
+	for (int i = 0; i < NUM_SKINMANIS; i++)
+	{
+		if (str_comp_nocase(ms_SkinmaniNames[i], pName) == 0)
+		{
+			Effect = i;
+			break;
+		}
+	}
+	return Effect;
 }
 
 bool CCosmeticsHandler::HasSkinmani(int ClientID, int Index)
@@ -355,7 +351,7 @@ bool CCosmeticsHandler::ToggleSkinmani(int ClientID, const char *pName)
 	return true;
 }
 
-void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo)
+void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo, CNetObj_PlayerInfo *pPlayerInfo)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return;
@@ -365,28 +361,10 @@ void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInf
 	if (HasSkinmani(ClientID, Effect) == false)
 		return;
 
-	SnapSkinmaniRaw(Tick, pClientInfo, Effect);
+	SnapSkinmaniRaw(Tick, pClientInfo, pPlayerInfo, Effect);
 }
 
-void CCosmeticsHandler::SnapSkinmani(int64 Tick, CNetObj_ClientInfo *pClientInfo, const char *pName)
-{
-	int Effect = -1;
-	for (int i = 0; i < NUM_SKINMANIS; i++)
-	{
-		if (str_comp_nocase(ms_SkinmaniNames[i], pName) == 0)
-		{
-			Effect = i;
-			break;
-		}
-	}
-
-	if (Effect == -1)
-		return;
-
-	SnapSkinmaniRaw(Tick, pClientInfo, Effect);
-}
-
-void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientInfo, int Effect)
+void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientInfo, CNetObj_PlayerInfo *pPlayerInfo, int Effect)
 {
 	int64 TickDef = Server()->Tick() - Tick;//only work with Tickdef
 	vec3 HSLBody = CcToHsl(pClientInfo->m_ColorBody);
@@ -423,6 +401,8 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorBody = HslToCc(HSLBody);
 	}
+	else if (Effect == SKINMANI_1337)
+		pPlayerInfo->m_ClientID = -1;
 }
 
 void CCosmeticsHandler::FillSkinmani(IServer::CAccountData *pFillingData, const char *pValue)

@@ -5,10 +5,10 @@
 class CShopNpc : public CNpc
 {
 private:
-	char m_aEffectName[64];
+	int m_Effect;
 
 public:
-	CShopNpc(CGameWorld *pGameWorld, int ClientID, const char *pEffectName);
+	CShopNpc(CGameWorld *pGameWorld, int ClientID, int Effect);
 
 	virtual void Snap(int SnappingClient);
 };

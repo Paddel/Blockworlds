@@ -528,7 +528,7 @@ void CGameContext::SetLevel(int ClientID, int Level)
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "[LevelUp+]: You are now level %d!", Level);
 			SendChatTarget(ClientID, aBuf);
-			if (pChr)
+			if (pChr && pChr->IsAlive())
 			{
 				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + 2 * Server()->TickSpeed());
 				CreateSound(pChr->GameMap(), pChr->m_Pos, SOUND_CTF_CAPTURE);
@@ -1452,7 +1452,6 @@ void CGameContext::OnSnap(int ClientID)
 {
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
 	pGameMap->Snap(ClientID);
-	m_CosmeticsHandler.Snap(ClientID);
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{

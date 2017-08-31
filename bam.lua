@@ -124,7 +124,7 @@ if family == "windows" then
 		table.insert(client_depends, CopyToDirectory(".", "other\\sdl\\lib64\\SDL.dll"))
 	end
 	
-	table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysqld.dll"))
+	--table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysqld.dll"))
 	table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysql.dll"))
 
 	if config.compiler.driver == "cl" then

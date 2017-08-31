@@ -3,10 +3,10 @@
 
 #include "shop_npc.h"
 
-CShopNpc::CShopNpc(CGameWorld *pGameWorld, int ClientID, const char *pEffectName)
+CShopNpc::CShopNpc(CGameWorld *pGameWorld, int ClientID, int Effect)
 : CNpc(pGameWorld, ClientID)
 {
-	str_copy(m_aEffectName, pEffectName, sizeof(m_aEffectName));
+	m_Effect = Effect;
 }
 
 void CShopNpc::Snap(int SnappingClient)
@@ -30,8 +30,6 @@ void CShopNpc::Snap(int SnappingClient)
 	pClientInfo->m_ColorBody = GameServer()->m_apPlayers[SnappingClient]->m_TeeInfos.m_ColorBody;
 	pClientInfo->m_ColorFeet = GameServer()->m_apPlayers[SnappingClient]->m_TeeInfos.m_ColorFeet;
 
-	GameServer()->CosmeticsHandler()->SnapSkinmani(0, pClientInfo, m_aEffectName);
-
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, TranslatedID, sizeof(CNetObj_PlayerInfo)));
 	if (!pPlayerInfo)
 		return;
@@ -44,6 +42,8 @@ void CShopNpc::Snap(int SnappingClient)
 
 	if (NetworkClipped(SnappingClient))
 		return;
+
+	GameServer()->CosmeticsHandler()->SnapSkinmaniRaw(0, pClientInfo, pPlayerInfo, m_Effect);
 
 	//snap character
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, TranslatedID, sizeof(CNetObj_Character)));
