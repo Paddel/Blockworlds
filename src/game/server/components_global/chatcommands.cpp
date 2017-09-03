@@ -577,6 +577,12 @@ void CChatCommandsHandler::ComSubscribe(CConsole::CResult *pResult, CGameContext
 	if (pGameServer->m_apPlayers[ClientID] == 0x0)
 		return;
 
+	if (pGameServer->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
+	{
+		pGameServer->SendChatTarget(ClientID, "You cannot subscribe to an event as a spectator");
+		return;
+	}
+
 	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You are not logged in");
