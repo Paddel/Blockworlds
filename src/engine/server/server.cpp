@@ -938,12 +938,12 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			Msg.AddRaw(&pMap->MapData()[Offset], ChunkSize);
 			SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID, true);
 
-			if(g_Config.m_Debug)
+			/*if(g_Config.m_Debug)
 			{
 				char aBuf[256];
 				str_format(aBuf, sizeof(aBuf), "sending chunk %d with size %d", Chunk, ChunkSize);
 				Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
-			}
+			}*/
 		}
 		else if(Msg == NETMSG_READY)
 		{

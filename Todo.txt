@@ -5,6 +5,8 @@ sv_lobbyonly
 attach/detach dummy
 invis gundesign
 
+endless superhammer
+
 -- Release
 
 clan toplist

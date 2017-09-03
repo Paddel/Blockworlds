@@ -665,7 +665,7 @@ CGameEvent *CGameMap::CreateGameEvent(int Index)
 
 bool CGameMap::TryVoteRandomEvent(int ClientID)
 {
-	if (IsBlockMap())
+	if (IsBlockMap() == false)
 		return false;
 
 	if (m_pGameEvent != 0x0)
@@ -692,7 +692,7 @@ void CGameMap::StartRandomEvent()
 	if (m_pGameEvent != 0x0)
 		return;
 
-	if (IsBlockMap())
+	if (IsBlockMap() == false)
 		return;
 
 	int Index = rand() % CGameEvent::NUM_EVENTS;
