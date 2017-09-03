@@ -1,6 +1,10 @@
 unlock system
 maps update
 
+sv_lobbyonly
+attach/detach dummy
+invis gundesign
+
 -- Release
 
 clan toplist
@@ -12,3 +16,6 @@ staub
 racing saving
 vpncheck fix
 questsystem
+
+casino
+achievment

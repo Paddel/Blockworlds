@@ -2,41 +2,42 @@
 
 #include <game/server/component.h>
 
-#define INQUIERY_MAX_OPTIONS 8
+#define INQUIRY_MAX_OPTIONS 8
 
 class CGameContext;
 class IServer;
 
-#define INQUIERY_DATA_SIZE 512
+#define INQUIRY_DATA_SIZE 512
 
-class CInquiery
+class CInquiry
 {
-	friend class CInquieriesHandler;
+	friend class CInquiriesHandler;
 	typedef void(*ResultFunction)(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 
 private:
 	int m_TimeLimit;
-	char m_aaOptions[INQUIERY_MAX_OPTIONS][16];
+	char m_aaOptions[INQUIRY_MAX_OPTIONS][16];
 	int m_NumOptions;
 	ResultFunction m_fResultCallback;
-	unsigned char m_aData[INQUIERY_DATA_SIZE];
+	unsigned char m_aData[INQUIRY_DATA_SIZE];
 
 public:
-	CInquiery(ResultFunction fResultCallback, int TimeLimit, const unsigned char *pData);
+	CInquiry(ResultFunction fResultCallback, int TimeLimit, const unsigned char *pData);
 	void AddOption(const char *pText);
 };
 
-class CInquieriesHandler : public CComponentGlobal
+class CInquiriesHandler : public CComponentGlobal
 {
 private:
-	CInquiery *m_apInquieries[MAX_CLIENTS];
+	CInquiry *m_apInquiries[MAX_CLIENTS];
 
 public:
-	CInquieriesHandler();
+	CInquiriesHandler();
 
 	virtual void Tick();
 
-	bool NewInquieryPossible(int ClientID);
-	void NewInquiery(int ClientID, CInquiery *pInquiery, const char *pText);
+	bool NewInquiryPossible(int ClientID);
+	void NewInquiry(int ClientID, CInquiry *pInquiry, const char *pText);
 	bool OnChatAnswer(int ClientID, const char *pText);
+	void Clear(int ClientID);
 };

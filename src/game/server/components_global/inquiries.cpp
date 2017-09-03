@@ -6,7 +6,7 @@
 
 #include "inquiries.h"
 
-CInquiery::CInquiery(ResultFunction fResultCallback, int TimeLimit, const unsigned char *pData)
+CInquiry::CInquiry(ResultFunction fResultCallback, int TimeLimit, const unsigned char *pData)
 {
 	m_fResultCallback = fResultCallback;
 	m_TimeLimit = TimeLimit;
@@ -15,69 +15,79 @@ CInquiery::CInquiery(ResultFunction fResultCallback, int TimeLimit, const unsign
 	m_NumOptions = 0;
 }
 
-void CInquiery::AddOption(const char *pText)
+void CInquiry::AddOption(const char *pText)
 {
 	str_copy(m_aaOptions[m_NumOptions], pText, sizeof(m_aaOptions[m_NumOptions]));
 	m_NumOptions++;
 }
 
-CInquieriesHandler::CInquieriesHandler()
+CInquiriesHandler::CInquiriesHandler()
 {
-	mem_zero(m_apInquieries, sizeof(m_apInquieries));
+	mem_zero(m_apInquiries, sizeof(m_apInquiries));
 }
 
-void CInquieriesHandler::Tick()
+void CInquiriesHandler::Tick()
 {
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if (Server()->ClientIngame(i) == false)
 			continue;
 
-		if (m_apInquieries[i] != 0x0 && Server()->Tick() > m_apInquieries[i]->m_TimeLimit)
+		if (m_apInquiries[i] != 0x0 && Server()->Tick() > m_apInquiries[i]->m_TimeLimit)
 		{
-			m_apInquieries[i]->m_fResultCallback(-1, m_apInquieries[i]->m_aData, i, GameServer());
-			delete m_apInquieries[i];
-			m_apInquieries[i] = 0x0;
+			m_apInquiries[i]->m_fResultCallback(-1, m_apInquiries[i]->m_aData, i, GameServer());
+			delete m_apInquiries[i];
+			m_apInquiries[i] = 0x0;
 		}
 	}
 }
 
-bool CInquieriesHandler::NewInquieryPossible(int ClientID)
+bool CInquiriesHandler::NewInquiryPossible(int ClientID)
 {
-	return m_apInquieries[ClientID] == 0x0;
+	return m_apInquiries[ClientID] == 0x0;
 }
 
-void CInquieriesHandler::NewInquiery(int ClientID, CInquiery *pInquiery, const char *pText)
+void CInquiriesHandler::NewInquiry(int ClientID, CInquiry *pInquiry, const char *pText)
 {
-	if (NewInquieryPossible(ClientID) == false || pInquiery->m_NumOptions == 0)
+	if (NewInquiryPossible(ClientID) == false || pInquiry->m_NumOptions == 0)
 		return;
 
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "%s (", pText);
-	for (int i = 0; i < pInquiery->m_NumOptions; i++)
-		str_fcat(aBuf, sizeof(aBuf), "/%s, ", pInquiery->m_aaOptions[i]);
+	for (int i = 0; i < pInquiry->m_NumOptions; i++)
+		str_fcat(aBuf, sizeof(aBuf), "/%s, ", pInquiry->m_aaOptions[i]);
 	aBuf[str_length(aBuf) - 2] = '\0';
 	str_append(aBuf, ")", sizeof(aBuf));
 	GameServer()->SendChatTarget(ClientID, aBuf);
 
-	m_apInquieries[ClientID] = pInquiery;
+	m_apInquiries[ClientID] = pInquiry;
 }
 
-bool CInquieriesHandler::OnChatAnswer(int ClientID, const char *pText)
+bool CInquiriesHandler::OnChatAnswer(int ClientID, const char *pText)
 {
-	if (m_apInquieries[ClientID] == 0x0)
+	if (m_apInquiries[ClientID] == 0x0)
 		return false;
 
-	for (int i = 0; i < m_apInquieries[ClientID]->m_NumOptions; i++)
+	for (int i = 0; i < m_apInquiries[ClientID]->m_NumOptions; i++)
 	{
-		if (str_comp_nocase(m_apInquieries[ClientID]->m_aaOptions[i], pText) == 0)
+		if (str_comp_nocase(m_apInquiries[ClientID]->m_aaOptions[i], pText) == 0)
 		{
-			m_apInquieries[ClientID]->m_fResultCallback(i, m_apInquieries[ClientID]->m_aData, ClientID, GameServer());
-			delete m_apInquieries[ClientID];
-			m_apInquieries[ClientID] = 0x0;
+			m_apInquiries[ClientID]->m_fResultCallback(i, m_apInquiries[ClientID]->m_aData, ClientID, GameServer());
+			delete m_apInquiries[ClientID];
+			m_apInquiries[ClientID] = 0x0;
 			return true;
 		}
 	}
 
 	return false;
+}
+
+void CInquiriesHandler::Clear(int ClientID)
+{
+	if (m_apInquiries[ClientID] != 0x0)
+	{
+		m_apInquiries[ClientID]->m_fResultCallback(-1, m_apInquiries[ClientID]->m_aData, ClientID, GameServer());
+		delete m_apInquiries[ClientID];
+		m_apInquiries[ClientID] = 0x0;
+	}
 }

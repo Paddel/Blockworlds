@@ -209,7 +209,7 @@ bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap)
 
 	switch (Effect)
 	{
-	case GUNDESIGN_PEW: pGameMap->AnimationHandler()->Laserwrite("PEW", Pos - vec2((5.0f * 15.0f + 5.0f) *0.5f, 5.0f * 3.5f), 5.0f, Server()->TickSpeed() * 0.2f); return true;
+	case GUNDESIGN_PEW: pGameMap->AnimationHandler()->Laserwrite("PEW", Pos, 5.0f, Server()->TickSpeed() * 0.2f); return true;
 	}
 
 	return false;

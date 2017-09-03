@@ -18,6 +18,7 @@ const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { "Name" },							//EXTRAS_SELL_GUNDESIGN
 { "Name" },							//EXTRAS_SELL_KNOCKOUT
 { "Name" },							//EXTRAS_SELL_EXTRAS
+{ "Map" },							//EXTRAS_PLAYERCOUNT
 };
 
 
@@ -33,11 +34,12 @@ int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 {},				//EXTRAS_ZONE_PROTECTION
 {},				//EXTRAS_ZONE_SPAWN
 {},				//EXTRAS_ZONE_UNTOUCHABLE
-{ 19 },			//EXTRAS_MAP4
+{ 19 },			//EXTRAS_MAP
 { 19 },			//EXTRAS_SELL_SKINMANI
 { 19 },			//EXTRAS_SELL_GUNDESIGN
 { 19 },			//EXTRAS_SELL_KNOCKOUT
 { 19 },			//EXTRAS_SELL_EXTRAS
+{ 19 },			//EXTRAS_PLAYERCOUNT
 };
 
 //TODO add angles
@@ -58,4 +60,5 @@ int gs_ExtrasColumntypes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {}, // 1 = integer,
 { 0 },			//EXTRAS_SELL_GUNDESIGN
 { 0 },			//EXTRAS_SELL_KNOCKOUT
 { 0 },			//EXTRAS_SELL_EXTRAS
+{ 0 },			//EXTRAS_PLAYERCOUNT
 };

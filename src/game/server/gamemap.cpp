@@ -24,6 +24,9 @@ CGameMap::CGameMap(CMap *pMap)
 
 	m_VoteCloseTime = 0;
 	m_BlockMap = false;
+	m_ShopMap = false;
+
+	m_NumPlayers = 0;
 
 	m_RandomEventTime = 0;
 	m_pGameEvent = 0x0;
@@ -341,6 +344,7 @@ void CGameMap::InitComponents()
 	m_apComponents[m_NumComponents++] = &m_World;
 	m_apComponents[m_NumComponents++] = &m_Shop;
 	m_apComponents[m_NumComponents++] = &m_AnimationHandler;
+	m_apComponents[m_NumComponents++] = &m_Lobby;
 
 	for (int i = 0; i < m_NumComponents; i++)
 	{
@@ -364,6 +368,8 @@ void CGameMap::DoMapTunings()
 	{
 		m_World.m_Core.m_Tuning.m_ShotgunSpeed = 0;
 		m_World.m_Core.m_Tuning.m_ShotgunLifetime = 100;
+		m_World.m_Core.m_Tuning.m_GunSpeed = 0;
+		m_World.m_Core.m_Tuning.m_GunLifetime = 100;
 	}
 }
 

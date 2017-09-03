@@ -8,6 +8,7 @@
 #include <game/server/components_map/gameworld.h>
 #include <game/server/components_map/shop.h>
 #include <game/server/components_map/animations.h>
+#include <game/server/components_map/lobby.h>
 
 class CMap;
 class IServer;
@@ -19,6 +20,7 @@ class CGameEvent;
 
 //god class?
 
+//TODO: remove includes
 class CGameMap
 {
 public:// TODO: clean this into an extra class. esp. vote spawn tele and doors
@@ -70,6 +72,7 @@ private:
 	CGameEvent *m_pGameEvent;//current map event
 	CShop m_Shop;
 	CAnimationHandler m_AnimationHandler;
+	CLobby m_Lobby;
 	array<CDoorTile *> m_lDoorTiles;
 	array<CTeleTo *> m_lTeleTo;
 	class CComponentMap *m_apComponents[16];
@@ -159,6 +162,7 @@ public:
 	void UpdateVotes() { m_VoteUpdate = true; };
 	bool IsBlockMap() const { return m_BlockMap; }
 	void SetBlockMap(bool Value) { m_BlockMap = Value; }
+	bool IsShopMap() const { return m_ShopMap; }
 	int NumPlayers() { return m_NumPlayers; }
 	CGameEvent *GetEvent() { return m_pGameEvent; }
 

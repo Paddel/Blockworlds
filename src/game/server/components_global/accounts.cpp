@@ -540,6 +540,8 @@ void CAccountsHandler::Logout(int ClientID)
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 		return;
 
+	GameServer()->InquiriesHandler()->Clear(ClientID);
+
 	Save(ClientID);
 
 	mem_zero(&Server()->GetClientInfo(ClientID)->m_AccountData, sizeof(IServer::CAccountData));

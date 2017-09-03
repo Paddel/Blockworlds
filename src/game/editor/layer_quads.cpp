@@ -2,6 +2,7 @@
 
 #include <base/math.h>
 
+#include <engine/input.h>
 #include <engine/console.h>
 #include <engine/graphics.h>
 
@@ -31,6 +32,35 @@ void CLayerQuads::Render()
 	m_pEditor->RenderTools()->RenderQuads(m_lQuads.base_ptr(), m_lQuads.size(), LAYERRENDERFLAG_OPAQUE, m_pEditor->EnvelopeEval, m_pEditor);
 	Graphics()->BlendNormal();
 	m_pEditor->RenderTools()->RenderQuads(m_lQuads.base_ptr(), m_lQuads.size(), LAYERRENDERFLAG_TRANSPARENT, m_pEditor->EnvelopeEval, m_pEditor);
+
+
+	Graphics()->TextureSet(-1);
+	Graphics()->LinesBegin();
+
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
+
+	for (int i = 0; i < m_lQuads.size(); i++)
+	{
+		CQuad *pQuad = &m_lQuads[i];
+		if (m_pEditor->GetSelectedQuad() != pQuad || pQuad->m_PosEnv < 0 || pQuad->m_PosEnv >= m_pEditor->m_Map.m_lEnvelopes.size())
+			continue;
+
+		vec2 QuadPos = vec2(fx2f(pQuad->m_aPoints[4].x), fx2f(pQuad->m_aPoints[4].y));
+		CEnvelope *pEnvelope = m_pEditor->m_Map.m_lEnvelopes[pQuad->m_PosEnv];
+		for (int i = 1; i < pEnvelope->m_lPoints.size(); i++)
+		{
+			CEnvPoint *pPointFrom = &pEnvelope->m_lPoints[i-1];
+			CEnvPoint *pPointTo = &pEnvelope->m_lPoints[i];
+
+			vec2 PosFrom = QuadPos + vec2(fx2f(pPointFrom->m_aValues[0]), fx2f(pPointFrom->m_aValues[1]));
+			vec2 PosTo = QuadPos + vec2(fx2f(pPointTo->m_aValues[0]), fx2f(pPointTo->m_aValues[1]));
+			IGraphics::CLineItem Line = IGraphics::CLineItem(PosFrom.x, PosFrom.y, PosTo.x, PosTo.y);
+			Graphics()->LinesDraw(&Line, 1);
+		}
+	}
+
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+	Graphics()->LinesEnd();
 }
 
 CQuad *CLayerQuads::NewQuad()
@@ -122,8 +152,13 @@ int CLayerQuads::BrushGrab(CLayerGroup *pBrush, CUIRect Rect)
 				n.m_aPoints[p].x -= f2fx(Rect.x);
 				n.m_aPoints[p].y -= f2fx(Rect.y);
 			}
-
-			pGrabbed->m_lQuads.add(n);
+			if (m_pEditor->Input()->KeyPressed('d'))
+			{
+				m_lQuads.remove_index(i);
+				i--;
+			}
+			else
+				pGrabbed->m_lQuads.add(n);
 		}
 	}
 
@@ -142,6 +177,24 @@ void CLayerQuads::BrushPlace(CLayer *pBrush, float wx, float wy)
 			n.m_aPoints[p].x += f2fx(wx);
 			n.m_aPoints[p].y += f2fx(wy);
 		}
+
+		/*if(1)
+		{
+			if (wx < 0 && wy > 0)
+				n.m_PosEnv = rand() % 4;
+			else if (wx > 0 && wy < 0)
+				n.m_PosEnv = rand() % 4 + 4;
+
+			if (n.m_PosEnv > -1)
+			{
+				CEnvelope *pEnvelope = m_pEditor->m_Map.m_lEnvelopes[n.m_PosEnv];
+				n.m_PosEnvOffset = rand() % (pEnvelope->m_lPoints[pEnvelope->m_lPoints.size() - 1].m_Time / 100);
+				n.m_PosEnvOffset *= 100;
+			}
+
+			for(int i = 0; i < 4; i++)
+				n.m_aColors[i].a = 255;
+		}*/
 
 		m_lQuads.add(n);
 	}

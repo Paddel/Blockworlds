@@ -26,6 +26,7 @@ void CNpc::Spawn(vec2 Pos)
 	m_Core.Reset();
 	m_Core.Init(&GameWorld()->m_Core, GameMap()->Collision());
 	m_Core.m_Pos = Pos;
+	m_Pos = Pos;
 }
 
 void CNpc::Reset()

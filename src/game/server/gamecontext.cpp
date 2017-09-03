@@ -572,6 +572,350 @@ void CGameContext::SetClanLevel(int ClientID, int Level)
 	}
 }
 
+void CGameContext::ResultBuySkinmani(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	if (OptionID == -1)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase expired");
+		return;
+	}
+	else if (OptionID != 0)
+		return;
+
+	const char *pName = (const char *)pData;
+
+
+	char aBuf[64];
+	int Effect = pGameServer->m_CosmeticsHandler.FindSkinmani(pName);
+	if (Effect == -1)
+		return;
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (pGameServer->m_CosmeticsHandler.HasSkinmani(ClientID, Effect) == true)
+	{
+		pGameServer->SendChatTarget(ClientID, "You already own this effect!");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoSkinmani(Effect, Price, Level) == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this Playerdesign", Level);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this Playerdesign is %i Blockpoints. You currently have %i", Price, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aSkinmani[Effect] = '1';
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints -= Price;
+	pGameServer->m_AccountsHandler.Save(ClientID);
+	pGameServer->SendChatTarget(ClientID, "Item purchased");
+}
+
+void CGameContext::OnBuySkinmani(int ClientID, const char *pName)
+{
+	char aBuf[64];
+	int Effect = m_CosmeticsHandler.FindSkinmani(pName);
+	if (Effect == -1)
+		return;
+
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if(m_CosmeticsHandler.HasSkinmani(ClientID, Effect) == true)
+	{
+		SendChatTarget(ClientID, "You already own this effect!");
+		return;
+	}
+
+	if(m_InquiriesHandler.NewInquiryPossible(ClientID) == false)
+	{
+		SendChatTarget(ClientID, "You cannot buy this effect right now. Try again in a few seconds");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoSkinmani(Effect, Price, Level) == false)
+	{
+		SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this Playerdesign", Level);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this Playerdesign is %i Blockpoints. You currently have %i", Price, Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	str_format(aBuf, sizeof(aBuf), "Do you want to buy Playerdesign '%s' for %i Blockpoints", pName, Price);
+
+	CInquiry *pInquiry = new CInquiry(ResultBuySkinmani, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *) pName);
+	pInquiry->AddOption("yes");
+	pInquiry->AddOption("no");
+	m_InquiriesHandler.NewInquiry(ClientID, pInquiry, aBuf);
+}
+
+void CGameContext::ResultBuyGundesign(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	if (OptionID == -1)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase expired");
+		return;
+	}
+	else if (OptionID != 0)
+		return;
+
+	const char *pName = (const char *)pData;
+
+	char aBuf[64];
+	int Effect = pGameServer->m_CosmeticsHandler.FindGundesign(pName);
+	if (Effect == -1)
+		return;
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (pGameServer->m_CosmeticsHandler.HasGundesign(ClientID, Effect) == true)
+	{
+		pGameServer->SendChatTarget(ClientID, "You already own this effect!");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoGundesign(Effect, Price, Level) == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this Gundesign", Level);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this Gundesign is %i Blockpoints. You currently have %i", Price, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aGundesigns[Effect] = '1';
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints -= Price;
+	pGameServer->m_AccountsHandler.Save(ClientID);
+	pGameServer->SendChatTarget(ClientID, "Item purchased");
+}
+
+void CGameContext::OnBuyGundesign(int ClientID, const char *pName)
+{
+	char aBuf[64];
+	int Effect = m_CosmeticsHandler.FindGundesign(pName);
+	if (Effect == -1)
+		return;
+
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (m_CosmeticsHandler.HasGundesign(ClientID, Effect) == true)
+	{
+		SendChatTarget(ClientID, "You already own this effect!");
+		return;
+	}
+
+	if (m_InquiriesHandler.NewInquiryPossible(ClientID) == false)
+	{
+		SendChatTarget(ClientID, "You cannot buy this effect right now. Try again in a few seconds");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoGundesign(Effect, Price, Level) == false)
+	{
+		SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this Gundesign", Level);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this Gundesign is %i Blockpoints. You currently have %i", Price, Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	CInquiry *pInquiry = new CInquiry(ResultBuyGundesign, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
+	pInquiry->AddOption("yes");
+	pInquiry->AddOption("no");
+	m_InquiriesHandler.NewInquiry(ClientID, pInquiry, aBuf);
+}
+
+void CGameContext::ResultBuyKnockouteffect(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	if (OptionID == -1)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase expired");
+		return;
+	}
+	else if (OptionID != 0)
+		return;
+
+	const char *pName = (const char *)pData;
+
+	char aBuf[64];
+	int Effect = pGameServer->m_CosmeticsHandler.FindKnockoutEffect(pName);
+	if (Effect == -1)
+		return;
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (pGameServer->m_CosmeticsHandler.HasKnockoutEffect(ClientID, Effect) == true)
+	{
+		pGameServer->SendChatTarget(ClientID, "You already own this effect!");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoKnockout(Effect, Price, Level) == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this Knockouteffect", Level);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this Knockouteffect is %i Blockpoints. You currently have %i", Price, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aKnockouts[Effect] = '1';
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints -= Price;
+	pGameServer->m_AccountsHandler.Save(ClientID);
+	pGameServer->SendChatTarget(ClientID, "Item purchased");
+}
+
+void CGameContext::OnBuyKnockout(int ClientID, const char *pName)
+{
+	char aBuf[64];
+	int Effect = m_CosmeticsHandler.FindKnockoutEffect(pName);
+	if (Effect == -1)
+		return;
+
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	if (m_CosmeticsHandler.HasKnockoutEffect(ClientID, Effect) == true)
+	{
+		SendChatTarget(ClientID, "You already own this effect!");
+		return;
+	}
+
+	if (m_InquiriesHandler.NewInquiryPossible(ClientID) == false)
+	{
+		SendChatTarget(ClientID, "You cannot buy this effect right now. Try again in a few seconds");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoKnockout(Effect, Price, Level) == false)
+	{
+		SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this Knockouteffect", Level);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this Knockouteffect is %i Blockpoints. You currently have %i", Price, Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	CInquiry *pInquiry = new CInquiry(ResultBuyGundesign, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
+	pInquiry->AddOption("yes");
+	pInquiry->AddOption("no");
+	m_InquiriesHandler.NewInquiry(ClientID, pInquiry, aBuf);
+}
+
+void CGameContext::OnBuyExtra(int ClientID, const char *pName)
+{
+
+}
+
 bool CGameContext::OnExtrasCallvote(int ClientID, const char *pCommand)
 {
 	if (str_comp(pCommand, "inviolable") == 0)
@@ -1484,7 +1828,7 @@ bool CGameContext::CanShutdown()
 	return true;
 }
 
-const char *CGameContext::GameType() { return g_Config.m_SvFakeGametype ? "DDRaceNetwork" : "BW"; }
+const char *CGameContext::GameType() { return "BW"; }
 const char *CGameContext::Version() { return GAME_VERSION; }
 const char *CGameContext::FakeVersion() { return GAME_FAKEVERSION; }
 const char *CGameContext::NetVersion() { return GAME_NETVERSION; }

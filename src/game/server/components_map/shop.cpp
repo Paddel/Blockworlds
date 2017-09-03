@@ -44,7 +44,7 @@ CShop::~CShop()
 	m_lpShopItems.delete_all();
 }
 
-void CShop::Init()
+void CShop::Init()//TODO: methode to big
 {
 	m_pLayers = GameMap()->Layers();
 	int Price = 0;
@@ -92,7 +92,7 @@ void CShop::Init()
 						continue;
 					}
 
-					//m_lpShopItems.add(new CShopItemGundesign(Pos, Effect, Server(), Price, Level));
+					m_lpShopItems.add(new CShopItemGundesign(Pos, Effect, Server(), Price, Level));
 						
 				}
 				else if (Tile == EXTRAS_SELL_KNOCKOUT)
@@ -109,7 +109,7 @@ void CShop::Init()
 						continue;
 					}
 
-					//m_lpShopItems.add(new CShopItem(SHOPITEM_KNOCKOUT, Pos, Effect, Price, Level));
+					m_lpShopItems.add(new CShopItem(SHOPITEM_KNOCKOUT, Pos, Effect, Price, Level));
 					
 				}
 				else if (Tile == EXTRAS_SELL_EXTRAS)
@@ -130,7 +130,9 @@ void CShop::Init()
 void CShop::TickGundesign(int Index)
 {
 	if (Server()->Tick() % (Server()->TickSpeed()) == 0)
-		GameServer()->CosmeticsHandler()->DoGundesignRaw(m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), m_lpShopItems[Index]->m_Effect, GameMap());
+		if(GameServer()->CosmeticsHandler()->DoGundesignRaw(m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), m_lpShopItems[Index]->m_Effect, GameMap()) == false)
+			GameServer()->CreateDamageInd(GameMap(), m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), -atan2(1, 0), 10);
+		
 }
 
 void CShop::TickKnockout(int Index)
@@ -150,10 +152,7 @@ void CShop::TickPrice(CShopItem *pItem)
 		else
 			str_format(aPrice, sizeof(aPrice), "LVL:%i", pItem->m_Level);
 
-		float Size = 5.0f;
-		int Length = str_length(aPrice);
-		GameMap()->AnimationHandler()->Laserwrite(aPrice, pItem->m_Pos - vec2(Size * Length * 5.5f  * 0.5f + 2.0f * Length, 96 + 7 * Size - 8), Size, Server()->TickSpeed() * 3, true);
-		GameMap()->AnimationHandler()->Laserwrite(aPrice, pItem->m_Pos - vec2(Size * Length * 5.5f  * 0.5f + 2.0f * Length, 96 + 7 * Size - 8), Size, Server()->TickSpeed() * 3, true);
+		GameMap()->AnimationHandler()->Laserwrite(aPrice, pItem->m_Pos - vec2(0, 96.0f - 8.0f), 5.0f, Server()->TickSpeed() * 3, true);
 	}
 }
 
@@ -174,10 +173,18 @@ void CShop::Tick()
 void CShop::SnapGundesign(int SnappingClient, int Index)
 {
 	CShopItemGundesign *pItem = (CShopItemGundesign *)m_lpShopItems[Index];
-	if (pItem->m_ID != -1 && GameServer()->CosmeticsHandler()->SnapGundesignRaw(pItem->m_Pos - vec2(64, 192.0f), pItem->m_Effect, pItem->m_ID) == false)
+	if (GameServer()->CosmeticsHandler()->SnapGundesignRaw(pItem->m_Pos - vec2(64, 192.0f), pItem->m_Effect, pItem->m_ID) == false)
 	{
-		Server()->SnapFreeID(pItem->m_ID);
-		pItem->m_ID = -1;
+		CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, pItem->m_ID, sizeof(CNetObj_Projectile)));
+		if (pProj)
+		{
+			pProj->m_X = (int)pItem->m_Pos.x - 64;
+			pProj->m_Y = (int)pItem->m_Pos.y - 192;
+			pProj->m_VelX = (int)(1);
+			pProj->m_VelY = (int)(0);
+			pProj->m_StartTick = Server()->Tick() - 5;
+			pProj->m_Type = WEAPON_GUN;
+		}
 	}
 }
 

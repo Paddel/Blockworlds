@@ -28,7 +28,7 @@ class CGameContext : public IGameServer
 	CTuningParams m_Tuning;
 	CChatCommandsHandler m_ChatCommandsHandler;
 	CAccountsHandler m_AccountsHandler;
-	CInquieriesHandler m_InquiriesHandler;
+	CInquiriesHandler m_InquiriesHandler;
 	CVoteMenuHandler m_VoteMenuHandler;
 	CCosmeticsHandler m_CosmeticsHandler;
 
@@ -67,7 +67,7 @@ public:
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CChatCommandsHandler *ChatCommandsHandler() { return &m_ChatCommandsHandler; }
 	CAccountsHandler *AccountsHandler() { return &m_AccountsHandler; }
-	CInquieriesHandler *InquieriesHandler() { return &m_InquiriesHandler; }
+	CInquiriesHandler *InquiriesHandler() { return &m_InquiriesHandler; }
 	CVoteMenuHandler *VoteMenuHandler() { return &m_VoteMenuHandler; }
 	CCosmeticsHandler *CosmeticsHandler() { return &m_CosmeticsHandler; }
 
@@ -135,6 +135,14 @@ public:
 	void SetLevel(int ClientID, int Level);
 	void GiveClanExperience(int ClientID, int Amount);
 	void SetClanLevel(int ClientID, int Level);
+
+	static void ResultBuySkinmani(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
+	void OnBuySkinmani(int ClientID, const char *pName);
+	static void ResultBuyGundesign(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
+	void OnBuyGundesign(int ClientID, const char *pName);
+	static void ResultBuyKnockouteffect(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
+	void OnBuyKnockout(int ClientID, const char *pName);
+	void OnBuyExtra(int ClientID, const char *pName);
 
 	bool OnExtrasCallvote(int ClientID, const char *pCommand);
 

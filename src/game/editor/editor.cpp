@@ -1711,6 +1711,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 					continue;
 
 				CLayer *pLayer = m_Map.m_lGroups[g]->m_lLayers[i];
+				m_Map.m_lGroups[g]->MapScreen();
 				if (pLayer->m_Visible && pLayer->m_Type == LAYERTYPE_EXTRAS)
 					pLayer->Render();
 			}
@@ -3536,7 +3537,38 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 							}
 							else
 							{
-								if((Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL)))
+								if (Input()->KeyPressed('z'))
+								{
+									if (i < pEnvelope->m_lPoints.size() - 1)
+										pEnvelope->m_lPoints[i].m_aValues[c] = pEnvelope->m_lPoints[i + 1].m_aValues[c];
+
+								}
+								else if (Input()->KeyPressed('x'))
+								{
+									if (i != 0)
+										pEnvelope->m_lPoints[i].m_aValues[c] = pEnvelope->m_lPoints[i - 1].m_aValues[c];
+									else if (pEnvelope->m_lPoints.size() > 1)
+										pEnvelope->m_lPoints[0].m_aValues[c] = pEnvelope->m_lPoints[pEnvelope->m_lPoints.size() - 1].m_aValues[c];
+
+								}
+								else if (Input()->KeyPressed('m'))
+								{
+									if (i != 0 && i != pEnvelope->m_lPoints.size() - 1)
+									{
+										float Fac = (pEnvelope->m_lPoints[i - 1].m_Time - pEnvelope->m_lPoints[i].m_Time) / (float)((pEnvelope->m_lPoints[i - 1].m_Time - pEnvelope->m_lPoints[i + 1].m_Time));
+											pEnvelope->m_lPoints[i].m_aValues[c] =
+											(pEnvelope->m_lPoints[i + 1].m_aValues[c] + pEnvelope->m_lPoints[i - 1].m_aValues[c]) * Fac;
+
+									}
+								}
+								else if (Input()->KeyPressed('d'))
+								{
+									if (m_Map.m_lEnvelopes[m_SelectedEnvelope]->m_Channels == 4 && c == 3)//color env and alpha
+										pEnvelope->m_lPoints[i].m_aValues[c] = 11;
+									else
+										pEnvelope->m_lPoints[i].m_aValues[c] = 0;
+								}
+								else if((Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL)))
 									pEnvelope->m_lPoints[i].m_aValues[c] -= f2fx(m_MouseDeltaY*0.001f);
 								else
 									pEnvelope->m_lPoints[i].m_aValues[c] -= f2fx(m_MouseDeltaY*ValueScale);

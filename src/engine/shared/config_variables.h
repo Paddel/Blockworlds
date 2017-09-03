@@ -91,7 +91,6 @@ MACRO_CONFIG_STR(SvRconModPassword, sv_rcon_mod_password, 32, "", CFGFLAG_SERVER
 MACRO_CONFIG_INT(SvRconMaxTries, sv_rcon_max_tries, 3, 0, 100, CFGFLAG_SERVER, "Maximum number of tries for remote console authentication")
 MACRO_CONFIG_INT(SvRconBantime, sv_rcon_bantime, 5, 0, 1440, CFGFLAG_SERVER, "The time a client gets banned if remote console authentication fails. 0 makes it just use kick")
 MACRO_CONFIG_INT(SvPunishStress, sv_punish_stress, 1, 0, 1, CFGFLAG_SERVER, "Bans a client when stressing the server")
-MACRO_CONFIG_INT(SvFakeGametype, sv_fake_gametype, 0, 0, 1, CFGFLAG_SERVER, "Remove after testing")
 MACRO_CONFIG_INT(SvAccountsystem, sv_accountsystem, 0, 0, 1, CFGFLAG_SERVER, "Enables/disables the Accountsystem")
 MACRO_CONFIG_INT(SvAccountForce, sv_account_force, 0, 0, 1, CFGFLAG_SERVER, "Forces the player to login to play the Accountsystem")
 MACRO_CONFIG_STR(SvDbAccName, sv_db_acc_name, 16, "root", CFGFLAG_SERVER, "Username for Account Database")

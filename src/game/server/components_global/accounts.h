@@ -8,7 +8,6 @@ class CAccountsHandler : public CComponentGlobal
 {
 private:
 	CDatabase m_Database;
-	array<IServer::CClanData *> m_lpClans;
 	bool m_Inited;
 	bool m_ClanSystemError;
 
@@ -25,6 +24,8 @@ private:
 	IServer::CClanData *CreateClan(CDatabase::CResultRow *pRow);
 public:
 	CAccountsHandler();
+
+	array<IServer::CClanData *> m_lpClans;
 
 	virtual void Init();
 	virtual void Tick();

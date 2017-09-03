@@ -91,7 +91,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	mem_zero(&m_aGotWeapon, sizeof(m_aGotWeapon));
 	GiveWeapon(WEAPON_HAMMER);
-	GiveWeapon(WEAPON_GUN);
+	if(GameMap()->IsShopMap() == false)
+		GiveWeapon(WEAPON_GUN);
 
 	return true;
 }
@@ -720,6 +721,15 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		else
 			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Map will be available soon");
 	}
+
+	if (NewTile == EXTRAS_SELL_SKINMANI)
+		GameServer()->OnBuySkinmani(GetPlayer()->GetCID(), ExtrasData.m_aData);
+	if(NewTile == EXTRAS_SELL_GUNDESIGN)
+		GameServer()->OnBuyGundesign(GetPlayer()->GetCID(), ExtrasData.m_aData);
+	if(NewTile == EXTRAS_SELL_KNOCKOUT)
+		GameServer()->OnBuyKnockout(GetPlayer()->GetCID(), ExtrasData.m_aData);
+	if(NewTile == EXTRAS_SELL_EXTRAS)
+		GameServer()->OnBuyExtra(GetPlayer()->GetCID(), ExtrasData.m_aData);
 
 	return false;
 }

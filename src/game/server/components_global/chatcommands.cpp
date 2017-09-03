@@ -387,24 +387,24 @@ void CChatCommandsHandler::ComClanInvite(CConsole::CResult *pResult, CGameContex
 		return;
 	}
 
-	if (pGameServer->InquieriesHandler()->NewInquieryPossible(InvitingID) == false)
+	if (pGameServer->InquiriesHandler()->NewInquiryPossible(InvitingID) == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "Claninvitation cannot be send right now. Try again in a few seconds");
 		return;
 	}
 
-	unsigned char aData[INQUIERY_DATA_SIZE];
+	unsigned char aData[INQUIRY_DATA_SIZE];
 	mem_copy(aData, &pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, sizeof(void *));
 	mem_copy(aData + sizeof(void *), &ClientID, sizeof(int));
 
-	CInquiery *pInquiery = new CInquiery(CAccountsHandler::ClanInvite, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 15, aData);
-	pInquiery->AddOption("accept");
-	pInquiery->AddOption("decline");
+	CInquiry *pInquiry = new CInquiry(CAccountsHandler::ClanInvite, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 15, aData);
+	pInquiry->AddOption("accept");
+	pInquiry->AddOption("decline");
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "%s invited you to his clan '%s'",
 		pGameServer->Server()->ClientName(ClientID), pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aName);
-	pGameServer->InquieriesHandler()->NewInquiery(InvitingID, pInquiery, aBuf);
+	pGameServer->InquiriesHandler()->NewInquiry(InvitingID, pInquiry, aBuf);
 
 	str_format(aBuf, sizeof(aBuf), "Claninvite has been sent to %s", pGameServer->Server()->ClientName(InvitingID));
 	pGameServer->SendChatTarget(ClientID, aBuf);
@@ -426,21 +426,21 @@ void CChatCommandsHandler::ComClanLeave(CConsole::CResult *pResult, CGameContext
 
 	if (str_comp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_aLeader, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_aName) == 0)
 	{
-		unsigned char aData[INQUIERY_DATA_SIZE];
+		unsigned char aData[INQUIRY_DATA_SIZE];
 		mem_copy(aData, &pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, sizeof(void *));
-		CInquiery *pInquiery = new CInquiery(CAccountsHandler::ClanClose, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 10, aData);
-		pInquiery->AddOption("yes");
-		pInquiery->AddOption("no");
-		pGameServer->InquieriesHandler()->NewInquiery(ClientID, pInquiery, "Are you sure you want to close your clan");
+		CInquiry *pInquiry = new CInquiry(CAccountsHandler::ClanClose, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 10, aData);
+		pInquiry->AddOption("yes");
+		pInquiry->AddOption("no");
+		pGameServer->InquiriesHandler()->NewInquiry(ClientID, pInquiry, "Are you sure you want to close your clan");
 	}
 	else
 	{
-		unsigned char aData[INQUIERY_DATA_SIZE];
+		unsigned char aData[INQUIRY_DATA_SIZE];
 		mem_copy(aData, &pGameServer->Server()->GetClientInfo(ClientID)->m_pClan, sizeof(void *));
-		CInquiery *pInquiery = new CInquiery(CAccountsHandler::ClanLeave, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 10, aData);
-		pInquiery->AddOption("yes");
-		pInquiery->AddOption("no");
-		pGameServer->InquieriesHandler()->NewInquiery(ClientID, pInquiery, "Are you sure you want to leave your clan");
+		CInquiry *pInquiry = new CInquiry(CAccountsHandler::ClanLeave, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * 10, aData);
+		pInquiry->AddOption("yes");
+		pInquiry->AddOption("no");
+		pGameServer->InquiriesHandler()->NewInquiry(ClientID, pInquiry, "Are you sure you want to leave your clan");
 	}
 }
 
@@ -665,7 +665,7 @@ bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
 
 	if (pCommand == 0x0)
 	{
-		if (GameServer()->InquieriesHandler()->OnChatAnswer(ClientID, pMsg))
+		if (GameServer()->InquiriesHandler()->OnChatAnswer(ClientID, pMsg))
 			return true;
 
 		char aBuf[256];

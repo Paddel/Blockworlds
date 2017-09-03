@@ -461,6 +461,33 @@ int CEditor::PopupQuad(CEditor *pEditor, CUIRect View)
 		return 1;
 	}
 
+	// square button
+	View.HSplitBottom(6.0f, &View, &Button);
+	View.HSplitBottom(12.0f, &View, &Button);
+	static int s_ButtonRand = 0;
+	if (pEditor->DoButton_Editor(&s_ButtonRand, "Rand Anim", 0, &Button, 0, ""))
+	{
+		/*if (pQuad->m_PosEnv != -1)
+		{
+			CEnvelope *pEnvelope = pEditor->m_Map.m_lEnvelopes[pQuad->m_PosEnv];
+			pQuad->m_PosEnvOffset = rand() % (pEnvelope->m_lPoints[pEnvelope->m_lPoints.size() - 1].m_Time / 100);
+			pQuad->m_PosEnvOffset *= 100;
+		}
+		if (pQuad->m_ColorEnv != -1)
+		{
+			CEnvelope *pEnvelope = pEditor->m_Map.m_lEnvelopes[pQuad->m_ColorEnv];
+			pQuad->m_ColorEnvOffset = rand() % (pEnvelope->m_lPoints[pEnvelope->m_lPoints.size() - 1].m_Time / 100);
+			pQuad->m_ColorEnvOffset *= 100;
+		}*/
+		CLayerQuads *pLayer = (CLayerQuads *)pEditor->GetSelectedLayerType(0, LAYERTYPE_QUADS);
+		if (pLayer)
+		{
+			for (int i = 0; i < pLayer->m_lQuads.size(); i++)
+				for(int j = 0; j < 4; j++)
+					pLayer->m_lQuads[i].m_aColors[j].a = 25;
+		}
+	}
+
 
 	enum
 	{
