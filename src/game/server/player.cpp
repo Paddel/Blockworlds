@@ -126,7 +126,12 @@ void CPlayer::PostTick()
 		if (m_SpectatorID < MAX_CLIENTS)
 		{
 			if (GameServer()->m_apPlayers[m_SpectatorID] != 0x0)
-				m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
+			{
+				if (GameServer()->m_apPlayers[m_SpectatorID]->GetTeam() == TEAM_SPECTATORS)
+					m_SpectatorID = -1;
+				else
+					m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
+			}
 		}
 		else
 		{
@@ -384,6 +389,9 @@ bool CPlayer::TryRespawnEvent()
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
+
+	if (m_Team == TEAM_SPECTATORS)
+		return;
 
 	if (!GameMap()->CanSpawn(0, &SpawnPos))
 		return;
