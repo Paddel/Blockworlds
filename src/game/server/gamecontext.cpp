@@ -995,6 +995,14 @@ void CGameContext::OnClientLeave(int ClientID, const char *pReason)
 		m_AccountsHandler.ClanSave(Server()->GetClientInfo(ClientID)->m_pClan);
 }
 
+void CGameContext::OnClientMapchange(int ClientID, CGameMap *pGameMapFrom, CGameMap *pGameMapTo)
+{
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "'%s' has moved to %s", Server()->ClientName(ClientID), pGameMapTo->Map()->GetFileName());
+
+	pGameMapFrom->SendChat(-1, aBuf);
+}
+
 void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching)
 {
 	if (Server()->ClientIngame(ClientID))
@@ -1007,11 +1015,10 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason, CGameMap *pGa
 				str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(ClientID), pReason);
 			else
 				str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(ClientID));
-		}
-		else
-			str_format(aBuf, sizeof(aBuf), "'%s' has moved to %s", Server()->ClientName(ClientID), pGameMap->Map()->GetFileName());
 
-		pGameMap->SendChat(-1, aBuf);
+			pGameMap->SendChat(-1, aBuf);
+		}
+		
 
 		if (g_Config.m_Debug)
 		{

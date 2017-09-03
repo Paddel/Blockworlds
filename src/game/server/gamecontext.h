@@ -161,6 +161,7 @@ public:
 	virtual void OnClientConnected(int ClientID);
 	virtual void OnClientEnter(int ClientID, bool MapSwitching);
 	virtual void OnClientLeave(int ClientID, const char *pReason);
+	virtual void OnClientMapchange(int ClientID, CGameMap *pGameMapFrom, CGameMap *pGameMapTo);
 	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching);
 	virtual void OnClientDirectInput(int ClientID, void *pInput);
 	virtual void OnClientPredictedInput(int ClientID, void *pInput);

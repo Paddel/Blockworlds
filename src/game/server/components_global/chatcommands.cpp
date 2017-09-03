@@ -85,6 +85,9 @@ void CChatCommandsHandler::ComPause(CConsole::CResult *pResult, CGameContext *pG
 	if (pPlayer == 0x0)
 		return;
 
+	if (pPlayer->GetTeam() == TEAM_SPECTATORS)
+		return;
+
 	pPlayer->TogglePause();
 }
 

@@ -212,6 +212,7 @@ public:
 	virtual void OnClientConnected(int ClientID) = 0;
 	virtual void OnClientEnter(int ClientID, bool MapSwitching) = 0;
 	virtual void OnClientLeave(int ClientID, const char *pReason) = 0;
+	virtual void OnClientMapchange(int ClientID, CGameMap *pGameMapFrom, CGameMap *pGameMapTo) = 0;
 	virtual void OnClientDrop(int ClientID, const char *pReason, CGameMap *pGameMap, bool MapSwitching) = 0;
 	virtual void OnClientDirectInput(int ClientID, void *pInput) = 0;
 	virtual void OnClientPredictedInput(int ClientID, void *pInput) = 0;

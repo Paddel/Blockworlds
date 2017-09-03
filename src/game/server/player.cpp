@@ -335,6 +335,9 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	if(m_Team == Team)
 		return;
 
+	m_SubscribeEvent = false;
+	m_Pause = false;
+
 	char aBuf[512];
 	if(DoChatMsg)
 	{
