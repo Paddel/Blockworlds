@@ -125,13 +125,8 @@ void CPlayer::PostTick()
 	{
 		if (m_SpectatorID < MAX_CLIENTS)
 		{
-			if (GameServer()->m_apPlayers[m_SpectatorID] != 0x0)
-			{
-				if (GameServer()->m_apPlayers[m_SpectatorID]->GetTeam() == TEAM_SPECTATORS)
-					m_SpectatorID = -1;
-				else
-					m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
-			}
+			if (GameServer()->GetPlayerChar(m_SpectatorID) != 0x0)
+				m_ViewPos = GameServer()->GetPlayerChar(m_SpectatorID)->m_Pos;
 		}
 		else
 		{
