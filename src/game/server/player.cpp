@@ -127,6 +127,9 @@ void CPlayer::PostTick()
 		{
 			if (GameServer()->GetPlayerChar(m_SpectatorID) != 0x0)
 				m_ViewPos = GameServer()->GetPlayerChar(m_SpectatorID)->m_Pos;
+
+			if (GameMap()->m_apPlayers[m_SpectatorID] == 0x0)// on another map or offline
+				m_SpectatorID = SPEC_FREEVIEW;
 		}
 		else
 		{
