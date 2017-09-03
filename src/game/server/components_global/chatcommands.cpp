@@ -580,7 +580,7 @@ void CChatCommandsHandler::ComSubscribe(CConsole::CResult *pResult, CGameContext
 	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You are not logged in");
-		//return;
+		return;
 	}
 
 	bool Before = pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent;

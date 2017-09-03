@@ -366,6 +366,9 @@ bool CPlayer::TryRespawnEvent()
 {
 	vec2 SpawnPos;
 
+	if (m_Team == TEAM_SPECTATORS)
+		return false;
+
 	if (!GameMap()->CanSpawn(1, &SpawnPos))
 		return false;
 

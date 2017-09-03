@@ -777,7 +777,7 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 
 	m_aClients[ClientID].m_pMap = pMap;
 
-	GameServer()->OnClientDrop(ClientID, "Changing map", pCurrentMap->GameMap(), true);
+	GameServer()->OnClientDrop(ClientID, "Changing map", pMap->GameMap(), true);
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
