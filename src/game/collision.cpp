@@ -46,7 +46,7 @@ bool CCollision::IsTileSolid(int x, int y)
 }
 
 // TODO: rewrite this smarter!
-int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision)
+int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, bool Hook)
 {
 	float Distance = distance(Pos0, Pos1);
 	int End(Distance+1);
@@ -56,13 +56,13 @@ int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *p
 	{
 		float a = i/Distance;
 		vec2 Pos = mix(Pos0, Pos1, a);
-		if(CheckPoint(Pos.x, Pos.y))
+		if(CheckPoint(Pos) && (Hook == false || m_pLayers->IsHookThrough(Last, Pos) == false))
 		{
 			if(pOutCollision)
 				*pOutCollision = Pos;
 			if(pOutBeforeCollision)
 				*pOutBeforeCollision = Last;
-			return GetTileAt(Pos.x, Pos.y);
+			return GetTileAt(Pos);
 		}
 		Last = Pos;
 	}

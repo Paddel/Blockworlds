@@ -3,6 +3,7 @@
 #ifndef GAME_LAYERS_H
 #define GAME_LAYERS_H
 
+#include <base/vmath.h>
 #include <engine/mapengine.h>
 #include <game/mapitems.h>
 
@@ -40,6 +41,8 @@ public:
 	CTile *GetExtrasTile(int Index) const { return m_apExtrasTiles[Index]; };
 	int GetExtrasWidth(int Index) const { return m_aExtrasWidth[Index]; };
 	int GetExtrasHeight(int Index) const { return m_aExtrasHeight[Index]; };
+
+	bool IsHookThrough(vec2 Last, vec2 Pos);
 };
 
 #endif

@@ -140,3 +140,22 @@ int CLayers::ExtrasIndex(int Index, float x, float y)
 		Ny = clamp(round_to_int(y) / 32, 0, m_aExtrasHeight[Index] - 1);
 	return Ny * m_aExtrasWidth[Index] + Nx;
 }
+
+bool CLayers::IsHookThrough(vec2 Last, vec2 Pos)
+{
+	for (int i = 0; i < m_NumExtrasLayer; i++)
+	{
+		int Tile = GetExtrasTile(i)[ExtrasIndex(i, round_to_int(Pos.x), round_to_int(Pos.y))].m_Index;
+		if (Tile == EXTRAS_HOOKTHROUGH)
+			return true;
+		if (Tile == EXTRAS_HOOKTHROUGH_TOP && Last.y <= Pos.y)
+			return true;
+		if (Tile == EXTRAS_HOOKTHROUGH_BOTTOM && Last.y >= Pos.y)
+			return true;
+		if (Tile == EXTRAS_HOOKTHROUGH_LEFT && Last.x >= Pos.x)
+			return true;
+		if (Tile == EXTRAS_HOOKTHROUGH_RIGHT && Last.x <= Pos.x)
+			return true;
+	}
+	return false;
+}

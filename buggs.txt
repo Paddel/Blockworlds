@@ -1,6 +1,6 @@
 wayblock abuse
-chatmsg mapchange
 wayblock msg
 exp same ips not counting
 deathnote mapcheck
-pause stalk
+
+ddnet hook

@@ -193,7 +193,7 @@ void CSrvCharacterCore::Tick(bool UseInput)
 		// make sure that the hook doesn't go though the ground
 		bool GoingToHitGround = false;
 		bool GoingToRetract = false;
-		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0);
+		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0, true);
 		if (Hit)
 		{
 			if (Hit == TILE_NOHOOK)

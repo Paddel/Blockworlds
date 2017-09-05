@@ -19,6 +19,11 @@ const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { "Name" },							//EXTRAS_SELL_KNOCKOUT
 { "Name" },							//EXTRAS_SELL_EXTRAS
 { "Map" },							//EXTRAS_PLAYERCOUNT
+{ },								//EXTRAS_HOOKTHROUGH
+{ },								//EXTRAS_HOOKTHROUGH_TOP
+{ },								//EXTRAS_HOOKTHROUGH_BOTTOM
+{ },								//EXTRAS_HOOKTHROUGH_LEFT
+{ },								//EXTRAS_HOOKTHROUGH_RIGHT
 };
 
 
@@ -40,6 +45,9 @@ int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { 19 },			//EXTRAS_SELL_KNOCKOUT
 { 19 },			//EXTRAS_SELL_EXTRAS
 { 19 },			//EXTRAS_PLAYERCOUNT
+{ },			//EXTRAS_HOOKTHROUGH
+{ },			//EXTRAS_HOOKTHROUGH_TOP
+{ },			//EXTRAS_HOOKTHROUGH_BOTTOM
 };
 
 //TODO add angles
@@ -61,4 +69,9 @@ int gs_ExtrasColumntypes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {}, // 1 = integer,
 { 0 },			//EXTRAS_SELL_KNOCKOUT
 { 0 },			//EXTRAS_SELL_EXTRAS
 { 0 },			//EXTRAS_PLAYERCOUNT
+{ },			//EXTRAS_HOOKTHROUGH
+{ },			//EXTRAS_HOOKTHROUGH_TOP
+{ },			//EXTRAS_HOOKTHROUGH_BOTTOM
+{ },			//EXTRAS_HOOKTHROUGH_RIGHT
+{ },			//EXTRAS_HOOKTHROUGH_LEFT
 };

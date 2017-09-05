@@ -1141,6 +1141,13 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
 
+	//pCharacter->m_HookState = HOOK_RETRACT_START;
+	/*pCharacter->m_HookTick = m_HookTick;
+	pCharacter->m_HookX = round_to_int(m_HookPos.x);
+	pCharacter->m_HookY = round_to_int(m_HookPos.y);
+	pCharacter->m_HookDx = round_to_int(m_HookDir.x*256.0f);
+	pCharacter->m_HookDy = round_to_int(m_HookDir.y*256.0f);*/
+
 	if (GetPlayer()->GetPause() == true)
 	{
 		pCharacter->m_Emote = EMOTE_BLINK;
