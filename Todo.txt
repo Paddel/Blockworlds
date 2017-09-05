@@ -11,8 +11,10 @@ endless superhammer
 
 -- Release
 
-clan toplist
 1on1 system
+clan room
+
+own shop design
 
 rcon stuff (global)
 

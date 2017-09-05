@@ -253,8 +253,8 @@ void CLayerExtras::Resize(int NewW, int NewH)
 {
 	CTile *pNewTiles = new CTile[NewW*NewH];
 	CExtrasData *pNewData = new CExtrasData[NewW*NewH];
-	mem_zero(pNewData, NewW*NewH * sizeof(CTile));
-	mem_zero(pNewTiles, NewW*NewH * sizeof(CExtrasData));
+	mem_zero(pNewTiles, NewW*NewH * sizeof(CTile));
+	mem_zero(pNewData, NewW*NewH * sizeof(CExtrasData));
 
 	// copy old data
 	for (int y = 0; y < min(NewH, m_Height); y++)
