@@ -64,8 +64,8 @@ void CGameMap::FindMapType()
 			{
 				int Index = y * Layers()->GetExtrasWidth(l) + x;
 				int Tile = Layers()->GetExtrasTile(l)[Index].m_Index;
-				CExtrasData ExtrasData = Layers()->GetExtrasData(l)[Index];
-				vec2 Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+				//CExtrasData ExtrasData = Layers()->GetExtrasData(l)[Index];
+				//vec2 Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
 
 				if (Tile == EXTRAS_ZONE_BLOCK)
 					m_BlockMap = true;

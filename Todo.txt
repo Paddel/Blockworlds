@@ -1,9 +1,6 @@
 unlock system
 maps update
 
-
-vote system
-
 welcome
 
 invis gundesign
