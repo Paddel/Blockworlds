@@ -89,6 +89,7 @@ public:
 	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
 	virtual int GetClientAuthed(int ClientID) = 0;
 	virtual int GetClientLatency(int ClientID) = 0;
+	virtual bool CompClientAddr(int C1, int C2) = 0;
 
 	virtual bool MovePlayer(int ClientID, const char *pMapName) = 0;
 	virtual bool MovePlayer(int ClientID, class CMap *pMap) = 0;

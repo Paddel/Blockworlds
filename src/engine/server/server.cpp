@@ -496,6 +496,19 @@ int CServer::GetClientLatency(int ClientID)
 	return m_aClients[ClientID].m_Latency;
 }
 
+bool CServer::CompClientAddr(int C1, int C2)
+{
+	if (m_aClients[C1].m_State == CClient::STATE_EMPTY ||
+		m_aClients[C2].m_State == CClient::STATE_EMPTY)
+		return false;
+
+	NETADDR Addr1 = *m_NetServer.ClientAddr(C1);
+	NETADDR Addr2 = *m_NetServer.ClientAddr(C2);
+	Addr1.port = 0;
+	Addr2.port = 0;
+	return net_addr_comp(&Addr1, &Addr2) == 0;
+}
+
 int CServer::SendMsg(CMsgPacker *pMsg, int Flags, int ClientID)
 {
 	return SendMsgEx(pMsg, Flags, ClientID, false);
@@ -668,11 +681,7 @@ void CServer::SetMapOnConnect(int ClientID)
 		if (m_aClients[i].m_State == CClient::STATE_EMPTY || i == ClientID)
 			continue;
 
-		NETADDR OtherAddr = *m_NetServer.ClientAddr(i);
-		NETADDR OwnAddr = *m_NetServer.ClientAddr(ClientID);
-		OtherAddr.port = 0;
-		OwnAddr.port = 0;
-		if (net_addr_comp(&OwnAddr, &OtherAddr) == 0)
+		if (CompClientAddr(ClientID, i) == true)
 		{
 			m_aClients[ClientID].m_pMap = m_aClients[i].m_pMap;
 			return;
@@ -785,11 +794,8 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 			m_aClients[i].m_ClientInfo.m_Detatched == true || m_aClients[i].m_pMap != pCurrentMap)
 			continue;
 
-		NETADDR OtherAddr = *m_NetServer.ClientAddr(i);
-		NETADDR OwnAddr = *m_NetServer.ClientAddr(ClientID);
-		OtherAddr.port = 0;
-		OwnAddr.port = 0;
-		if (net_addr_comp(&OwnAddr, &OtherAddr) == 0)
+
+		if (CompClientAddr(ClientID, i) == true)
 			if(MovePlayer(i, pMap) == false)
 				DropClient(i, "Could not move Dummy. Use '/detatch' if you're not using a dummy.");
 	}

@@ -197,6 +197,8 @@ public:
 	virtual int GetClientLatency(int ClientID);
 	virtual int MaxClients() const;
 
+	virtual bool CompClientAddr(int C1, int C2);
+
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);
 	int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System);
 
