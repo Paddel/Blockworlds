@@ -1,6 +1,7 @@
 
 
 #include <new>
+#include <engine/server/map.h>
 #include <engine/shared/config.h>
 #include <game/mapitems.h>
 #include <game/extras.h>
@@ -739,10 +740,15 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (NewTile == EXTRAS_MAP)
 	{
-		if (Server()->MovePlayer(GetPlayer()->GetCID(), ExtrasData.m_aData) == true)
+		CMap *pMap = Server()->FindMap(ExtrasData.m_aData);
+		if(pMap == 0x0)
+			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Map will be available soon");
+		else if(pMap->HasFreePlayerSlot() == false)
+			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "No free playerslot on Map");
+		else if (Server()->MovePlayer(GetPlayer()->GetCID(), pMap) == true)
 			return true;
 		else
-			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Map will be available soon");
+			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "An Error occured");
 	}
 
 	if (NewTile == EXTRAS_SELL_SKINMANI)

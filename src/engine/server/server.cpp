@@ -1666,8 +1666,8 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			{
 				const char *pAuthStr = pThis->m_aClients[i].m_Authed == CServer::AUTHED_ADMIN ? "(Admin)" :
 										pThis->m_aClients[i].m_Authed == CServer::AUTHED_MOD ? "(Mod)" : "";
-				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s' score=%d %s", i, aAddrStr,
-					pThis->m_aClients[i].m_aName, pAuthStr);
+				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s'map='%s' %s", i, aAddrStr,
+					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_pMap->GetFileName(), pAuthStr);
 			}
 			else if(pThis->m_aClients[i].m_Online == true)
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s switching map", i, aAddrStr);

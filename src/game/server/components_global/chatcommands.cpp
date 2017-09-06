@@ -99,7 +99,7 @@ void CChatCommandsHandler::ComInfo(CConsole::CResult *pResult, CGameContext *pGa
 	pGameServer->SendChatTarget(ClientID, aBuf);
 	str_format(aBuf, sizeof(aBuf), "Based on Teeworlds %s", GAME_VERSION);
 	pGameServer->SendChatTarget(ClientID, aBuf);
-	pGameServer->SendChatTarget(ClientID, "Hosted by Google");
+	pGameServer->SendChatTarget(ClientID, "Hosted by exec");
 	pGameServer->SendChatTarget(ClientID, "www.13x37.com");
 }
 
@@ -577,7 +577,7 @@ void CChatCommandsHandler::ComDeathnote(CConsole::CResult *pResult, CGameContext
 
 	if(pChr->GetPlayer()->CanBeDeathnoted() == false)
 	{
-		str_format(aBuf, sizeof(aBuf), "Player '%s' cannot be killed rightnow", pName);
+		str_format(aBuf, sizeof(aBuf), "Player '%s' cannot be killed right now", pName);
 		pGameServer->SendChatTarget(ClientID, aBuf);
 		return;
 	}
@@ -589,6 +589,8 @@ void CChatCommandsHandler::ComDeathnote(CConsole::CResult *pResult, CGameContext
 	pGameServer->SendChatTarget(KillingID, aBuf);
 	str_format(aBuf, sizeof(aBuf), "Successfully killed %s. %d pages remaining", pName, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages);
 	pGameServer->SendChatTarget(ClientID, aBuf);
+
+	pGameServer->m_apPlayers[ClientID]->m_LastDeathnote = pGameServer->Server()->Tick();
 	
 }
 

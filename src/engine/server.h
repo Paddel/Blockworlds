@@ -91,6 +91,7 @@ public:
 	virtual int GetClientLatency(int ClientID) = 0;
 	virtual bool CompClientAddr(int C1, int C2) = 0;
 
+	virtual class CMap *FindMap(const char *pName) = 0;
 	virtual bool MovePlayer(int ClientID, const char *pMapName) = 0;
 	virtual bool MovePlayer(int ClientID, class CMap *pMap) = 0;
 	virtual bool MoveLobby(int ClientID) = 0;

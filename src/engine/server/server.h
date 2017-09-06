@@ -209,7 +209,7 @@ public:
 	static int NewClientCallback(int ClientID, void *pUser);
 	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
-	CMap *FindMap(const char *pName);
+	virtual CMap *FindMap(const char *pName);
 	bool MovePlayer(int ClientID, const char *pMapName);
 	bool MovePlayer(int ClientID, CMap *pMap);
 	bool MoveLobby(int ClientID);
