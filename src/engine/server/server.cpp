@@ -259,7 +259,6 @@ void CServer::CClient::Reset()
 	m_LastAckedSnapshot = -1;
 	m_LastInputTick = -1;
 	m_SnapRate = CClient::SNAPRATE_INIT;
-	m_Score = 0;
 }
 
 CServer::CServer() : m_Translator(this)
@@ -373,13 +372,6 @@ void CServer::SetClientCountry(int ClientID, int Country)
 		return;
 
 	m_aClients[ClientID].m_Country = Country;
-}
-
-void CServer::SetClientScore(int ClientID, int Score)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
-		return;
-	m_aClients[ClientID].m_Score = Score;
 }
 
 void CServer::Kick(int ClientID, const char *pReason)
@@ -1294,7 +1286,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 			p.AddString(ClientClan(i), MAX_CLAN_LENGTH); // client clan
 
 			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Country); p.AddString(aBuf, 6); // client country
-			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Score); p.AddString(aBuf, 6); // client score
+			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_ClientInfo.m_AccountData.m_Level); p.AddString(aBuf, 6); // client score
 			str_format(aBuf, sizeof(aBuf), "%d", 1); p.AddString(aBuf, 2); // is player?
 
 			Clients++;

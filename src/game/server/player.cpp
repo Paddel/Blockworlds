@@ -16,7 +16,6 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 {
 	m_pGameServer = pGameServer;
 	m_DieTick = Server()->Tick();
-	m_ScoreStartTick = Server()->Tick();
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
 	m_Team = Team;
@@ -58,8 +57,6 @@ void CPlayer::Tick()
 		GameServer()->SendTuningParams(m_ClientID);
 		mem_copy(&m_LastTuning, &m_Tuning, sizeof(m_LastTuning));
 	}
-
-	Server()->SetClientScore(m_ClientID, m_Score);
 
 	// do latency stuff
 	{
