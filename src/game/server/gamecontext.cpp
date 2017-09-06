@@ -95,6 +95,12 @@ void CGameContext::StringTime(int64 Tick, char *pSrc, int SrcSize)
 	int Seconds = DeltaTime / Server()->TickSpeed() - Minutes * 60 - Hours * 60 * 60 - Days * 60 * 60 * 24;
 	int ConnectCount = 0 + (Days > 0 ? 1 : 0) + (Hours > 0 ? 1 : 0) + (Minutes > 0 ? 1 : 0) + (Seconds > 0 ? 1 : 0);
 
+	if (ConnectCount == 0)
+	{
+		str_fcat(pSrc, SrcSize, "1 second");
+		return;
+	}
+
 	if (Days > 0)
 	{
 		str_fcat(pSrc, SrcSize, "%i day%s", Days, Days > 1 ? "s" : "");
@@ -1748,6 +1754,8 @@ void CGameContext::OnConsoleInit()
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
+	CMapVoting::InitMapVotes();
+
 	//init components
 	InitComponents();
 
@@ -1782,6 +1790,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
+
+	CMapVoting::PrintMapVotes();
 
 	for (int i = 0; i < m_NumComponents; i++)
 		m_apComponents[i]->Init();

@@ -170,12 +170,29 @@ void CVoteMenuHandler::OnClientJoin(int ClientID)
 
 void CVoteMenuHandler::AddVote(const char *pDescription, const char *pCommand)
 {
+	char aBuf[256];
+
+	if (pCommand[0] == '%')
+	{
+		int Result = CMapVoting::ActivateMapVoting(pCommand, pDescription);
+		if (Result == -1)
+		{
+			str_format(aBuf, sizeof(aBuf), "mapvote '%s' is already activated", pDescription);
+			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		}
+		else if (Result == -1)
+		{
+			str_format(aBuf, sizeof(aBuf), "mapvote '%s' does not exist", pDescription);
+			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		}
+		return;
+	}
+
 	for (int i = 0; i < m_lpServerOptions.size(); i++)
 	{
 		if (str_comp_nocase(m_lpServerOptions[i]->m_aDescription, pDescription) != 0)
 			continue;
 
-		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "option '%s' already exists", pDescription);
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		return;
@@ -186,7 +203,6 @@ void CVoteMenuHandler::AddVote(const char *pDescription, const char *pCommand)
 	str_copy(pNewOption->m_aCommand, pCommand, sizeof(pNewOption->m_aCommand));
 	m_lpServerOptions.add(pNewOption);
 
-	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "added option '%s' '%s'", pDescription, pCommand);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
@@ -195,6 +211,15 @@ void CVoteMenuHandler::AddVote(const char *pDescription, const char *pCommand)
 
 void CVoteMenuHandler::RemoveVote(const char *pDescription)
 {
+	char aBuf[256];
+
+	if (CMapVoting::DeactivateMapVoting(pDescription) == true)
+	{
+		str_format(aBuf, sizeof(aBuf), "mapvote '%s' deactivated", pDescription);
+		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
 	int Index = -1;
 	for (int i = 0; i < m_lpServerOptions.size(); i++)
 	{
@@ -207,7 +232,6 @@ void CVoteMenuHandler::RemoveVote(const char *pDescription)
 
 	if (Index == -1)
 	{
-		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "option '%s' does not exist", pDescription);
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		return;
@@ -215,7 +239,6 @@ void CVoteMenuHandler::RemoveVote(const char *pDescription)
 
 	CVoteOptionServer *pOption = m_lpServerOptions[Index];
 
-	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "removed option '%s' '%s'", pOption->m_aDescription, pOption->m_aCommand);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
@@ -229,17 +252,18 @@ void CVoteMenuHandler::ForceVote(int ClientID, const char *pDescription, const c
 {
 	char aBuf[128];
 
+	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+	if (pGameMap != 0x0 && pGameMap->MapVoting()->ExecuteMapVote(pDescription) == true)
+	{
+		str_format(aBuf, sizeof(aBuf), "admin forced server option '%s' (%s)", pDescription, pReason);
+		GameServer()->SendChat(-1, aBuf);
+		return;
+	}
+
 	for (int i = 0; i < m_lpServerOptions.size(); i++)
 	{
 		if (str_comp_nocase(m_lpServerOptions[i]->m_aDescription, pDescription) != 0)
 			continue;
-
-		if (str_comp(m_lpServerOptions[i]->m_aCommand, "%rand_event") == 0)
-		{
-			CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
-			if (pGameMap != 0x0)
-				pGameMap->StartRandomEvent();
-		}
 
 		str_format(aBuf, sizeof(aBuf), "admin forced server option '%s' (%s)", pDescription, pReason);
 		GameServer()->SendChat(-1, aBuf);
@@ -309,28 +333,28 @@ void CVoteMenuHandler::CallVote(int ClientID, const char *pDescription, const ch
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
 	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
 	char aChatmsg[512];
-	if (str_find(pDescription, "###") || pPlayer == 0x0)//stripline
+	if (str_find(pDescription, "###") || pPlayer == 0x0 || pGameMap == 0x0)//stripline
 		return;
 
-	//check server option
 	CVoteOptionServer *pOption = 0x0;
-	for (int i = 0; i < m_lpServerOptions.size(); i++)
+
+	if (pGameMap->MapVoting()->OnMapVote(ClientID, pDescription, &pOption) == true && pOption == 0x0)
+		return;
+
+	if(pOption == 0x0)
 	{
-		if (str_comp_nocase(m_lpServerOptions[i]->m_aDescription, pDescription) != 0)
-			continue;
-		pOption = m_lpServerOptions[i];
-		break;
+		for (int i = 0; i < m_lpServerOptions.size(); i++)
+		{
+			if (str_comp_nocase(m_lpServerOptions[i]->m_aDescription, pDescription) != 0)
+				continue;
+			pOption = m_lpServerOptions[i];
+			break;
+		}
 	}
 
 	if (pOption != 0x0)
 	{
-		if (str_comp(pOption->m_aCommand, "%rand_event") == 0)
-		{
-			if(pGameMap->TryVoteRandomEvent(ClientID) == false)
-				return;
-		}
-
-		str_format(aChatmsg, sizeof(aChatmsg), "'%s' called vote to change server option '%s' (%s)", Server()->ClientName(ClientID),
+		str_format(aChatmsg, sizeof(aChatmsg), "'%s' called vote '%s' (%s)", Server()->ClientName(ClientID),
 			pOption->m_aDescription, pReason);
 
 		pGameMap->SendChat(-1, aChatmsg);
@@ -415,10 +439,23 @@ void CVoteMenuHandler::UpdateMenu(int ClientID)
 
 		for (int i = 0; i < m_lpServerOptions.size(); i++)
 		{
-			if (str_comp(m_lpServerOptions[i]->m_aCommand, "%rand_event") == 0 && pGameMap && (pGameMap->IsBlockMap() == false || pGameMap->HasArena() == false))
+			OptionMsg.m_pDescription = m_lpServerOptions[i]->m_aDescription;
+			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+		}
+	}
+
+	if (pGameMap->MapVoting()->GetNumActiveMapVotes() > 0)
+	{
+		CreateStripline(aBuf, VOTE_DESC_LENGTH, "Map Votes");
+		OptionMsg.m_pDescription = aBuf;
+		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+
+		for (int i = 0; i < CMapVoting::NUM_MAPVOTES; i++)
+		{
+			if (pGameMap->MapVoting()->MapvoteActive(i) == false)
 				continue;
 
-			OptionMsg.m_pDescription = m_lpServerOptions[i]->m_aDescription;
+			OptionMsg.m_pDescription = pGameMap->MapVoting()->GetMapVoteDesc(i);
 			Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 		}
 	}

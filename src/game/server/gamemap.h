@@ -8,7 +8,7 @@
 #include <game/server/components_map/animations.h>
 #include <game/server/components_map/lobby.h>
 #include <game/server/components_map/race_components.h>
-#include <game/server/components_map/voting.h>
+#include <game/server/components_map/mapvoting.h>
 
 class CMap;
 class IServer;

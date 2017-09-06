@@ -943,7 +943,7 @@ void CCharacter::HandleRace()
 	m_Core.m_Inviolable = IsInviolable();
 	m_Core.m_EndlessHook = m_EndlessHook;
 
-	if(m_ZoneUntouchable && m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookTick >= Server()->TickSpeed() * 3.0f)
+	if(m_ZoneUntouchable && m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookTick >= Server()->TickSpeed() * 10.0f)
 		m_Core.m_HookState = HOOK_RETRACTED;
 }
 

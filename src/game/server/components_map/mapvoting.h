@@ -6,6 +6,18 @@
 
 class CMapVoting : public CComponentMap
 {
+public:
+	struct CMapVote : public CVoteOptionServer//starts with %
+	{
+		bool m_Active;
+	};
+
+	enum
+	{
+		MAPVOTE_EVENT=0,
+		NUM_MAPVOTES,
+	};
+
 private:
 	//Voting
 	int m_VoteCreator;
@@ -16,6 +28,11 @@ private:
 	char m_aVoteCommand[VOTE_CMD_LENGTH];
 	char m_aVoteReason[VOTE_REASON_LENGTH];
 	int m_VoteEnforce;
+	static CMapVote m_aMapVotes[NUM_MAPVOTES];
+	bool m_aMapVoteAcitve[NUM_MAPVOTES];
+	int m_NumActiveMapVotes;
+	int m_UpdateNumMapVotes;
+
 	enum
 	{
 		VOTE_ENFORCE_UNKNOWN = 0,
@@ -24,6 +41,7 @@ private:
 	};
 
 	void UpdateVote();
+
 public:
 	CMapVoting();
 
@@ -38,5 +56,18 @@ public:
 	int GetVotePos() const { return m_VotePos; };
 	void UpdateVotes() { m_VoteUpdate = true; };
 
+	bool ExecuteMapVote(const char *pDesc);
+	bool OnMapVote(int ClientID, const char *pDesc, CVoteOptionServer **ppOption);
+	bool MapvoteActive(int Index);
+
+	int GetNumActiveMapVotes() const { return m_NumActiveMapVotes; }
+	const char *GetMapVoteDesc(int Index) const { return m_aMapVotes[Index].m_aDescription; }
+
 	virtual void Tick();
+	virtual void Init();
+
+	static void InitMapVotes();
+	static int ActivateMapVoting(const char *pCommand, const char *pDesc);
+	static bool DeactivateMapVoting(const char *pDesc);
+	static void PrintMapVotes();
 };

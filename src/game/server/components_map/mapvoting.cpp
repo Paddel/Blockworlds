@@ -3,11 +3,18 @@
 #include <game/server/gamemap.h>
 #include <game/server/player.h>
 
-#include "voting.h"
+#include "mapvoting.h"
+
+CMapVoting::CMapVote CMapVoting::m_aMapVotes[CMapVoting::NUM_MAPVOTES];
+static int s_UpdateNumMapVotes = 0;
 
 CMapVoting::CMapVoting()
 {
 	m_VoteCloseTime = 0;
+
+	mem_zero(&m_aMapVoteAcitve, sizeof(m_aMapVoteAcitve));
+	m_NumActiveMapVotes = 0;
+	m_UpdateNumMapVotes = s_UpdateNumMapVotes;
 }
 
 void CMapVoting::UpdateVote()
@@ -69,10 +76,8 @@ void CMapVoting::UpdateVote()
 
 			if (m_VoteEnforce == VOTE_ENFORCE_YES)
 			{
-				if (str_comp(m_aVoteCommand, "%rand_event") == 0)
-				{
-					//StartRandomEvent();
-				}
+				if (m_aVoteCommand[0] == '%')
+					ExecuteMapVote(m_aVoteDescription);
 				else
 				{
 					Server()->SetRconCID(IServer::RCON_CID_VOTE);
@@ -202,4 +207,129 @@ void CMapVoting::SendVoteSet(int ClientID)
 void CMapVoting::Tick()
 {
 	UpdateVote();
+
+	if (m_UpdateNumMapVotes != s_UpdateNumMapVotes)
+	{
+		m_NumActiveMapVotes = 0;
+		for (int i = 0; i < NUM_MAPVOTES; i++)
+			if (MapvoteActive(i))
+				m_NumActiveMapVotes++;
+
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (GameMap()->m_apPlayers[i] != 0x0)
+				GameServer()->VoteMenuHandler()->UpdateMenu(i);
+		}
+
+		m_UpdateNumMapVotes = s_UpdateNumMapVotes;
+	}
+}
+
+bool CMapVoting::ExecuteMapVote(const char *pDesc)
+{
+	int Index = -1;
+	for (int i = 0; i < NUM_MAPVOTES; i++)
+	{
+		if (str_comp(pDesc, m_aMapVotes[i].m_aDescription) != 0)
+			continue;
+		Index = i;
+		break;
+	}
+
+	if (Index == -1 || MapvoteActive(Index) == false)
+		return false;
+
+	if (Index == MAPVOTE_EVENT)
+		GameMap()->StartRandomEvent();
+
+
+	return true;
+}
+
+bool CMapVoting::OnMapVote(int ClientID, const char *pDesc, CVoteOptionServer **ppOption)
+{
+	int Index = -1;
+	for (int i = 0; i < NUM_MAPVOTES; i++)
+	{
+		if (str_comp(pDesc, m_aMapVotes[i].m_aDescription) != 0)
+			continue;
+		Index = i;
+		break;
+	}
+
+	if (Index == -1 || MapvoteActive(Index) == false)
+		return false;
+
+	if (Index == MAPVOTE_EVENT)
+	{
+		if (GameMap()->TryVoteRandomEvent(ClientID) == true)
+		{
+			*ppOption = &m_aMapVotes[Index];
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool CMapVoting::MapvoteActive(int Index)
+{
+	return m_aMapVoteAcitve[Index] == true && m_aMapVotes[Index].m_Active == true;
+}
+
+void CMapVoting::Init()
+{
+	if (GameMap()->IsBlockMap() == true && GameMap()->HasArena())
+		m_aMapVoteAcitve[MAPVOTE_EVENT] = true;
+
+
+
+	for (int i = 0; i < NUM_MAPVOTES; i++)
+		if (MapvoteActive(i))
+			m_NumActiveMapVotes++;
+}
+
+void CMapVoting::InitMapVotes()
+{
+	mem_zero(&m_aMapVotes, sizeof(m_aMapVotes));
+
+	str_copy(m_aMapVotes[MAPVOTE_EVENT].m_aCommand, "%rand_event", sizeof(CMapVote::m_aCommand));
+}
+
+int CMapVoting::ActivateMapVoting(const char *pCommand, const char *pDesc)
+{
+	for (int i = 0; i < NUM_MAPVOTES; i++)
+	{
+		if (str_comp_nocase(pCommand, m_aMapVotes[i].m_aCommand) == 0)
+		{
+			if (m_aMapVotes[i].m_Active == true)
+				return -1;
+			m_aMapVotes[i].m_Active = true;
+			str_copy(m_aMapVotes[i].m_aDescription, pDesc, sizeof(CMapVote::m_aDescription));
+			s_UpdateNumMapVotes++;
+			return 0;
+		}
+	}
+	return -2;
+}
+
+bool CMapVoting::DeactivateMapVoting(const char *pDesc)
+{
+	for (int i = 0; i < NUM_MAPVOTES; i++)
+	{
+		if (str_comp_nocase(pDesc, m_aMapVotes[i].m_aDescription) == 0)
+		{
+			m_aMapVotes[i].m_Active = false;
+			s_UpdateNumMapVotes++;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+void CMapVoting::PrintMapVotes()
+{
+	for (int i = 0; i < NUM_MAPVOTES; i++)
+		dbg_msg("mapvotes", "vote '%s' %s as '%s'", m_aMapVotes[i].m_aCommand, m_aMapVotes[i].m_Active ? "active" : "inactive", m_aMapVotes[i].m_aDescription);
 }
