@@ -1,5 +1,6 @@
 #pragma once
 
+#include <base/tl/array.h>
 #include <game/server/component.h>
 
 enum

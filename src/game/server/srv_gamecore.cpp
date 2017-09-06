@@ -292,7 +292,7 @@ void CSrvCharacterCore::Tick(bool UseInput)
 		if (m_HookedPlayer != -1)
 		{
 			CSrvCharacterCore *pCore = m_pWorld->SearchCore(m_HookedPlayer);
-			if (m_HookTick > SERVER_TICK_SPEED + SERVER_TICK_SPEED / 5 || pCore == 0x0 || pCore->m_Inviolable == true || m_Inviolable == true)
+			if ((m_HookTick > SERVER_TICK_SPEED + SERVER_TICK_SPEED / 5 && m_EndlessHook == false) || pCore == 0x0 || pCore->m_Inviolable == true || m_Inviolable == true)
 			{
 				m_HookedPlayer = -1;
 				m_HookState = HOOK_RETRACTED;
@@ -572,7 +572,7 @@ void CSrvCharacterCore::TickPredict(bool UseInput)
 
 		// release hook (max hook time is 1.25
 		m_HookTick++;
-		if (m_HookedPlayer != -1 && (m_HookTick > SERVER_TICK_SPEED + SERVER_TICK_SPEED / 5 || !m_pWorld->SearchCore(m_HookedPlayer)))
+		if (m_HookedPlayer != -1 && (m_HookTick > SERVER_TICK_SPEED + SERVER_TICK_SPEED / 5 && m_EndlessHook == false) || !m_pWorld->SearchCore(m_HookedPlayer))
 		{
 			m_HookedPlayer = -1;
 			m_HookState = HOOK_RETRACTED;

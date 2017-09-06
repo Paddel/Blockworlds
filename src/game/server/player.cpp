@@ -36,6 +36,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);
 	m_UseSpawnState = false;
 	m_CreateTick = Server()->Tick();
+	m_FirstInput = true;
 }
 
 CPlayer::~CPlayer()
@@ -244,6 +245,9 @@ bool CPlayer::CanBeDeathnoted()
 	if (m_SubscribeEvent == true && GameMap()->GetEvent() != 0x0)
 		return false;
 
+	if (GameMap()->IsBlockMap() == false)
+		return false;
+
 	return true;
 }
 
@@ -284,6 +288,13 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 
 	if(m_pCharacter)
 		m_pCharacter->OnDirectInput(NewInput);
+
+	if (m_FirstInput)
+	{
+		if (m_pCharacter != 0x0 && NewInput->m_Hook == 1)
+			m_pCharacter->Core()->m_HookState = HOOK_RETRACTED;
+		m_FirstInput = false;
+	}
 
 	if(!m_pCharacter && m_Team != TEAM_SPECTATORS && (NewInput->m_Fire&1))
 		m_Spawning = true;
@@ -375,7 +386,7 @@ bool CPlayer::TryRespawnEvent()
 	if (m_Team == TEAM_SPECTATORS)
 		return false;
 
-	if (!GameMap()->CanSpawn(1, &SpawnPos))
+	if (!GameMap()->RaceComponents()->CanSpawn(1, &SpawnPos))
 		return false;
 
 	if (m_pCharacter != 0x0 && m_pCharacter->IsAlive() == false)
@@ -397,7 +408,7 @@ void CPlayer::TryRespawn()
 	if (m_Team == TEAM_SPECTATORS)
 		return;
 
-	if (!GameMap()->CanSpawn(0, &SpawnPos))
+	if (!GameMap()->RaceComponents()->CanSpawn(0, &SpawnPos))
 		return;
 
 

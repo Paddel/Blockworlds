@@ -97,6 +97,7 @@ MACRO_CONFIG_STR(SvDbAccName, sv_db_acc_name, 16, "root", CFGFLAG_SERVER, "Usern
 MACRO_CONFIG_STR(SvDbAccPassword, sv_db_acc_password, 16, "", CFGFLAG_SERVER, "Password for Account Database")
 MACRO_CONFIG_STR(SvDbAccAddress, sv_db_acc_address, 48, "localhost", CFGFLAG_SERVER, "Address for Account Database")
 MACRO_CONFIG_STR(SvDbAccSchema, sv_db_acc_schema, 16, "", CFGFLAG_SERVER, "Schema name for Account Database")
+MACRO_CONFIG_INT(SvLobbyOnly, sv_lobby_only, 0, 0, 1, CFGFLAG_SERVER, "Forces the player to join the lobby")
 
 MACRO_CONFIG_STR(EcBindaddr, ec_bindaddr, 128, "localhost", CFGFLAG_ECON, "Address to bind the external console to. Anything but 'localhost' is dangerous")
 MACRO_CONFIG_INT(EcPort, ec_port, 0, 0, 0, CFGFLAG_ECON, "Port to use for the external console")

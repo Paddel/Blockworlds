@@ -97,7 +97,7 @@ public:
 
 	// helper functions
 	void CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float AngleMod, int Amount);
-	void CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner, int Weapon, bool NoDamage);
+	void CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner);
 	void CreateHammerHit(CGameMap *pGameMap, vec2 Pos);
 	void CreatePlayerSpawn(CGameMap *pGameMap, vec2 Pos);
 	void CreateDeath(CGameMap *pGameMap, vec2 Pos, int Who);

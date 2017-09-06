@@ -65,6 +65,7 @@ public:
 		int m_CurrentSkinmani;
 		int64 m_InviolableTime;
 		bool m_UseInviolable;
+		bool m_Detatched;
 
 		void Reset()
 		{

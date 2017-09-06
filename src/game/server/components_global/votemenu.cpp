@@ -334,11 +334,11 @@ void CVoteMenuHandler::CallVote(int ClientID, const char *pDescription, const ch
 			pOption->m_aDescription, pReason);
 
 		pGameMap->SendChat(-1, aChatmsg);
-		pGameMap->StartVote(pOption->m_aDescription, pOption->m_aCommand, pReason);
+		pGameMap->MapVoting()->StartVote(pOption->m_aDescription, pOption->m_aCommand, pReason);
 		pPlayer->m_Vote = 1;
 		pPlayer->m_VotePos = 1;
-		pGameMap->SetVotePos(1);
-		pGameMap->SetVoteCreator(ClientID);
+		pGameMap->MapVoting()->SetVotePos(1);
+		pGameMap->MapVoting()->SetVoteCreator(ClientID);
 		pPlayer->m_LastVoteCall = Server()->Tick();
 
 		return;
@@ -415,7 +415,7 @@ void CVoteMenuHandler::UpdateMenu(int ClientID)
 
 		for (int i = 0; i < m_lpServerOptions.size(); i++)
 		{
-			if (str_comp(m_lpServerOptions[i]->m_aCommand, "%rand_event") == 0 && pGameMap && pGameMap->IsBlockMap() == false)
+			if (str_comp(m_lpServerOptions[i]->m_aCommand, "%rand_event") == 0 && pGameMap && (pGameMap->IsBlockMap() == false || pGameMap->HasArena() == false))
 				continue;
 
 			OptionMsg.m_pDescription = m_lpServerOptions[i]->m_aDescription;

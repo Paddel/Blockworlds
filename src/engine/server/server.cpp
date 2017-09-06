@@ -688,12 +688,15 @@ void CServer::SetMapOnConnect(int ClientID)
 	}
 
 	//connect via serverbrowser
-	for (int i = 0; i < m_lpMaps.size() && pMap == 0x0; i++)
+	if (g_Config.m_SvLobbyOnly == false)
 	{
-		NETSOCKET MapSocket = m_lpMaps[i]->GetSocket();
-		NETSOCKET ClientSocket = m_NetServer.ClientSocket(ClientID);
-		if (mem_comp(&ClientSocket, &MapSocket, sizeof(NETSOCKET)) == 0)
-			pMap = m_lpMaps[i];
+		for (int i = 0; i < m_lpMaps.size() && pMap == 0x0; i++)
+		{
+			NETSOCKET MapSocket = m_lpMaps[i]->GetSocket();
+			NETSOCKET ClientSocket = m_NetServer.ClientSocket(ClientID);
+			if (mem_comp(&ClientSocket, &MapSocket, sizeof(NETSOCKET)) == 0)
+				pMap = m_lpMaps[i];
+		}
 	}
 
 	if (pMap == 0x0 || pMap->HasFreePlayerSlot() == false)
@@ -746,6 +749,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
+	pThis->m_aClients[ClientID].m_Online = false;
 	pThis->m_aClients[ClientID].m_ClientInfo.Reset();
 	return 0;
 }
@@ -782,6 +786,21 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_aClients[i].m_State == CClient::STATE_EMPTY || i == ClientID ||
+			m_aClients[i].m_ClientInfo.m_Detatched == true || m_aClients[i].m_pMap != pCurrentMap)
+			continue;
+
+		NETADDR OtherAddr = *m_NetServer.ClientAddr(i);
+		NETADDR OwnAddr = *m_NetServer.ClientAddr(ClientID);
+		OtherAddr.port = 0;
+		OwnAddr.port = 0;
+		if (net_addr_comp(&OwnAddr, &OtherAddr) == 0)
+			if(MovePlayer(i, pMap) == false)
+				DropClient(i, "Could not move Dummy. Use '/detatch' if you're not using a dummy.");
+	}
 
 	return true;
 }
@@ -1650,7 +1669,7 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 				const char *pAuthStr = pThis->m_aClients[i].m_Authed == CServer::AUTHED_ADMIN ? "(Admin)" :
 										pThis->m_aClients[i].m_Authed == CServer::AUTHED_MOD ? "(Mod)" : "";
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s' score=%d %s", i, aAddrStr,
-					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_Score, pAuthStr);
+					pThis->m_aClients[i].m_aName, pAuthStr);
 			}
 			else if(pThis->m_aClients[i].m_Online == true)
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s switching map", i, aAddrStr);

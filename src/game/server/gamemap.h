@@ -1,7 +1,5 @@
 #pragma once
 
-#include <base/tl/array.h>
-#include <game/voting.h>
 #include <game/layers.h>
 #include <game/collision.h>
 #include <game/server/components_map/eventhandler.h>
@@ -9,6 +7,8 @@
 #include <game/server/components_map/shop.h>
 #include <game/server/components_map/animations.h>
 #include <game/server/components_map/lobby.h>
+#include <game/server/components_map/race_components.h>
+#include <game/server/components_map/voting.h>
 
 class CMap;
 class IServer;
@@ -18,48 +18,11 @@ class CTranslateItem;
 class IConsole;
 class CGameEvent;
 
-//god class?
+//TODO: voting system in extra class
 
 //TODO: remove includes
 class CGameMap
 {
-public:// TODO: clean this into an extra class. esp. vote spawn tele and doors
-	struct CSpawnEval
-	{
-		CSpawnEval()
-		{
-			m_Got = false;
-			m_FriendlyTeam = -1;
-			m_Pos = vec2(100, 100);
-		}
-
-		vec2 m_Pos;
-		bool m_Got;
-		int m_FriendlyTeam;
-		float m_Score;
-	};
-
-	struct CDoorTile
-	{
-		int m_Index;
-		vec2 m_Pos;
-		int m_ID;
-		bool m_Default;
-		char m_LaserDir[2];
-
-		int m_Delay;
-		float m_Length;
-		vec2 m_Direction;
-		int m_SnapID;
-		int m_Type;
-	};
-
-	struct CTeleTo
-	{
-		int m_ID;
-		vec2 m_Pos;
-	};
-
 private:
 	CMap *m_pMap;
 	IServer *m_pServer;
@@ -73,46 +36,23 @@ private:
 	CShop m_Shop;
 	CAnimationHandler m_AnimationHandler;
 	CLobby m_Lobby;
-	array<CDoorTile *> m_lDoorTiles;
-	array<CTeleTo *> m_lTeleTo;
+	CRaceComponents m_RaceComponents;
+	CMapVoting m_MapVoting;
 	class CComponentMap *m_apComponents[16];
 	int m_NumComponents;
-	vec2 m_aaSpawnPoints[3][64];
-	int m_aNumSpawnPoints[3];
+	
 	int m_RoundStartTick;
 	bool m_ShopMap;
 	bool m_BlockMap;
+	bool m_HasArena;
 	int m_NumPlayers;
 	int64 m_RandomEventTime;
 
-	//Voting
-	int m_VoteCreator;
-	int64 m_VoteCloseTime;
-	bool m_VoteUpdate;
-	int m_VotePos;
-	char m_aVoteDescription[VOTE_DESC_LENGTH];
-	char m_aVoteCommand[VOTE_CMD_LENGTH];
-	char m_aVoteReason[VOTE_REASON_LENGTH];
-	int m_VoteEnforce;
-	enum
-	{
-		VOTE_ENFORCE_UNKNOWN = 0,
-		VOTE_ENFORCE_NO,
-		VOTE_ENFORCE_YES,
-	};
-
-	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos);
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type);
-	bool OnEntity(int Index, vec2 Pos);
-
-	void UpdateVote();
-	void InitEntities();
-	void InitDoorTile(CDoorTile *pTile);
-	void InitExtras();
+	
 	void InitComponents();
+	void FindMapType();
 
 	void DoMapTunings();
-	void DoStoreAnimations();
 public:
 	CGameMap(CMap *pMap);
 	~CGameMap();
@@ -131,13 +71,6 @@ public:
 	void FillTranslateItems(CTranslateItem *pTranslateItems);
 	vec2 GetPlayerViewPos(int ClientID);
 
-	bool CanSpawn(int Team, vec2 *pOutPos);
-	CDoorTile *GetDoorTile(int Index);
-	bool DoorTileActive(CDoorTile *pDoorTile) const;
-	void OnDoorHandle(int ID, int Delay, bool Activate);
-	bool GetRandomTelePos(int ID, vec2 *Pos);
-
-	void SnapDoors(int SnappingClient);
 	void SnapFakePlayer(int SnappingClient);
 	void SnapGameInfo(int SnappingClient);
 	void Snap(int SnappingClient);
@@ -150,19 +83,10 @@ public:
 	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
 	void PlayerKilled(int ClientID);
 
-	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
-	void EndVote();
-	void SendVoteSet(int ClientID);
-	void SendVoteStatus(int ClientID, int Total, int Yes, int No);
-	void VoteEnforce(const char *pVote);
-	int64 GetVoteCloseTime() const { return m_VoteCloseTime; };
-	void SetVoteCreator(int ClientID) { m_VoteCreator = ClientID; };
-	void SetVotePos(int Pos) { m_VotePos = Pos; };
-	int GetVotePos() const { return m_VotePos; };
-	void UpdateVotes() { m_VoteUpdate = true; };
 	bool IsBlockMap() const { return m_BlockMap; }
 	void SetBlockMap(bool Value) { m_BlockMap = Value; }
 	bool IsShopMap() const { return m_ShopMap; }
+	bool HasArena() const { return m_HasArena; }
 	int NumPlayers() { return m_NumPlayers; }
 	CGameEvent *GetEvent() { return m_pGameEvent; }
 
@@ -180,4 +104,6 @@ public:
 	CGameWorld *World() { return &m_World; };
 	CEventHandler *Events() { return &m_Events; }
 	CAnimationHandler *AnimationHandler() { return &m_AnimationHandler; }
+	CRaceComponents *RaceComponents() { return &m_RaceComponents; }
+	CMapVoting *MapVoting() { return &m_MapVoting; }
 };

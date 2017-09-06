@@ -280,7 +280,7 @@ CEntity *CGameWorld::IntersectTee(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewP
 }
 
 
-CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis)
+CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis, bool IntersectCollision)
 {
 	// Find other players
 	float ClosestRange = Radius*2;
@@ -292,21 +292,24 @@ CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotTh
 		if(p == pNotThis)
 			continue;
 
-		if(within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius))
-		{
-			if (within_reach(Pos, p->m_Pos, ClosestRange) == true);
-			{
-				float Len = distance(Pos, p->m_Pos);
-				ClosestRange = Len;
-				pClosest = p;
-			}
-		}
+		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius) == false)
+			continue;
+
+		if (within_reach(Pos, p->m_Pos, ClosestRange) == false)
+			continue;
+
+		if(IntersectCollision && GameMap()->Collision()->IntersectLine(Pos, p->m_Pos, 0x0, 0x0) != 0)
+			continue;
+
+		float Len = distance(Pos, p->m_Pos);
+		ClosestRange = Len;
+		pClosest = p;
 	}
 
 	return pClosest;
 }
 
-CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis)
+CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis, bool IntersectCollision)
 {
 	// Find other players
 	float ClosestRange = Radius * 2;
@@ -317,15 +320,18 @@ CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis)
 		if (p == pNotThis)
 			continue;
 
-		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius))
-		{
-			float Len = distance(Pos, p->m_Pos);
-			if (Len < ClosestRange)
-			{
-				ClosestRange = Len;
-				pClosest = p;
-			}
-		}
+		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius) == false)
+			continue;
+
+		if (within_reach(Pos, p->m_Pos, ClosestRange) == false)
+			continue;
+
+		if (IntersectCollision && GameMap()->Collision()->IntersectLine(Pos, p->m_Pos, 0x0, 0x0) != 0)
+			continue;
+
+		float Len = distance(Pos, p->m_Pos);
+		ClosestRange = Len;
+		pClosest = p;
 	}
 
 	for (CNpc *p = (CNpc *)FindFirst(ENTTYPE_CHARACTER); p; p = (CNpc *)p->TypeNext())
@@ -333,15 +339,15 @@ CEntity *CGameWorld::ClosestTee(vec2 Pos, float Radius, CEntity *pNotThis)
 		if (p == pNotThis)
 			continue;
 
-		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius))
-		{
-			if (within_reach(Pos, p->m_Pos, ClosestRange) == true);
-			{
-				float Len = distance(Pos, p->m_Pos);
-				ClosestRange = Len;
-				pClosest = p;
-			}
-		}
+		if (within_reach(Pos, p->m_Pos, p->m_ProximityRadius + Radius) == false)
+			continue;
+
+		if (within_reach(Pos, p->m_Pos, ClosestRange) == false)
+			continue;
+
+		float Len = distance(Pos, p->m_Pos);
+		ClosestRange = Len;
+		pClosest = p;
 	}
 
 	return pClosest;

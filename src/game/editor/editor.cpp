@@ -2174,7 +2174,10 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 		Graphics()->SetColor(1, 1, 0, 1);
 		float Step = 0.01f;
 		for (float i = 0; i < 2 * pi; i += Step)
-			Graphics()->LinesDraw(&IGraphics::CLineItem(m_WorldOffsetX + sinf(i) * 14, m_WorldOffsetY + cosf(i) * 14, m_WorldOffsetX + sinf(i - Step) * 14, m_WorldOffsetY + cosf(i - Step) * 14), 1);
+		{
+			IGraphics::CLineItem Item = IGraphics::CLineItem(m_WorldOffsetX + sinf(i) * 14, m_WorldOffsetY + cosf(i) * 14, m_WorldOffsetX + sinf(i - Step) * 14, m_WorldOffsetY + cosf(i - Step) * 14);
+			Graphics()->LinesDraw(&Item, 1);
+		}
 
 		Graphics()->LinesEnd();
 	}

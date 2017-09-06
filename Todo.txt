@@ -1,15 +1,16 @@
 unlock system
 maps update
 
-sv_lobbyonly
-attach/detach dummy
+
+vote system
+
+welcome
+
 invis gundesign
 
-endless superhammer
-
-
-
 -- Release
+
+client crash command
 
 1on1 system
 clan room

@@ -285,6 +285,16 @@ void CChatCommandsHandler::ComLobby(CConsole::CResult *pResult, CGameContext *pG
 		pGameServer->SendChatTarget(ClientID, "You could not be moved to the lobby");
 }
 
+void CChatCommandsHandler::ComDetatch(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+
+	pGameServer->Server()->GetClientInfo(ClientID)->m_Detatched = !pGameServer->Server()->GetClientInfo(ClientID)->m_Detatched;
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_Detatched)
+		pGameServer->SendChatTarget(ClientID, "Your player has been detatched");
+	else
+		pGameServer->SendChatTarget(ClientID, "Your player has been attached");
+}
+
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
@@ -558,6 +568,13 @@ void CChatCommandsHandler::ComDeathnote(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 
+	if(pGameServer->m_apPlayers[ClientID]->GameMap() != pChr->GameMap())
+	{
+		str_format(aBuf, sizeof(aBuf), "Player '%s' is not on your map", pName);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
 	if(pChr->GetPlayer()->CanBeDeathnoted() == false)
 	{
 		str_format(aBuf, sizeof(aBuf), "Player '%s' cannot be killed rightnow", pName);
@@ -629,6 +646,7 @@ void CChatCommandsHandler::Init()
 	Register("pages", "", 0, ComPages, "Informs you the use of your deathnote");
 	Register("weaponkit", "", 0, ComWeaponkit, "Use a weaponkit");
 	Register("lobby", "", 0, ComLobby, "Moves you to the lobby");
+	Register("detatch", "", 0, ComDetatch, "Allows you to be on a different map as your dummy");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

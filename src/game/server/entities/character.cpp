@@ -61,6 +61,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_LastWeapon = WEAPON_GUN;
 	m_QueuedWeapon = -1;
 	m_ProtectionTime = 1;
+	m_EndlessHook = false;
+	m_SuperHammer = false;
 
 	for (int i = 0; i < NUM_EXTRAIDS; i++)
 		m_aExtraIDs[i] = -1;
@@ -348,7 +350,8 @@ void CCharacter::FireWeapon()
 				else
 					Dir = vec2(0.f, -1.f);
 
-				pTarget->Push(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, GetPlayer()->GetCID());
+				float Force = m_SuperHammer ? 15.0f : 10.0f;
+				pTarget->Push(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * Force, GetPlayer()->GetCID());
 				pTarget->Unfreeze();
 				Hits++;
 			}
@@ -670,7 +673,7 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	{
 		vec2 Pos;
 		int ID = str_toint(ExtrasData.m_aData);
-		if (GameMap()->GetRandomTelePos(ID, &Pos) == true)
+		if (GameMap()->RaceComponents()->GetRandomTelePos(ID, &Pos) == true)
 		{
 			m_Core.m_Pos = Pos;
 			m_Core.m_HookState = HOOK_RETRACTED;
@@ -686,7 +689,24 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		pData += gs_ExtrasSizes[Tile][1];
 		bool Activate = (bool)str_toint(pData);
 		pData += gs_ExtrasSizes[Tile][2];
-		GameMap()->OnDoorHandle(ID, Delay, Activate);
+		GameMap()->RaceComponents()->OnDoorHandle(ID, Delay, Activate);
+	}
+
+	if (Tile == EXTRAS_DOOR)
+	{
+		CRaceComponents::CDoorTile *pDoorTile = GameMap()->RaceComponents()->GetDoorTile(Index);
+		if (pDoorTile && pDoorTile->m_Freeze == true && GameMap()->RaceComponents()->DoorTileActive(pDoorTile))
+			Freeze(3.0f);
+	}
+
+	if (Tile == EXTRAS_LASERGUN_TRIGGER)
+	{
+		const char *pData = ExtrasData.m_aData;
+		int ID = str_toint(pData);
+		pData += gs_ExtrasSizes[Tile][0];
+		int Delay = str_toint(pData);
+		pData += gs_ExtrasSizes[Tile][1];
+		GameMap()->RaceComponents()->OnLasergunTrigger(ID, Delay);
 	}
 
 	if (Tile == EXTRAS_FREEZE)
@@ -703,6 +723,9 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_ZONE_UNTOUCHABLE)
 		m_ZoneUntouchable = true;
+
+	if (Tile == EXTRAS_ZONE_PROTECTION && Server()->GetClientInfo(GetPlayer()->GetCID())->m_UseInviolable == false)
+		m_ProtectionTime = 0;//anti abuse
 
 	if (m_ProtectionTime == 1 && Tile == EXTRAS_ZONE_PROTECTION && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
 		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Passive mode enabled");
@@ -770,8 +793,8 @@ void CCharacter::HandleStops()
 		if (Index < 0)
 			continue;
 
-		CGameMap::CDoorTile *pDoorTile = GameMap()->GetDoorTile(Index);
-		if (pDoorTile && GameMap()->DoorTileActive(pDoorTile))
+		CRaceComponents::CDoorTile *pDoorTile = GameMap()->RaceComponents()->GetDoorTile(Index);
+		if (pDoorTile && pDoorTile->m_Freeze == false && GameMap()->RaceComponents()->DoorTileActive(pDoorTile))
 		{
 			vec2 DoorPos = vec2(Index % pLayers->GetExtrasWidth(i) * 32.0f + 16.0f, Index / pLayers->GetExtrasWidth(i) * 32.0f + 16.0f);
 			if (pDoorTile->m_Type == 1)
@@ -855,10 +878,11 @@ void CCharacter::HandleTiles()
 	if (Tile == TILE_RESTART)
 	{
 		vec2 Pos;
-		if (GameMap()->CanSpawn(0, &Pos))
+		if (GameMap()->RaceComponents()->CanSpawn(0, &Pos))
 		{
 			m_Core.m_Pos = Pos;
 			m_Core.m_HookState = HOOK_RETRACTED;
+			m_ProtectionTime = 1;
 		}
 	}
 
@@ -870,6 +894,18 @@ void CCharacter::HandleTiles()
 			Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 			return;
 		}
+	}
+
+	if (Tile == TILE_ENDLESSHOOK && m_EndlessHook == false)
+	{
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Endless-Hook has been activated!");
+		m_EndlessHook = true;
+	}
+
+	if (Tile == TILE_SUPERHAMMER && m_SuperHammer == false)
+	{
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Superhammer has been activated!");
+		m_SuperHammer = true;
 	}
 }
 
@@ -905,6 +941,10 @@ void CCharacter::HandleRace()
 
 	//gamecore inviolable
 	m_Core.m_Inviolable = IsInviolable();
+	m_Core.m_EndlessHook = m_EndlessHook;
+
+	if(m_ZoneUntouchable && m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookTick >= Server()->TickSpeed() * 3.0f)
+		m_Core.m_HookState = HOOK_RETRACTED;
 }
 
 void CCharacter::Tick()
@@ -1158,6 +1198,9 @@ void CCharacter::Snap(int SnappingClient)
 		int HookingID = Server()->Translate(SnappingClient, pCharacter->m_HookedPlayer);
 		pCharacter->m_HookedPlayer = HookingID;
 	}
+
+	if (m_EndlessHook)
+		pCharacter->m_HookTick = 0;
 
 	SnapExtras(SnappingClient);
 }

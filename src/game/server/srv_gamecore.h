@@ -38,6 +38,7 @@ public:
 	int m_HookState;
 	int m_HookedPlayer;
 	bool m_Inviolable;
+	bool m_EndlessHook;
 
 	int m_Jumped;
 

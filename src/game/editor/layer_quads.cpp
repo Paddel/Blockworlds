@@ -185,15 +185,15 @@ void CLayerQuads::BrushPlace(CLayer *pBrush, float wx, float wy)
 			else if (wx > 0 && wy < 0)
 				n.m_PosEnv = rand() % 4 + 4;
 
-			if (n.m_PosEnv > -1)
+			if (n.m_PosEnv > 0)
 			{
-				CEnvelope *pEnvelope = m_pEditor->m_Map.m_lEnvelopes[n.m_PosEnv];
+				CEnvelope *pEnvelope = m_pEditor->m_Map.m_lEnvelopes[n.m_PosEnv - 1];
 				n.m_PosEnvOffset = rand() % (pEnvelope->m_lPoints[pEnvelope->m_lPoints.size() - 1].m_Time / 100);
 				n.m_PosEnvOffset *= 100;
 			}
 
 			for(int i = 0; i < 4; i++)
-				n.m_aColors[i].a = 255;
+				n.m_aColors[i].a = str_toint(g_Config.m_Password);
 		}*/
 
 		m_lQuads.add(n);

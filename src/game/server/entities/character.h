@@ -115,6 +115,9 @@ private:
 
 	vec2 m_LastPos;
 
+	bool m_EndlessHook;
+	bool m_SuperHammer;
+
 	// weapon info
 	CEntity *m_apHitObjects[10];
 	int m_NumObjectsHit;

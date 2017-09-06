@@ -150,6 +150,8 @@ private:
 	int m_ClientID;
 	int m_Team;
 	bool m_Pause;
+
+	bool m_FirstInput;
 };
 
 #endif

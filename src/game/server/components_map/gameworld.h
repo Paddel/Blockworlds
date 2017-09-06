@@ -26,6 +26,8 @@ public:
 		ENTTYPE_FLAG,
 		ENTTYPE_CHARACTER,
 		ENTTYPE_NPC,
+		ENTTYPE_DRAGGER,
+		ENTTYPE_LASERGUN,
 		NUM_ENTTYPES
 	};
 
@@ -94,8 +96,8 @@ public:
 		Returns:
 			Returns a pointer to the closest CCharacter or NULL if no CCharacter is close enough.
 	*/
-	class CCharacter *ClosestCharacter(vec2 Pos, float Radius, CEntity *ppNotThis);
-	class CEntity *ClosestTee(vec2 Pos, float Radius, CEntity *ppNotThis);
+	class CCharacter *ClosestCharacter(vec2 Pos, float Radius, CEntity *ppNotThis, bool IntersectCollision = false);
+	class CEntity *ClosestTee(vec2 Pos, float Radius, CEntity *ppNotThis, bool IntersectCollision = false);
 
 	/*
 		Function: insert_entity

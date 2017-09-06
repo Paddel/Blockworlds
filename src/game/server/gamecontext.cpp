@@ -155,7 +155,7 @@ void CGameContext::CreateHammerHit(CGameMap *pGameMap, vec2 Pos)
 }
 
 
-void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner, int Weapon, bool NoDamage)
+void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner)
 {
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
@@ -165,25 +165,21 @@ void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner, int 
 		pEvent->m_Y = (int)Pos.y;
 	}
 
-	if (!NoDamage)
+	CEntity *apEnts[MAX_CLIENTS];
+	float Radius = 135.0f;
+	float InnerRadius = 48.0f;
+	int Num = pGameMap->World()->FindTees(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS);
+	for(int i = 0; i < Num; i++)
 	{
-		// deal damage
-		CEntity *apEnts[MAX_CLIENTS];
-		float Radius = 135.0f;
-		float InnerRadius = 48.0f;
-		int Num = pGameMap->World()->FindTees(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS);
-		for(int i = 0; i < Num; i++)
-		{
-			vec2 Diff = apEnts[i]->m_Pos - Pos;
-			vec2 ForceDir(0,1);
-			float l = length(Diff);
-			if(l)
-				ForceDir = normalize(Diff);
-			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-			float Dmg = 6 * l;
-			if((int)Dmg)
-				apEnts[i]->Push(ForceDir*Dmg*2, Owner);
-		}
+		vec2 Diff = apEnts[i]->m_Pos - Pos;
+		vec2 ForceDir(0,1);
+		float l = length(Diff);
+		if(l)
+			ForceDir = normalize(Diff);
+		l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+		float Dmg = 6 * l;
+		if((int)Dmg)
+			apEnts[i]->Push(ForceDir*Dmg*2, Owner);
 	}
 }
 
@@ -405,7 +401,7 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 
 		//ranking
 		if (Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_LoggedIn == true &&
-			Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
+			Server()->GetClientInfo(ClientID)->m_LoggedIn == true && pChr->InBlockZone())
 		{
 			NewRankings(Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_AccountData.m_Ranking,
 				Server()->GetClientInfo(ClientID)->m_AccountData.m_Ranking);
@@ -963,7 +959,7 @@ void CGameContext::OnClientEnter(int ClientID, bool MapSwitching)
 		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	}
 
-	pGameMap->UpdateVotes();
+	pGameMap->MapVoting()->UpdateVotes();
 }
 
 void CGameContext::OnClientConnected(int ClientID)
@@ -1155,7 +1151,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
-			if(pGameMap->GetVoteCloseTime())
+			if(pGameMap->MapVoting()->GetVoteCloseTime())
 			{
 				SendChatTarget(ClientID, "Wait for current vote to end before calling a new one.");
 				return;
@@ -1186,7 +1182,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
 		{
-			if (!pGameMap->GetVoteCloseTime())
+			if (!pGameMap->MapVoting()->GetVoteCloseTime())
 				return;
 
 			if(pPlayer->m_Vote == 0)
@@ -1195,11 +1191,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				if(!pMsg->m_Vote)
 					return;
 
-				int NewPos = pGameMap->GetVotePos() + 1;
+				int NewPos = pGameMap->MapVoting()->GetVotePos() + 1;
 				pPlayer->m_Vote = pMsg->m_Vote;
 				pPlayer->m_VotePos = NewPos;
-				pGameMap->SetVotePos(NewPos);
-				pGameMap->UpdateVotes();
+				pGameMap->MapVoting()->SetVotePos(NewPos);
+				pGameMap->MapVoting()->UpdateVotes();
 			}
 		}
 		else if (MsgID == NETMSGTYPE_CL_SETTEAM)
@@ -1231,7 +1227,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				pPlayer->m_LastSetTeam = Server()->Tick();
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
-					pGameMap->UpdateVotes();
+					pGameMap->MapVoting()->UpdateVotes();
 				pPlayer->SetTeam(pMsg->m_Team);
 				pPlayer->m_TeamChangeTick = Server()->Tick();
 			}
@@ -1562,7 +1558,7 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	CGameMap *pGameMap = pSelf->Server()->CurrentGameMap(CallID);
-	pGameMap->VoteEnforce(pResult->GetString(0));
+	pGameMap->MapVoting()->VoteEnforce(pResult->GetString(0));
 }
 
 void CGameContext::ConMutePlayer(IConsole::IResult *pResult, void *pUser)

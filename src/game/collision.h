@@ -6,12 +6,15 @@
 #include <base/math.h>
 #include <base/vmath.h>
 
+#include "mapitems.h"
+
 class CCollision
 {
 	class CTile *m_pTiles;
 	int m_Width;
 	int m_Height;
 	class CLayers *m_pLayers;
+	bool m_CollisionMap[NUM_TILES];
 
 	bool IsTileSolid(int x, int y);
 	int GetTile(int x, int y);
@@ -30,6 +33,9 @@ public:
 	void MovePoint(vec2 *pInoutPos, vec2 *pInoutVel, float Elasticity, int *pBounces);
 	void MoveBox(vec2 *pInoutPos, vec2 *pInoutVel, vec2 Size, float Elasticity);
 	bool TestBox(vec2 Pos, vec2 Size);
+
+	void SetExtraCollision(int Tile);
+	void ReleaseExtraCollision(int Tile);
 };
 
 #endif

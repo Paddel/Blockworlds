@@ -18,6 +18,8 @@ CCollision::CCollision()
 	m_Width = 0;
 	m_Height = 0;
 	m_pLayers = 0;
+
+	mem_zero(&m_CollisionMap, sizeof(m_CollisionMap));
 }
 
 void CCollision::Init(class CLayers *pLayers)
@@ -26,6 +28,9 @@ void CCollision::Init(class CLayers *pLayers)
 	m_Width = m_pLayers->GameLayer()->m_Width;
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
+
+	m_CollisionMap[TILE_SOLID] = true;
+	m_CollisionMap[TILE_NOHOOK] = true;
 }
 
 int CCollision::GetTile(int x, int y)
@@ -39,10 +44,7 @@ int CCollision::GetTile(int x, int y)
 bool CCollision::IsTileSolid(int x, int y)
 {
 	int Tile = GetTile(x, y);
-	if (Tile == TILE_SOLID || Tile == TILE_NOHOOK)
-		return true;
-	else
-		return false;
+	return m_CollisionMap[Tile];
 }
 
 // TODO: rewrite this smarter!
@@ -182,4 +184,14 @@ void CCollision::MoveBox(vec2 *pInoutPos, vec2 *pInoutVel, vec2 Size, float Elas
 
 	*pInoutPos = Pos;
 	*pInoutVel = Vel;
+}
+
+void CCollision::SetExtraCollision(int Tile)
+{
+	m_CollisionMap[Tile] = true;
+}
+
+void CCollision::ReleaseExtraCollision(int Tile)
+{
+	m_CollisionMap[Tile] = false;
 }
