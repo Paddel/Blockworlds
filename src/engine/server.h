@@ -38,8 +38,8 @@ public:
 
 	struct CAccountData
 	{
-		char m_aName[32];
-		char m_aPassword[32];
+		char m_aName[11];
+		char m_aPassword[11];
 		char m_aAddress[47];
 		bool m_Vip;
 		int m_Pages;

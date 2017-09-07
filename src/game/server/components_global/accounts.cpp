@@ -32,14 +32,14 @@ void CAccountsHandler::CreateTables()
 	char aQuery[QUERY_MAX_STR_LEN];
 
 	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s"
-		"(name VARCHAR(32) BINARY NOT NULL, leader VARCHAR(32) BINARY NOT NULL"
+		"(name VARCHAR(32) BINARY NOT NULL, leader VARCHAR(11) BINARY NOT NULL"
 		", level INT DEFAULT 1, experience INT DEFAULT 0, members INT DEFAULT 1"
 		", PRIMARY KEY(name)"
 		") CHARACTER SET utf8 COLLATE utf8_bin;", TABLE_CLANS);
 	m_Database.QueryOrderly(aQuery, 0x0, 0x0);
 
 	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s"
-		"(name VARCHAR(32) BINARY NOT NULL, password VARCHAR(32) BINARY NOT NULL"
+		"(name VARCHAR(11) BINARY NOT NULL, password VARCHAR(11) BINARY NOT NULL"
 		", address VARCHAR(47), vip INT(2) DEFAULT 0, pages INT DEFAULT 0, level INT DEFAULT 1"
 		", experience INT DEFAULT 0, weaponkits INT DEFAULT 0, ranking INT DEFAULT 1000"
 		", clan VARCHAR(32), blockpoints INT DEFAULT 0, knockouts VARCHAR(256) DEFAULT NULL"
