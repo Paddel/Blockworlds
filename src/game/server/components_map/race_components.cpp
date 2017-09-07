@@ -312,6 +312,9 @@ bool CRaceComponents::DoorTileActive(CDoorTile *pDoorTile) const
 
 void CRaceComponents::OnDoorHandle(int ID, int Delay, bool Activate)
 {
+	if (Delay <= 0)
+		Delay = 1;
+
 	for (int i = 0; i < m_lDoorTiles.size(); i++)
 	{
 		if (m_lDoorTiles[i]->m_ID != ID)

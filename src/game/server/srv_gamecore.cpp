@@ -68,7 +68,7 @@ void CSrvCharacterCore::Reset()
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
 	m_Inviolable = false;
-	m_MaxAirJumps = 2;
+	m_MaxAirJumps = 1;
 	m_AirJumps = m_MaxAirJumps;
 }
 

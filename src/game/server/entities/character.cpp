@@ -318,7 +318,7 @@ void CCharacter::FireWeapon()
 	if(!WillFire)
 		return;
 
-	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
+	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius;
 
 	switch(m_ActiveWeapon)
 	{
@@ -328,15 +328,15 @@ void CCharacter::FireWeapon()
 			m_NumObjectsHit = 0;
 			GameServer()->CreateSound(GameMap(), m_Pos, SOUND_HAMMER_FIRE);
 
-			CCharacter *apEnts[MAX_CLIENTS];
+			CEntity *apEnts[MAX_CLIENTS];
 			int Hits = 0;
 			int Num = GameWorld()->FindTees(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEnts, MAX_CLIENTS);
 
 			for (int i = 0; i < Num; ++i)
 			{
-				CCharacter *pTarget = apEnts[i];
+				CEntity *pTarget = apEnts[i];
 
-				if ((pTarget == this) || GameMap()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
+				if (pTarget == this)
 					continue;
 
 				// set his velocity to fast upward (for now)
@@ -725,6 +725,7 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		{
 			m_Core.m_Pos = Pos;
 			m_Core.m_HookState = HOOK_RETRACTED;
+			m_Core.m_HookedPlayer = -1;
 		}
 	}
 
@@ -948,6 +949,7 @@ void CCharacter::HandleTiles()
 		{
 			m_Core.m_Pos = Pos;
 			m_Core.m_HookState = HOOK_RETRACTED;
+			m_Core.m_HookedPlayer = -1;
 			m_ProtectionTime = 1;
 		}
 	}

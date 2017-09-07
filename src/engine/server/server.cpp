@@ -339,11 +339,11 @@ void CServer::SetClientName(int ClientID, const char *pName)
 	str_copy(aCleanName, pName, sizeof(aCleanName));
 
 	// clear name
-	for(char *p = aCleanName; *p; ++p)
+	/*for(char *p = aCleanName; *p; ++p)
 	{
 		if(*p < 32)
 			*p = ' ';
-	}
+	}*/
 
 	if(TrySetClientName(ClientID, aCleanName))
 	{
@@ -1233,9 +1233,15 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 
 	p.AddString(GameServer()->Version(), 32);
 
-	str_copy(aBuf, g_Config.m_SvName, sizeof(aBuf));
-	if(pMap != m_pDefaultMap)
-		str_fcat(aBuf, sizeof(aBuf), " %s", pMap->GetFileName());
+	mem_zero(&aBuf, sizeof(aBuf));
+	for (int i = 0; i < str_length(g_Config.m_SvName); i++)
+	{
+		if (g_Config.m_SvName[i] == '%')
+			str_fcat(aBuf, sizeof(aBuf), "%s", pMap->GetFileName());
+		else
+			str_fcat(aBuf, sizeof(aBuf), "%c", g_Config.m_SvName[i]);
+	}
+
 	if (MaxClientsOnMap > WantingMaxClients)
 		str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", ClientsOnMap, MaxClientsOnMap);
 	p.AddString(aBuf, 64);
