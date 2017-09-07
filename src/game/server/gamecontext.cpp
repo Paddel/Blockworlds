@@ -916,7 +916,7 @@ void CGameContext::OnBuyKnockout(int ClientID, const char *pName)
 
 	str_format(aBuf, sizeof(aBuf), "Do you want to buy Knockouteffect '%s' for %i Blockpoints", pName, Price);
 
-	CInquiry *pInquiry = new CInquiry(ResultBuyGundesign, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
+	CInquiry *pInquiry = new CInquiry(ResultBuyKnockouteffect, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
 	pInquiry->AddOption("yes");
 	pInquiry->AddOption("no");
 	m_InquiriesHandler.NewInquiry(ClientID, pInquiry, aBuf);

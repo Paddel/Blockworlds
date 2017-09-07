@@ -44,7 +44,7 @@ int CCollision::GetTile(int x, int y)
 bool CCollision::IsTileSolid(int x, int y)
 {
 	int Tile = GetTile(x, y);
-	return m_CollisionMap[Tile];
+	return Tile < NUM_TILES ? m_CollisionMap[Tile] : false;
 }
 
 // TODO: rewrite this smarter!
