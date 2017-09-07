@@ -41,6 +41,8 @@ public:
 	bool m_EndlessHook;
 
 	int m_Jumped;
+	int m_AirJumps;
+	int m_MaxAirJumps;
 
 	int m_Direction;
 	int m_Angle;

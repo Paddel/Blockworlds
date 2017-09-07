@@ -925,8 +925,8 @@ void CCharacter::HandleStops()
 void CCharacter::HandleTiles()
 {
 	int Tile = GameMap()->Collision()->GetTileAt(m_Pos);
-	//int LastTile = GameMap()->Collision()->GetTileAt(m_LastPos);
-	//int NewTile = Tile != LastTile ? Tile : TILE_AIR;
+	int LastTile = GameMap()->Collision()->GetTileAt(m_LastPos);
+	int NewTile = Tile != LastTile ? Tile : TILE_AIR;
 
 	if (Tile == TILE_FREEZE)
 		Freeze(3.0f);
@@ -972,6 +972,18 @@ void CCharacter::HandleTiles()
 	{
 		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Superhammer has been activated!");
 		m_SuperHammer = true;
+	}
+
+	if (Tile == TILE_GIVEPASSIVE && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime < Server()->Tick())
+	{
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Passive-Mode has beed activated for half an hour");
+		Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime = Server()->Tick() + Server()->TickSpeed() * 60 * 30.0f;
+	}
+
+	if(NewTile == TILE_EXTRAJUMP)
+	{
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "+1 Airjump");
+		m_Core.m_MaxAirJumps++;
 	}
 }
 

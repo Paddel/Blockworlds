@@ -68,6 +68,8 @@ void CSrvCharacterCore::Reset()
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
 	m_Inviolable = false;
+	m_MaxAirJumps = 2;
+	m_AirJumps = m_MaxAirJumps;
 }
 
 void CSrvCharacterCore::Tick(bool UseInput)
@@ -122,7 +124,12 @@ void CSrvCharacterCore::Tick(bool UseInput)
 				{
 					m_TriggeredEvents |= COREEVENT_AIR_JUMP;
 					m_Vel.y = -m_pWorld->m_Tuning.m_AirJumpImpulse;
-					m_Jumped |= 3;
+
+					m_AirJumps--;
+					if(m_AirJumps <= 0)
+						m_Jumped |= 3;
+					else
+						m_Jumped |= 1;
 				}
 			}
 		}
@@ -162,7 +169,10 @@ void CSrvCharacterCore::Tick(bool UseInput)
 	// 1 bit = to keep track if a jump has been made on this input
 	// 2 bit = to keep track if a air-jump has been made
 	if (Grounded)
+	{
 		m_Jumped &= ~2;
+		m_AirJumps = m_MaxAirJumps;
+	}
 
 	// do hook
 	if (m_HookState == HOOK_IDLE)
