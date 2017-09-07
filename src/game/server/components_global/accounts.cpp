@@ -14,6 +14,20 @@
 #define COLUMN_NUM_ACCOUNT 16
 #define COLUMN_NUM_CLAN 5
 
+inline bool CheckValidChars(const char *pStr)
+{
+	int Len = str_length(pStr);
+	for (int i = 0; i < Len; i++)
+		if ((pStr[i] < 'a' || pStr[i] > 'z') &&
+			(pStr[i] < 'A' || pStr[i] > 'Z') &&
+			(pStr[i] < '0' || pStr[i] > '9'))
+			return false;
+	 
+	/*if (pStr[0] == ' ' || pStr[Len - 1] == ' ')
+		return false;*/
+	return true;
+}
+
 struct CResultData
 {
 	CGameContext *m_pGameServer;
@@ -451,6 +465,12 @@ void CAccountsHandler::Login(int ClientID, const char *pName, const char *pPassw
 		return;
 	}
 
+	if (CheckValidChars(pName) == false || CheckValidChars(pPassword) == false)
+	{
+		GameServer()->SendChatTarget(ClientID, "Valid characters are A-Z and 0-9");
+		return;
+	}
+
 	CResultData *pResultData = new CResultData();
 	pResultData->m_pGameServer = GameServer();
 	pResultData->m_ClientID = ClientID;
@@ -506,6 +526,12 @@ void CAccountsHandler::Register(int ClientID, const char *pName, const char *pPa
 	if (PasswortLength * sizeof(char) >= sizeof(IServer::CAccountData::m_aPassword))
 	{
 		GameServer()->SendChatTarget(ClientID, "Loginpassword too long!");
+		return;
+	}
+
+	if (CheckValidChars(pName) == false || CheckValidChars(pPassword) == false)
+	{
+		GameServer()->SendChatTarget(ClientID, "Valid characters are A-Z and 0-9");
 		return;
 	}
 
@@ -640,6 +666,24 @@ void CAccountsHandler::ChangePassword(int ClientID, const char *pOldPassword, co
 		return;
 	}
 
+	if (str_length(pNewPassword) * sizeof(char) >= sizeof(IServer::CAccountData::m_aPassword))
+	{
+		GameServer()->SendChatTarget(ClientID, "Loginpassword too long!");
+		return;
+	}
+
+	if (str_length(pNewPassword) <= 3)
+	{
+		GameServer()->SendChatTarget(ClientID, "Your password must be at least 4 characters long!");
+		return;
+	}
+
+	if(CheckValidChars(pNewPassword) == false)
+	{
+		GameServer()->SendChatTarget(ClientID, "Valid characters are A-Z and 0-9");
+		return;
+	}
+
 	char aQuery[QUERY_MAX_STR_LEN];
 	str_format(aQuery, sizeof(aQuery), "UPDATE %s SET ", TABLE_ACCOUNTS);
 
@@ -681,6 +725,12 @@ void CAccountsHandler::ClanCreate(int ClientID, const char *pName)
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "You need to be at least level %i to create a clan!", NeededClanCreateLevel());
 		GameServer()->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (CheckValidChars(pName) == false)
+	{
+		GameServer()->SendChatTarget(ClientID, "Valid characters are A-Z and 0-9");
 		return;
 	}
 
