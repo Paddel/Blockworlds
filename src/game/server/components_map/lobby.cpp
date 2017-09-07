@@ -81,14 +81,7 @@ void CLobby::Tick()
 
 		CGameMap *pGameMap = FindGameMap(pPlayercount->m_aMapName);
 		if (pGameMap == 0x0)
-		{
-			dbg_msg("playercount", "Map %s not found", pPlayercount->m_aMapName);
-			delete m_lpLobbyMapcounts[i];
-			m_lpLobbyMapcounts.remove_index(i);
-			i--;
 			continue;
-		}
-
 
 		str_format(aBuf, sizeof(aBuf), "%i", pGameMap->NumPlayers());
 		GameMap()->AnimationHandler()->Laserwrite(aBuf, pPlayercount->m_Pos, 10.0f, 1);

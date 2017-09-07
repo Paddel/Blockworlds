@@ -130,6 +130,14 @@ public:
 			SendMsgFinal(pMsg, Flags, ClientID);
 	}
 
+	void SendPackMsgTranslate(CNetMsg_Sv_KillMsg *pMsg, int Flags, int ClientID)
+	{
+		pMsg->m_Killer = Translate(ClientID, pMsg->m_Killer);
+		pMsg->m_Victim = Translate(ClientID, pMsg->m_Victim);
+		if (pMsg->m_Killer != -1 && pMsg->m_Victim != -1)
+			SendMsgFinal(pMsg, Flags, ClientID);
+	}
+
 	void SendPackMsgTranslate(CNetMsg_Sv_Chat *pMsg, int Flags, int ClientID)
 	{
 		if (pMsg->m_ClientID == -1)
