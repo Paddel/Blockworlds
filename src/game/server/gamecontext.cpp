@@ -66,12 +66,15 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 
 bool CGameContext::TryJoinTeam(int Team, int ClientID)
 {
-	if (m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS &&
+	if (m_apPlayers[ClientID] != 0x0 && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS &&
 		Team == 0 && g_Config.m_SvAccountForce == 1 && Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		SendBroadcast("Register/Login first to join the game", ClientID);
 		return false;
 	}
+
+	if (m_apPlayers[ClientID] != 0x0 && m_apPlayers[ClientID]->GameMap()->IsShopMap() == true && Team == TEAM_SPECTATORS)
+		return false;
 
 	return true;
 }
@@ -797,6 +800,8 @@ void CGameContext::OnBuyGundesign(int ClientID, const char *pName)
 		return;
 	}
 
+	str_format(aBuf, sizeof(aBuf), "Do you want to buy Gundesign '%s' for %i Blockpoints", pName, Price);
+
 	CInquiry *pInquiry = new CInquiry(ResultBuyGundesign, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
 	pInquiry->AddOption("yes");
 	pInquiry->AddOption("no");
@@ -909,15 +914,124 @@ void CGameContext::OnBuyKnockout(int ClientID, const char *pName)
 		return;
 	}
 
+	str_format(aBuf, sizeof(aBuf), "Do you want to buy Knockouteffect '%s' for %i Blockpoints", pName, Price);
+
 	CInquiry *pInquiry = new CInquiry(ResultBuyGundesign, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
 	pInquiry->AddOption("yes");
 	pInquiry->AddOption("no");
 	m_InquiriesHandler.NewInquiry(ClientID, pInquiry, aBuf);
 }
 
+void CGameContext::ResultBuyExtra(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	if (OptionID == -1)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase expired");
+		return;
+	}
+	else if (OptionID != 0)
+		return;
+
+	const char *pName = (const char *)pData;
+
+	char aBuf[64];
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	/*if (pGameServer->m_CosmeticsHandler.HasExtra(ClientID, pName) == true)
+	{
+		pGameServer->SendChatTarget(ClientID, "You already own this!");
+		return;
+	}*/
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoExtra(pName, Price, Level) == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this item", Level);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this item is %i Blockpoints. You currently have %i", Price, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (str_comp(pName, "weaponkit") == 0)
+		pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits++;
+	else if (str_comp(pName, "page") == 0)
+		pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Pages++;
+	
+	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints -= Price;
+	pGameServer->m_AccountsHandler.Save(ClientID);
+	pGameServer->SendChatTarget(ClientID, "Item purchased");
+}
+
 void CGameContext::OnBuyExtra(int ClientID, const char *pName)
 {
+	char aBuf[64];
 
+	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		SendChatTarget(ClientID, "You are not logged in");
+		return;
+	}
+
+	/*if (m_CosmeticsHandler.HasExtra(ClientID, pName) == true)
+	{
+		SendChatTarget(ClientID, "You already own this!");
+		return;
+	}*/
+
+	if (m_InquiriesHandler.NewInquiryPossible(ClientID) == false)
+	{
+		SendChatTarget(ClientID, "You cannot buy this item right now. Try again in a few seconds");
+		return;
+	}
+
+	int Level = 0;
+	int Price = 0;
+
+	if (ShopInfoExtra(pName, Price, Level) == false)
+	{
+		SendChatTarget(ClientID, "Item not buyable");
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Level < Level)
+	{
+		str_format(aBuf, sizeof(aBuf), "You need to be level %i to buy this item", Level);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints < Price)
+	{
+		str_format(aBuf, sizeof(aBuf), "The price for this item is %i Blockpoints. You currently have %i", Price, Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints);
+		SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	str_format(aBuf, sizeof(aBuf), "Do you want to buy item '%s' for %i Blockpoints", pName, Price);
+
+	CInquiry *pInquiry = new CInquiry(ResultBuyExtra, Server()->Tick() + Server()->TickSpeed() * 12, (const unsigned char *)pName);
+	pInquiry->AddOption("yes");
+	pInquiry->AddOption("no");
+	m_InquiriesHandler.NewInquiry(ClientID, pInquiry, aBuf);
 }
 
 bool CGameContext::OnExtrasCallvote(int ClientID, const char *pCommand)
@@ -1662,7 +1776,7 @@ void CGameContext::ConVIPSet(IConsole::IResult *pResult, void *pUser)
 
 	if(pThis->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Client has to be logged in");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Client is not logged in");
 		return;
 	}
 

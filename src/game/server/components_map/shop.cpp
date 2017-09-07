@@ -130,8 +130,8 @@ void CShop::Init()//TODO: methode to big
 void CShop::TickGundesign(int Index)
 {
 	if (Server()->Tick() % (Server()->TickSpeed()) == 0)
-		if(GameServer()->CosmeticsHandler()->DoGundesignRaw(m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), m_lpShopItems[Index]->m_Effect, GameMap()) == false)
-			GameServer()->CreateDamageInd(GameMap(), m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), -atan2(1, 0), 10);
+		if(GameServer()->CosmeticsHandler()->DoGundesignRaw(m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), m_lpShopItems[Index]->m_Effect, GameMap(), vec2(1.0f, 0.0f)) == false)
+			GameServer()->CreateDamageInd(GameMap(), m_lpShopItems[Index]->m_Pos - vec2(-64, 192.0f), -atan2(1.0f, 0.0f), 10);
 		
 }
 
@@ -168,11 +168,36 @@ void CShop::Tick()
 
 		TickPrice(m_lpShopItems[i]);
 	}
+
+	//TODO extra broadcast class
+	if (GameMap()->IsShopMap() == true)
+	{
+		char aBuf[256];
+		static int64 s_LastSent = Server()->Tick();
+		if (s_LastSent < Server()->Tick())
+		{
+			s_LastSent = Server()->Tick() + Server()->TickSpeed();
+			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (GameMap()->m_apPlayers[i] == 0x0 || Server()->GetClientInfo(i)->m_LoggedIn == false)
+					continue;
+
+				str_format(aBuf, sizeof(aBuf), "Blockpoints: %d", Server()->GetClientInfo(i)->m_AccountData.m_BlockPoints);
+				str_fcat(aBuf, sizeof(aBuf), "                                                                           "
+					"                                                                                                    ");
+				GameServer()->SendBroadcast(aBuf, i);
+			}
+		}
+	}
 }
 
 void CShop::SnapGundesign(int SnappingClient, int Index)
 {
 	CShopItemGundesign *pItem = (CShopItemGundesign *)m_lpShopItems[Index];
+	CCharacter *pChr = GameServer()->GetPlayerChar(SnappingClient);
+	if (pChr == 0x0 || within_reach(pChr->m_Pos, pItem->m_Pos - vec2(64, 192.0f), 1100.0f) == false)
+		return;
+
 	if (GameServer()->CosmeticsHandler()->SnapGundesignRaw(pItem->m_Pos - vec2(64, 192.0f), pItem->m_Effect, pItem->m_ID) == false)
 	{
 		CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, pItem->m_ID, sizeof(CNetObj_Projectile)));

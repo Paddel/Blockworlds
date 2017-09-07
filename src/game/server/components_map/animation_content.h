@@ -142,3 +142,122 @@ public:
 		return GetTick() + Server()->TickSpeed() * 3.0f < Server()->Tick();
 	}
 };
+
+class CStarsCW : public CMapAnimation
+{
+	static const int NUM = 10;
+	bool m_Spawned[NUM];
+	vec2 m_Direction;
+public:
+	CStarsCW(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir) : CMapAnimation(Pos, Tick, pGameMap)
+	{
+		for (int i = 0; i < NUM; i++)
+			m_Spawned[i] = false;
+
+		m_Direction = Dir;
+	}
+
+	virtual void Tick()
+	{
+		for (int i = 0; i < NUM; i++)
+		{
+			if (GetTick() + Server()->TickSpeed() * 0.2f * (i / (float)NUM) <= Server()->Tick() && m_Spawned[i] == false)
+			{
+				float AngleFrom = GetAngle(m_Direction) + 5.1f;
+				float AngleTo = AngleFrom + ((i - 5) / 5.0f) * pi * 0.3f;
+				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				m_Spawned[i] = true;
+			}
+		}
+	}
+
+	virtual void Snap(int SnappingClient) { }
+
+	virtual bool Done()
+	{
+		return GetTick() + Server()->TickSpeed() * 0.2f < Server()->Tick();
+	}
+};
+
+class CStarsCCW : public CMapAnimation
+{
+	static const int NUM = 10;
+	bool m_Spawned[NUM];
+	vec2 m_Direction;
+public:
+	CStarsCCW(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir) : CMapAnimation(Pos, Tick, pGameMap)
+	{
+		for (int i = 0; i < NUM; i++)
+			m_Spawned[i] = false;
+
+		m_Direction = Dir;
+	}
+
+	virtual void Tick()
+	{
+		for (int i = 0; i < NUM; i++)
+		{
+			if (GetTick() + Server()->TickSpeed() * 0.2f * (i / (float)NUM) <= Server()->Tick() && m_Spawned[i] == false)
+			{
+				float AngleFrom = GetAngle(m_Direction) + 5.1f;
+				float AngleTo = AngleFrom + ((5 - i) / 5.0f) * pi * 0.3f;
+				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				m_Spawned[i] = true;
+			}
+		}
+	}
+
+	virtual void Snap(int SnappingClient) { }
+
+	virtual bool Done()
+	{
+		return GetTick() + Server()->TickSpeed() * 0.2f < Server()->Tick();
+	}
+};
+
+class CStarsTOC : public CMapAnimation
+{
+	static const int NUM = 10;
+	bool m_Spawned[NUM];
+	vec2 m_Direction;
+public:
+	CStarsTOC(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir) : CMapAnimation(Pos, Tick, pGameMap)
+	{
+		for (int i = 0; i < NUM; i++)
+			m_Spawned[i] = false;
+
+		m_Direction = Dir;
+	}
+
+	virtual void Tick()
+	{
+		for (int i = 0; i < NUM / 2; i++)
+		{
+			if (GetTick() + Server()->TickSpeed() * 0.2f * (i / (float)(NUM / 2.0f)) <= Server()->Tick() && m_Spawned[i] == false)
+			{
+				float AngleFrom = GetAngle(m_Direction) + 5.0f;
+				float AngleTo = AngleFrom + ((i - 5) / 5.0f) * pi * 0.3f;
+				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				m_Spawned[i] = true;
+			}
+		}
+
+		for (int i = NUM / 2; i < NUM; i++)
+		{
+			if (GetTick() + Server()->TickSpeed() * 0.2f * ((i - NUM / 2) / (float)(NUM / 2.0f)) <= Server()->Tick() && m_Spawned[i] == false)
+			{
+				float AngleFrom = GetAngle(m_Direction) + 5.0f;
+				float AngleTo = AngleFrom + ((5 - (i - NUM / 2)) / 5.0f) * pi * 0.3f;
+				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				m_Spawned[i] = true;
+			}
+		}
+	}
+
+	virtual void Snap(int SnappingClient) { }
+
+	virtual bool Done()
+	{
+		return GetTick() + Server()->TickSpeed() * 0.2f < Server()->Tick();
+	}
+};

@@ -84,6 +84,9 @@ public:
 	bool IsInviolable();
 	void SetActiveWeapon(int Weapon);
 
+	void SetExtraCollision();
+	void ReleaseExtraCollision();
+
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 	CSrvCharacterCore *Core() { return &m_Core; }

@@ -24,7 +24,7 @@ const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { },								//EXTRAS_HOOKTHROUGH_BOTTOM
 { },								//EXTRAS_HOOKTHROUGH_LEFT
 { },								//EXTRAS_HOOKTHROUGH_RIGHT
-{ "Level" },						//EXTRAS_BARRIER_LEVEL
+{},									//
 { "Level" },						//EXTRAS_INFO_LEVEL
 { "ID", "Type"},					//EXTRAS_LASERGUN,
 { "ID", "Delay"},					//EXTRAS_LASERGUN_TRIGGER,
@@ -54,7 +54,7 @@ int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 { },			//EXTRAS_HOOKTHROUGH_BOTTOM
 { },			//EXTRAS_HOOKTHROUGH_LEFT
 { },			//EXTRAS_HOOKTHROUGH_RIGHT
-{ 5 },			//EXTRAS_BARRIER_LEVEL
+{ },			//
 { 5 },			//EXTRAS_INFO_LEVEL
 { 3, 3 },		//EXTRAS_LASERGUN
 { 3, 5 },		//EXTRAS_LASERGUN_TRIGGER
@@ -84,7 +84,7 @@ int gs_ExtrasColumntypes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {}, // 1 = integer,
 { },			//EXTRAS_HOOKTHROUGH_BOTTOM
 { },			//EXTRAS_HOOKTHROUGH_RIGHT
 { },			//EXTRAS_HOOKTHROUGH_LEFT
-{ 1 },			//EXTRAS_BARRIER_LEVEL
+{ },			//
 { 1 },			//EXTRAS_INFO_LEVEL
 { 1, 1 },		//EXTRAS_LASERGUN
 { 1, 1 },		//EXTRAS_LASERGUN_TRIGGER

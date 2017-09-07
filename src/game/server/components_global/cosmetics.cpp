@@ -10,22 +10,33 @@
 const char *CCosmeticsHandler::ms_KnockoutNames[NUM_KNOCKOUTS] = {
 	"Explosion",
 	"Hammerhit",
+	"KO Stars",
+	"Star Ring",
+	"Starexplosion",
 	"Love",
 	"Thunderstorm",
 };
 
 const char *CCosmeticsHandler::ms_GundesignNames[NUM_GUNDESIGNS] = {
+	"Clockwise",
+	"Counterclock",
+	"TwoOClock",
+	"Blinking Bullet",
+	"Reverse",
+	"Invis Bullet",
 	"Heart",
 	"Pew",
 	"1337 gun",
 };
 
 const char *CCosmeticsHandler::ms_SkinmaniNames[NUM_SKINMANIS] = {
-	"Rainbow",
-	"Epi Rainbow (VIP)",
-	"Cooldown",
+	"Feet Fire",
+	"Feet Water",
+	"Feet Poison",
+	"Feet Blackwhite",
 	"Nightblue",
-	"1337 skin",
+	"Rainbow (VIP)",
+	"Epi Rainbow (VIP)",
 };
 
 inline int HslToCc(vec3 HSL)
@@ -36,18 +47,6 @@ inline int HslToCc(vec3 HSL)
 inline vec3 CcToHsl(int Cc)
 {
 	return vec3(((Cc >> 16) & 0xff) / 255.0f, ((Cc >> 8) & 0xff) / 255.0f, 0.5f + (Cc & 0xff) / 255.0f*0.5f);
-}
-
-void CCosmeticsHandler::KnockoutExplosion(vec2 Pos, CGameMap *pGameMap)
-{
-	GameServer()->CreateSound(pGameMap, Pos, SOUND_GRENADE_EXPLODE);
-
-	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
-	if (pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
 }
 
 int CCosmeticsHandler::FindKnockoutEffect(const char *pName)
@@ -104,14 +103,49 @@ void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGam
 	/*if (g_Config.m_Debug)
 		dbg_msg("cosmetics", "Knockouteffect %s", ms_KnockoutNames[Effect]);*/
 
-	switch (Effect)
+	if (Effect == KNOCKOUT_EXPLOSION)
 	{
-	case KNOCKOUT_EXPLOSION: KnockoutExplosion(Pos, pGameMap); break;
-	case KNOCKOUT_HAMMERHIT: GameServer()->CreateHammerHit(pGameMap, Pos); break;
-	case KNOCKOUT_LOVE: pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_LOVE); break;
-	case KNOCKOUT_THUNDERSTORM: pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_THUNDERSTORM); break;
-	default: dbg_msg("cosmetics", "ERROR: Knockouteffect '%s' not implemented!", ms_KnockoutNames[Effect]);
+		GameServer()->CreateSound(pGameMap, Pos, SOUND_GRENADE_EXPLODE);
+
+		CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+		if (pEvent)
+		{
+			pEvent->m_X = (int)Pos.x;
+			pEvent->m_Y = (int)Pos.y;
+		}
 	}
+	else if (Effect == KNOCKOUT_HAMMERHIT)
+		GameServer()->CreateHammerHit(pGameMap, Pos);
+	else if (Effect == KNOCKOUT_KOSTARS)
+	{
+		for (float i = 0.1f; i < 2 * pi; i += pi / 4.0f)
+			GameServer()->CreateDamageInd(pGameMap, Pos, i, 1);
+	}
+	else if (Effect == KNOCKOUT_STARRING)
+	{
+		for (float i = 0.0f; i < 2 * pi; i += pi / 20.0f)
+			GameServer()->CreateDamageInd(pGameMap, Pos, i, 1);
+	}
+	else if (Effect == KNOCKOUT_STAREXPLOSION)
+	{
+		GameServer()->CreateSound(pGameMap, Pos, SOUND_GRENADE_EXPLODE);
+
+		CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+		if (pEvent)
+		{
+			pEvent->m_X = (int)Pos.x;
+			pEvent->m_Y = (int)Pos.y;
+		}
+
+		for (float i = 0.1f; i < 2 * pi; i += pi / 4.0f)
+			GameServer()->CreateDamageInd(pGameMap, Pos, i, 1);
+	}
+	else if (Effect == KNOCKOUT_LOVE)
+		pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_LOVE);
+	else if (Effect == KNOCKOUT_THUNDERSTORM)
+		pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_THUNDERSTORM);
+	else
+		dbg_msg("cosmetics", "ERROR: Knockouteffect '%s' not implemented!", ms_KnockoutNames[Effect]);
 }
 
 bool CCosmeticsHandler::ToggleKnockout(int ClientID, const char *pName)
@@ -186,7 +220,7 @@ bool CCosmeticsHandler::HasGundesign(int ClientID, int Index)
 	return Server()->GetClientInfo(ClientID)->m_AccountData.m_aGundesigns[Index] == '1';
 }
 
-bool CCosmeticsHandler::DoGundesign(int ClientID, vec2 Pos)
+bool CCosmeticsHandler::DoGundesign(int ClientID, vec2 Pos, vec2 Direction)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return false;
@@ -199,20 +233,43 @@ bool CCosmeticsHandler::DoGundesign(int ClientID, vec2 Pos)
 	if (pGameMap == 0x0)
 		return false;
 
-	return DoGundesignRaw(Pos, Effect, pGameMap);
+	return DoGundesignRaw(Pos, Effect, pGameMap, Direction);
 }
 
-bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap)
+bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, vec2 Direction)
 {
 	/*if (g_Config.m_Debug)
 		dbg_msg("cosmetics", "Gundesigneffect %s", ms_GundesignNames[Effect]);*/
 
-	switch (Effect)
+	if (Effect == GUNDESIGN_PEW)
 	{
-	case GUNDESIGN_PEW: pGameMap->AnimationHandler()->Laserwrite("PEW", Pos, 5.0f, Server()->TickSpeed() * 0.2f); return true;
+		pGameMap->AnimationHandler()->Laserwrite("PEW", Pos, 5.0f, Server()->TickSpeed() * 0.2f);
 	}
+	else if (Effect == GUNDESIGN_REVERSE)
+	{
+		float AngleFrom = GetAngle(Direction) +  5.1f;
+		for (int i = 0; i < 10; i++)
+		{
+			float AngleTo = AngleFrom + ((i - 5) / 5.0f) * pi * 0.3f;
+			GameServer()->CreateDamageInd(pGameMap, Pos + GetDir(AngleTo - 5.1f) * 85.0f, AngleTo + pi, 1);
+		}
+	}
+	else if (Effect == GUNDESIGN_CLOCKWISE)
+	{
+		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_CW, Direction);
+	}
+	else if (Effect == GUNDESIGN_COUNTERCLOCK)
+	{
+		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_CCW, Direction);
+	}
+	else if (Effect == GUNDESIGN_TWOCLOCK)
+	{
+		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_TOC, Direction);
+	}
+	else
+		return false;
 
-	return false;
+	return true;
 }
 
 bool CCosmeticsHandler::ToggleGundesign(int ClientID, const char *pName)
@@ -278,6 +335,14 @@ bool CCosmeticsHandler::SnapGundesignRaw(vec2 Pos, int Effect, int EntityID)
 		}
 		return true;
 	}
+	else if (Effect == GUNDESIGN_BLINKING)
+	{
+		if ((Server()->Tick() / (Server()->TickSpeed() / 25)) % 2)
+			return true;
+	}
+	else if (Effect == GUNDESIGN_INVISBULLET)
+		return true;
+
 	return false;
 }
 
@@ -323,6 +388,10 @@ bool CCosmeticsHandler::HasSkinmani(int ClientID, int Index)
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 		return false;
 
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == true &&
+		(Index == SKINMANI_VIP_RAINBOW || Index == SKINMANI_VIP_RAINBOW_EPI))
+		return true;
+
 	return Server()->GetClientInfo(ClientID)->m_AccountData.m_aSkinmani[Index] == '1';
 }
 
@@ -351,7 +420,7 @@ bool CCosmeticsHandler::ToggleSkinmani(int ClientID, const char *pName)
 	return true;
 }
 
-void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo, CNetObj_PlayerInfo *pPlayerInfo)
+void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return;
@@ -361,38 +430,42 @@ void CCosmeticsHandler::SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInf
 	if (HasSkinmani(ClientID, Effect) == false)
 		return;
 
-	SnapSkinmaniRaw(Tick, pClientInfo, pPlayerInfo, Effect);
+	SnapSkinmaniRaw(Tick, pClientInfo, Effect);
 }
 
-void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientInfo, CNetObj_PlayerInfo *pPlayerInfo, int Effect)
+void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientInfo, int Effect)
 {
 	int64 TickDef = Server()->Tick() - Tick;//only work with Tickdef
 	vec3 HSLBody = CcToHsl(pClientInfo->m_ColorBody);
 	//vec3 HSLFeet = CcToHsl(pClientInfo->m_ColorFeet);
 
-	if (Effect == SKINMANI_RAINBOW)
+	if (Effect == SKINMANI_FEET_FIRE)
 	{
-		/*pClientInfo->m_ColorBody = ((int)((sinf(TickDef / 255.0f) + 1.0f) / 2.0f * 255) << 16) +
-			((int)(((pClientInfo->m_ColorBody >> 8) & 0xff) * 255) << 8)
-			+ ((0.5f + (pClientInfo->m_ColorBody & 0xff) / 255.0f*0.5f) - 0.5f) * 255 * 2;*/
-		HSLBody.h = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
-		HSLBody.s = 0.5f;
-		HSLBody.l = 0.0f;
-		pClientInfo->m_ColorBody = HslToCc(HSLBody);
+		HSLBody.h = 0.0f;
+		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
 	}
-	else if (Effect == SKINMANI_RAINBOW_EPI)
+	else if (Effect == SKINMANI_FEET_WATER)
 	{
-		HSLBody.h = (sinf(TickDef / 2.0f) + 1.0f) / 2.0f;
-		HSLBody.s = 1.0f;
-		HSLBody.l = 0.0f;
-		pClientInfo->m_ColorBody = HslToCc(HSLBody);
+		HSLBody.h = 0.6f;
+		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
 	}
-	else if (Effect == SKINMANI_COOLDOWN)
+	else if (Effect == SKINMANI_FEET_POISON)
 	{
-		HSLBody.s *= clamp((sinf(TickDef / 50.0f) + 1.0f), 0.0f, HSLBody.s);
-		pClientInfo->m_ColorBody = HslToCc(HSLBody);
+		HSLBody.h = 0.3f;
+		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLBody.l = 0.5f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+	}
+	else if (Effect == SKINMANI_FEET_BLACKWHITE)
+	{
+		HSLBody.h = 0.0f;
+		HSLBody.s = 0.0f;
+		HSLBody.l = (sinf(TickDef / 255.0f) + 3.0f) / 4.0f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
 	}
 	else if (Effect == SKINMANI_NIGHTBLUE)
 	{
@@ -401,8 +474,22 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorBody = HslToCc(HSLBody);
 	}
-	else if (Effect == SKINMANI_1337)
-		pPlayerInfo->m_ClientID = -1;
+	else if (Effect == SKINMANI_VIP_RAINBOW)
+	{
+		HSLBody.h = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLBody.s = 0.5f;
+		HSLBody.l = 0.5f;
+		pClientInfo->m_ColorBody = HslToCc(HSLBody);
+		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+	}
+	else if (Effect == SKINMANI_VIP_RAINBOW_EPI)
+	{
+		HSLBody.h = (sinf(TickDef / 2.0f) + 1.0f) / 2.0f;
+		HSLBody.s = 1.0f;
+		HSLBody.l = 0.5f;
+		pClientInfo->m_ColorBody = HslToCc(HSLBody);
+		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+	}
 }
 
 void CCosmeticsHandler::FillSkinmani(IServer::CAccountData *pFillingData, const char *pValue)

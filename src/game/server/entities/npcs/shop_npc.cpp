@@ -15,7 +15,11 @@ void CShopNpc::Snap(int SnappingClient)
 		return;
 
 	int TranslatedID = Server()->Translate(SnappingClient, m_ClientID);
+
 	if (TranslatedID == -1)
+		return;
+
+	if (NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, TranslatedID, sizeof(CNetObj_ClientInfo)));
@@ -30,6 +34,8 @@ void CShopNpc::Snap(int SnappingClient)
 	pClientInfo->m_ColorBody = GameServer()->m_apPlayers[SnappingClient]->m_TeeInfos.m_ColorBody;
 	pClientInfo->m_ColorFeet = GameServer()->m_apPlayers[SnappingClient]->m_TeeInfos.m_ColorFeet;
 
+	GameServer()->CosmeticsHandler()->SnapSkinmaniRaw(0, pClientInfo, m_Effect);
+
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, TranslatedID, sizeof(CNetObj_PlayerInfo)));
 	if (!pPlayerInfo)
 		return;
@@ -39,11 +45,6 @@ void CShopNpc::Snap(int SnappingClient)
 	pPlayerInfo->m_ClientID = TranslatedID;
 	pPlayerInfo->m_Score = 0;
 	pPlayerInfo->m_Team = 1;
-
-	if (NetworkClipped(SnappingClient))
-		return;
-
-	GameServer()->CosmeticsHandler()->SnapSkinmaniRaw(0, pClientInfo, pPlayerInfo, m_Effect);
 
 	//snap character
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, TranslatedID, sizeof(CNetObj_Character)));

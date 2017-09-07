@@ -58,6 +58,9 @@ void CPlayer::Tick()
 		mem_copy(&m_LastTuning, &m_Tuning, sizeof(m_LastTuning));
 	}
 
+	if (GameMap()->IsShopMap() == true)
+		m_Pause = false;
+
 	// do latency stuff
 	{
 		int Latency = Server()->GetClientLatency(m_ClientID);
@@ -81,6 +84,9 @@ void CPlayer::Tick()
 
 	if(((!m_pCharacter && m_Team == TEAM_SPECTATORS) || m_Pause) && m_SpectatorID == SPEC_FREEVIEW)
 		m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
+
+	if (GameMap()->IsShopMap() && m_Team == TEAM_SPECTATORS)
+		m_ViewPos = vec2(0.0f, 0.0f);
 
 	if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
 		m_Spawning = true;
@@ -190,8 +196,6 @@ void CPlayer::Snap(int SnappingClient)
 	if (m_Pause && m_ClientID == SnappingClient)
 		pPlayerInfo->m_Team = TEAM_SPECTATORS;
 
-	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo, pPlayerInfo);
-
 	if (HideIdentity() && Server()->GetClientAuthed(SnappingClient) <= IServer::AUTHED_NO)
 	{
 		StrToInts(&pClientInfo->m_Name0, 4, "");
@@ -205,6 +209,8 @@ void CPlayer::Snap(int SnappingClient)
 
 		pPlayerInfo->m_Team = 1;
 	}
+
+	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo);
 
 	if(m_ClientID == SnappingClient && pPlayerInfo->m_Team == TEAM_SPECTATORS)
 	{

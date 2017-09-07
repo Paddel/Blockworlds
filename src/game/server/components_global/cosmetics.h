@@ -10,23 +10,34 @@ class CCosmeticsHandler : public CComponentGlobal
 {
 public:
 	enum
-	{
-		KNOCKOUT_EXPLOSION=0,
+	{//Maximum sizeof(m_aKnockouts)/sizeof(char) = 256
+		KNOCKOUT_EXPLOSION = 0,
 		KNOCKOUT_HAMMERHIT,
+		KNOCKOUT_KOSTARS,
+		KNOCKOUT_STARRING,
+		KNOCKOUT_STAREXPLOSION,
 		KNOCKOUT_LOVE,
 		KNOCKOUT_THUNDERSTORM,
-		NUM_KNOCKOUTS,//Maximum sizeof(m_aKnockouts)/sizeof(char) = 256
+		NUM_KNOCKOUTS,
 
-		GUNDESIGN_HEART=0,
+		GUNDESIGN_CLOCKWISE = 0,
+		GUNDESIGN_COUNTERCLOCK,
+		GUNDESIGN_TWOCLOCK,
+		GUNDESIGN_BLINKING,
+		GUNDESIGN_REVERSE,
+		GUNDESIGN_INVISBULLET,
+		GUNDESIGN_HEART,
 		GUNDESIGN_PEW,
 		GUNDESIGN_1337,
 		NUM_GUNDESIGNS,
 
-		SKINMANI_RAINBOW=0,
-		SKINMANI_RAINBOW_EPI,
-		SKINMANI_COOLDOWN,
+		SKINMANI_FEET_FIRE = 0,
+		SKINMANI_FEET_WATER,
+		SKINMANI_FEET_POISON,
+		SKINMANI_FEET_BLACKWHITE,
 		SKINMANI_NIGHTBLUE,
-		SKINMANI_1337,
+		SKINMANI_VIP_RAINBOW,
+		SKINMANI_VIP_RAINBOW_EPI,
 		NUM_SKINMANIS,
 	};
 
@@ -34,10 +45,6 @@ public:
 	static const char *ms_KnockoutNames[NUM_KNOCKOUTS];
 	static const char *ms_GundesignNames[NUM_GUNDESIGNS];
 	static const char *ms_SkinmaniNames[NUM_SKINMANIS];
-
-private:
-
-	void KnockoutExplosion(vec2 Pos, CGameMap *pGameMap);
 
 public:
 
@@ -50,8 +57,8 @@ public:
 
 	int FindGundesign(const char *pName);
 	bool HasGundesign(int ClientID, int Index);
-	bool DoGundesign(int ClientID, vec2 Pos);
-	bool DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap);
+	bool DoGundesign(int ClientID, vec2 Pos, vec2 Direction);
+	bool DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, vec2 Direction);
 	bool ToggleGundesign(int ClientID, const char *pName);
 
 	bool SnapGundesign(int ClientID, vec2 Pos, int EntityID);
@@ -61,7 +68,7 @@ public:
 	int FindSkinmani(const char *pName);
 	bool HasSkinmani(int ClientID, int Index);
 	bool ToggleSkinmani(int ClientID, const char *pName);
-	void SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo, CNetObj_PlayerInfo *pPlayerInfo);
-	void SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientInfo, CNetObj_PlayerInfo *pPlayerInfo, int Effect);
+	void SnapSkinmani(int ClientID, int64 Tick, CNetObj_ClientInfo *pClientInfo);
+	void SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientInfo, int Effect);
 	void FillSkinmani(IServer::CAccountData *pFillingData, const char *pValue);
 };

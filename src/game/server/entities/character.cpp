@@ -605,6 +605,53 @@ void CCharacter::SetActiveWeapon(int Weapon)
 		m_ActiveWeapon = Weapon;
 }
 
+void CCharacter::SetExtraCollision()
+{
+	int Level = 0;
+	if(Server()->GetClientInfo(GetPlayer()->GetCID())->m_LoggedIn == true)
+		Level = Server()->GetClientInfo(GetPlayer()->GetCID())->m_AccountData.m_Level;
+	if(Level < 1)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_1);
+	if (Level < 50)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_50);
+	if (Level < 100)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_100);
+	if (Level < 200)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_200);
+	if (Level < 300)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_300);
+	if (Level < 400)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_400);
+	if (Level < 500)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_500);
+	if (Level < 600)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_600);
+	if (Level < 700)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_700);
+	if (Level < 800)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_800);
+	if (Level < 900)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_900);
+	if (Level < 999)
+		GameMap()->Collision()->SetExtraCollision(TILE_BARRIER_LEVEL_999);
+}
+
+void CCharacter::ReleaseExtraCollision()
+{
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_1);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_50);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_100);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_200);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_300);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_400);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_500);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_600);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_700);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_800);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_900);
+	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_999);
+}
+
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
 	// check for changes
@@ -759,6 +806,19 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		GameServer()->OnBuyKnockout(GetPlayer()->GetCID(), ExtrasData.m_aData);
 	if(NewTile == EXTRAS_SELL_EXTRAS)
 		GameServer()->OnBuyExtra(GetPlayer()->GetCID(), ExtrasData.m_aData);
+
+	if (NewTile == EXTRAS_INFO_LEVEL)
+	{
+		int Level = str_toint(ExtrasData.m_aData);
+		if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_LoggedIn == false)
+			GameServer()->SendChatTarget(GetPlayer()->GetCID(), "You must be logged in to enter this area");
+		else if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_AccountData.m_Level < Level)
+		{
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "You must be level %d to enter this area", Level);
+			GameServer()->SendChatTarget(GetPlayer()->GetCID(), aBuf);
+		}
+	}
 
 	return false;
 }
@@ -1006,7 +1066,9 @@ void CCharacter::TickDefered()
 	vec2 StartVel = m_Core.m_Vel;
 	bool StuckBefore = GameMap()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
 
+	SetExtraCollision();
 	m_Core.Move();
+	ReleaseExtraCollision();
 	bool StuckAfterMove = GameMap()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
 	m_Core.Quantize();
 	bool StuckAfterQuant = GameMap()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));

@@ -96,7 +96,7 @@ void CGameEvent::Tick()
 			GameServer()->StringTime(m_CreateTick + Server()->TickSpeed() * TIME_COUNTDOWN, aBuf, sizeof(aBuf));
 			str_fcat(aBuf, sizeof(aBuf), "\n%i/%i participants", m_NumParticipants, MINIMUM_PLAYERS);
 			str_fcat(aBuf, sizeof(aBuf), "\nWrite '/sub' to take part!");
-			str_fcat(aBuf, sizeof(aBuf), "                                                                           "
+			str_fcat(aBuf, sizeof(aBuf), "\n                                                                           "
 				"                                                                                                    ");
 
 			GameMap()->SendBroadcast(aBuf);

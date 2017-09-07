@@ -169,13 +169,18 @@ int CGameMap::FreeNpcSlot()
 {
 	int ClientID = MAX_CLIENTS;
 	CNpc *pFirst = (CNpc *)m_World.FindFirst(CGameWorld::ENTTYPE_NPC);
-	for (CNpc *pNpc = pFirst; pNpc; pNpc = (CNpc *)pNpc->TypeNext())
+	bool Found = false;
+	while (Found == false)
 	{
-		if (ClientID != pNpc->GetCID())
-			continue;
+		Found = true;
+		for (CNpc *pNpc = pFirst; pNpc; pNpc = (CNpc *)pNpc->TypeNext())
+		{
+			if (ClientID != pNpc->GetCID())
+				continue;
 
-		ClientID++;
-		pNpc = pFirst;
+			ClientID++;
+			Found = false;
+		}
 	}
 
 	return ClientID;

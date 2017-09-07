@@ -1701,7 +1701,10 @@ void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 				str_fcat(aBuf, sizeof(aBuf), " weaponkits=%i", pAccountData->m_WeaponKits);
 				str_fcat(aBuf, sizeof(aBuf), " ranking=%i", pAccountData->m_Ranking);
 				str_fcat(aBuf, sizeof(aBuf), " blockpoints=%i", pAccountData->m_BlockPoints);
-				str_fcat(aBuf, sizeof(aBuf), " knockouts=%s", pAccountData->m_aKnockouts);
+				str_fcat(aBuf, sizeof(aBuf), " knockout=%s", pAccountData->m_aKnockouts);
+				str_fcat(aBuf, sizeof(aBuf), " gundesign=%s", pAccountData->m_aGundesigns);
+				str_fcat(aBuf, sizeof(aBuf), " skinmani=%s", pAccountData->m_aSkinmani);
+				str_fcat(aBuf, sizeof(aBuf), " extras=%s", pAccountData->m_aExtras);
 			}
 			else
 				str_append(aBuf, "Not Logged In", sizeof(aBuf));

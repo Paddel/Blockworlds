@@ -37,13 +37,17 @@ public:
 
 	void Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun = false);
 	void DoAnimation(vec2 Pos, int Index);
+	void DoAnimationGundesign(vec2 Pos, int Index, vec2 Direction);
 
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 
 	enum
 	{
-		ANIMATION_LOVE=0,
+		ANIMATION_LOVE = 0,
 		ANIMATION_THUNDERSTORM,
+		ANIMATION_STARS_CW,
+		ANIMATION_STARS_CCW,
+		ANIMATION_STARS_TOC,
 	};
 };

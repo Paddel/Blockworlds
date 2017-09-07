@@ -120,6 +120,16 @@ void CAnimationHandler::DoAnimation(vec2 Pos, int Index)
 	}
 }
 
+void CAnimationHandler::DoAnimationGundesign(vec2 Pos, int Index, vec2 Direction)
+{
+	switch (Index)
+	{
+	case ANIMATION_STARS_CW: m_lpAnimations.add(new CStarsCW(Pos, Server()->Tick(), GameMap(), Direction)); break;
+	case ANIMATION_STARS_CCW: m_lpAnimations.add(new CStarsCCW(Pos, Server()->Tick(), GameMap(), Direction)); break;
+	case ANIMATION_STARS_TOC: m_lpAnimations.add(new CStarsTOC(Pos, Server()->Tick(), GameMap(), Direction)); break;
+	}
+}
+
 void CAnimationHandler::Tick()
 {
 	for (int i = 0; i < m_lpAnimations.size(); i++)

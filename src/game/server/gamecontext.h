@@ -142,6 +142,7 @@ public:
 	void OnBuyGundesign(int ClientID, const char *pName);
 	static void ResultBuyKnockouteffect(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 	void OnBuyKnockout(int ClientID, const char *pName);
+	static void ResultBuyExtra(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 	void OnBuyExtra(int ClientID, const char *pName);
 
 	bool OnExtrasCallvote(int ClientID, const char *pCommand);
