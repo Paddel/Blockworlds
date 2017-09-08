@@ -31,14 +31,14 @@ inline bool ShopInfoSkinmani(int Index, int& Price, int& Level)
 		Index == CCosmeticsHandler::SKINMANI_FEET_WATER ||
 		Index == CCosmeticsHandler::SKINMANI_FEET_POISON)
 	{
-		Price = 130;
-		Level = 25;
+		Price = 250;
+		Level = 50;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::SKINMANI_FEET_BLACKWHITE)
 	{
-		Price = 250;
-		Level = 55;
+		Price = 450;
+		Level = 75;
 		return true;
 	}
 	else
@@ -50,32 +50,32 @@ inline bool ShopInfoGundesign(int Index, int& Price, int& Level)
 	if (Index == CCosmeticsHandler::GUNDESIGN_CLOCKWISE ||
 		Index == CCosmeticsHandler::GUNDESIGN_COUNTERCLOCK)
 	{
-		Price = 130;
-		Level = 25;
+		Price = 250;
+		Level = 50;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::GUNDESIGN_TWOCLOCK)
 	{
-		Price = 160;
-		Level = 28;
+		Price = 300;
+		Level = 60;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::GUNDESIGN_BLINKING)
 	{
-		Price = 250;
-		Level = 55;
+		Price = 450;
+		Level = 75;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::GUNDESIGN_REVERSE)
 	{
-		Price = 320;
-		Level = 65;
+		Price = 500;
+		Level = 85;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::GUNDESIGN_INVISBULLET)
 	{
-		Price = 400;
-		Level = 75;
+		Price = 700;
+		Level = 95;
 		return true;
 	}
 	else
@@ -88,20 +88,20 @@ inline bool ShopInfoKnockout(int Index, int& Price, int& Level)
 		Index == CCosmeticsHandler::KNOCKOUT_HAMMERHIT ||
 		Index == CCosmeticsHandler::KNOCKOUT_KOSTARS)
 	{
-		Price = 130;
-		Level = 25;
+		Price = 250;
+		Level = 50;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::KNOCKOUT_STARRING)
 	{
-		Price = 250;
-		Level = 55;
+		Price = 450;
+		Level = 75;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::KNOCKOUT_STAREXPLOSION)
 	{
-		Price = 320;
-		Level = 65;
+		Price = 500;
+		Level = 85;
 		return true;
 	}
 	else

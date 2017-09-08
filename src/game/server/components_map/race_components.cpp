@@ -165,7 +165,7 @@ void CRaceComponents::InitDoorTile(CDoorTile *pTile)
 		pTile->m_SnapID = Server()->SnapNewID();
 
 		pTile->m_Length = 16.0f;
-		for (int i = 1; i < 16; i++)
+		for (int i = 1; i < 64; i++)
 		{
 			if (GameMap()->Collision()->CheckPoint(pTile->m_Pos + Dir * 32.0f * i) == false)
 				pTile->m_Length += 32;
