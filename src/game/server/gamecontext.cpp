@@ -399,7 +399,7 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 			return;
 
 		int ExperienceAmount = 0;
-		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 60 < Server()->Tick() && pChr->InBlockZone() &&
+		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 90 < Server()->Tick() && pChr->InBlockZone() &&
 			pChr->GameMap()->NumPlayers() >= 8 &&
 			Server()->CompClientAddr(ClientID, pPlayer->m_AttackedBy) == false)
 		{
