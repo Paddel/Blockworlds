@@ -68,6 +68,9 @@ void CMapVoting::UpdateVote()
 						No++;
 				}
 
+				if (m_aVoteCommand[0] == '%' && Yes >= 8)
+					m_VoteEnforce = VOTE_ENFORCE_YES;
+
 				if (Yes >= Total / 2 + 1)
 					m_VoteEnforce = VOTE_ENFORCE_YES;
 				else if (No >= (Total + 1) / 2)
