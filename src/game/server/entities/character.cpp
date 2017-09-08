@@ -1270,8 +1270,11 @@ void CCharacter::Snap(int SnappingClient)
 
 	if (IsFreezed())
 	{
+		if(m_DeepFreeze == true)
+			pCharacter->m_Emote = EMOTE_PAIN;
+		else
+			pCharacter->m_Emote = EMOTE_BLINK;
 		pCharacter->m_Weapon = WEAPON_NINJA;
-		pCharacter->m_Emote = EMOTE_PAIN;
 	}
 
 	//translate hook
