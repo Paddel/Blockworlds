@@ -1,7 +1,10 @@
 
+
 -- Release
 
 client crash command
+
+id hide in event
 
 1on1 system
 clan room

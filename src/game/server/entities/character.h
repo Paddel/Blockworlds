@@ -109,6 +109,8 @@ private:
 	int64 m_FreezeCryTick;
 	int m_aExtraIDs[NUM_EXTRAIDS];
 
+	//bool m_HookLock;
+
 	//zones
 	bool m_ZoneBlock;
 	bool m_ZoneSpawn;

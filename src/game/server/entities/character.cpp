@@ -1001,12 +1001,12 @@ void CCharacter::HandleRace()
 	if (m_FreezeTime > 0)
 		m_FreezeTime--;
 
-	//ignore imput
+	//ignore input
 	if (IsFreezed() || GetPlayer()->GetPause())
 	{
 		m_Input.m_Jump = 0;
 		m_Input.m_Direction = 0;
-		m_Input.m_Hook = 0;
+		//m_Input.m_Hook = 0;
 	}
 
 	//counting stars
@@ -1262,6 +1262,9 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+
+	if (GetPlayer()->InEvent() == true)
+		pCharacter->m_Emote = EMOTE_NORMAL;
 
 	if (GetPlayer()->GetPause() == true)
 	{

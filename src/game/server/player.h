@@ -47,6 +47,7 @@ public:
 	void DoPlayerTuning();
 	bool CanBeDeathnoted();
 	bool HideIdentity();
+	bool InEvent();
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();

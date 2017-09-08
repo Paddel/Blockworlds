@@ -42,7 +42,7 @@ void CTranslator::SortMap(void *pData)
 		//fill in correct IDs
 		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
 		{
-			if (aFillingList[i] >= pSortionData->m_UsingMapItems)
+			if (aFillingList[i] >= pSortionData->m_UsingMapItems - 1)// no -1 if you dont need last id
 				continue;
 
 			pSortionData->m_aIDMap[aFillingList[i]] = aFillingList[i];

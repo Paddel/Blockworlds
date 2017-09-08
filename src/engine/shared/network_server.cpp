@@ -72,7 +72,7 @@ int CNetServer::Update()
 		{
 			if(g_Config.m_SvPunishStress && Now - m_aSlots[i].m_Connection.ConnectTime() < time_freq() * 0.75f && NetBan())
 			{
-				if(NetBan()->BanAddr(ClientAddr(i), 60, "Stressing network") == -1)
+				if(NetBan()->BanAddr(ClientAddr(i), 30, "Stressing network") == -1)
 					Drop(i, m_aSlots[i].m_Connection.ErrorString());
 			}
 			else

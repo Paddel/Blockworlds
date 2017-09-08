@@ -58,7 +58,7 @@ void CPlayer::Tick()
 		mem_copy(&m_LastTuning, &m_Tuning, sizeof(m_LastTuning));
 	}
 
-	if (GameMap()->IsShopMap() == true)
+	if (GameMap()->IsShopMap() == true || InEvent())
 		m_Pause = false;
 
 	// do latency stuff
@@ -182,7 +182,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(!pPlayerInfo)
 		return;
 
-	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[TranslatedID];
+	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = TranslatedID;
 	pPlayerInfo->m_Score = 0;
@@ -255,6 +255,13 @@ bool CPlayer::CanBeDeathnoted()
 }
 
 bool CPlayer::HideIdentity()
+{
+	if (InEvent())
+		return true;
+	return false;
+}
+
+bool CPlayer::InEvent()
 {
 	if (m_SubscribeEvent == true && GameMap()->GetEvent() != 0x0 && GameMap()->GetEvent()->OnCountdown() == false)
 		return true;
