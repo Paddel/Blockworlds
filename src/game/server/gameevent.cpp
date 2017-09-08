@@ -94,7 +94,7 @@ void CGameEvent::Tick()
 			char aBuf[512];
 			str_format(aBuf, sizeof(aBuf), "Event %s starts in ", EventName());
 			GameServer()->StringTime(m_CreateTick + Server()->TickSpeed() * TIME_COUNTDOWN, aBuf, sizeof(aBuf));
-			str_fcat(aBuf, sizeof(aBuf), "\n%i/%i participants", m_NumParticipants, MINIMUM_PLAYERS);
+			str_fcat(aBuf, sizeof(aBuf), "\n%i participants (min %i)", m_NumParticipants, MINIMUM_PLAYERS);
 			str_fcat(aBuf, sizeof(aBuf), "\nWrite '/sub' to take part!");
 			str_fcat(aBuf, sizeof(aBuf), "\n                                                                           "
 				"                                                                                                    ");
@@ -108,7 +108,7 @@ void CGameEvent::Tick()
 		if (m_Started == false && m_NumParticipants < MINIMUM_PLAYERS)
 		{
 			GameMap()->SendBroadcast("Not enough participants to start event");
-			EndEvent();
+			m_Ending = true;
 		}
 		else
 		{
