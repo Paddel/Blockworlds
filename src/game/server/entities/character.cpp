@@ -318,7 +318,7 @@ void CCharacter::FireWeapon()
 	if(!WillFire)
 		return;
 
-	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius;
+	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius * 0.75f;
 
 	switch(m_ActiveWeapon)
 	{
