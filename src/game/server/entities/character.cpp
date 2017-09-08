@@ -1002,12 +1002,21 @@ void CCharacter::HandleRace()
 		m_FreezeTime--;
 
 	//ignore input
-	if (IsFreezed() || GetPlayer()->GetPause())
+	if (IsFreezed())
 	{
 		m_Input.m_Jump = 0;
 		m_Input.m_Direction = 0;
-		//m_Input.m_Hook = 0;
+		m_Input.m_Hook = 0;
 	}
+
+	if (GetPlayer()->GetPause() || GetPlayer()->m_PlayerFlags&PLAYERFLAG_CHATTING)
+	{
+		m_Input.m_Jump = 0;
+		m_Input.m_Direction = 0;
+		m_Input.m_Hook = m_HookLock;
+	}
+	else
+		m_HookLock = m_Input.m_Hook;
 
 	//counting stars
 	if (IsFreezed() && m_FreezeTime % Server()->TickSpeed() == Server()->TickSpeed() - 1)
