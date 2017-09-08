@@ -7,7 +7,7 @@
 #include "gameevent.h"
 
 #define TIME_COUNTDOWN 119 // in seconds
-#define MINIMUM_PLAYERS 2
+#define MINIMUM_PLAYERS 8
 #define MAXIMUM_TIME 60 * 5
 
 CGameEvent::CGameEvent(int Type, CGameMap *pGameMap)
@@ -206,5 +206,5 @@ void CGameEvent::PlayerKilled(int ClientID)
 void CGameEvent::PlayerBlocked(int ClientID, bool Dead, vec2 Pos)
 {
 	if (m_Started == true && m_Ending == false)
-		PlayerBlocked(ClientID, Dead, Pos);
+		OnPlayerBlocked(ClientID, Dead, Pos);
 }
