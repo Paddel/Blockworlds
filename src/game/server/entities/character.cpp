@@ -903,21 +903,29 @@ void CCharacter::HandleStops()
 
 	//tiles
 	{
-		int Tile = GameMap()->Collision()->GetTileAt(m_Pos);
+		//int TileM = GameMap()->Collision()->GetTileAt(m_Pos);
+		int TileTR = GameMap()->Collision()->GetTileAt(vec2(m_Pos.x - m_ProximityRadius / 3.f, m_Pos.y + m_ProximityRadius / 3.f));
+		int TileTL = GameMap()->Collision()->GetTileAt(vec2(m_Pos.x - m_ProximityRadius / 3.f, m_Pos.y - m_ProximityRadius / 3.f));
+		int TileBR = GameMap()->Collision()->GetTileAt(vec2(m_Pos.x + m_ProximityRadius / 3.f, m_Pos.y + m_ProximityRadius / 3.f));
+		int TileBL = GameMap()->Collision()->GetTileAt(vec2(m_Pos.x + m_ProximityRadius / 3.f, m_Pos.y - m_ProximityRadius / 3.f));
 
-		if (Tile == TILE_ONEWAY_RIGHT)
+		if (TileTR == TILE_ONEWAY_RIGHT || TileTL == TILE_ONEWAY_RIGHT ||
+			TileBR == TILE_ONEWAY_RIGHT || TileBL == TILE_ONEWAY_RIGHT)
 			if (m_Core.m_Vel.x < 0.0f)
 				m_Core.m_Vel.x = 0.0f;
 				
-		if (Tile == TILE_ONEWAY_LEFT)
+		if (TileTR == TILE_ONEWAY_LEFT || TileTL == TILE_ONEWAY_LEFT ||
+			TileBR == TILE_ONEWAY_LEFT || TileBL == TILE_ONEWAY_LEFT)
 			if (m_Core.m_Vel.x > 0.0f)
 				m_Core.m_Vel.x = 0.0f;
 
-		if (Tile == TILE_ONEWAY_UP)
+		if (TileTR == TILE_ONEWAY_UP || TileTL == TILE_ONEWAY_UP ||
+			TileBR == TILE_ONEWAY_UP || TileBL == TILE_ONEWAY_UP)
 			if (m_Core.m_Vel.y > 0.0f)
 				m_Core.m_Vel.y = 0.0f;
-				
-		if (Tile == TILE_ONEWAY_DOWN)
+		
+		if (TileTR == TILE_ONEWAY_DOWN || TileTL == TILE_ONEWAY_DOWN ||
+			TileBR == TILE_ONEWAY_DOWN || TileBL == TILE_ONEWAY_DOWN)
 			if (m_Core.m_Vel.y < 0.0f)
 				m_Core.m_Vel.y = 0.0f;
 	}
@@ -1262,7 +1270,7 @@ void CCharacter::Snap(int SnappingClient)
 		(GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID != -1 && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
 	{
 		pCharacter->m_Health = 10;
-		pCharacter->m_Armor = 10;
+		pCharacter->m_Armor = (IsFreezed()) ? 10 - (m_FreezeTime / 15) : 0;
 		pCharacter->m_AmmoCount = 0;
 	}
 

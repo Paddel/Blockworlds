@@ -1,7 +1,4 @@
 
-shield freeze timer
-one way
-
 broadcast system
 
 client crash command
