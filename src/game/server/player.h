@@ -132,6 +132,7 @@ public:
 	bool  m_UseSpawnState;
 	CCharState m_SpawnState;
 	int m_AutomuteScore;
+	int64 m_LastExpAccountAlert;
 
 private:
 	CCharacter *m_pCharacter;

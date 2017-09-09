@@ -8,7 +8,8 @@ CClanNpc::CClanNpc(CGameWorld *pGameWorld, int ClientID)
 {
 	str_copy(m_aName, "ERROR", sizeof(m_aName));
 	m_CheckingClan = 0;
-	m_Highest = 0;
+	m_HighestLevel = 0;
+	m_HighestExperience = 0;
 }
 
 void CClanNpc::Tick()
@@ -21,10 +22,11 @@ void CClanNpc::Tick()
 
 	IServer::CClanData *pClan = GameServer()->AccountsHandler()->m_lpClans[m_CheckingClan];
 
-	if (pClan->m_Level > m_Highest)
+	if (pClan->m_Level > m_HighestLevel || pClan->m_Experience > m_HighestExperience)
 	{
 		str_copy(m_aName, pClan->m_aName, sizeof(m_aName));
-		m_Highest = pClan->m_Level;
+		m_HighestLevel = pClan->m_Level;
+		m_HighestExperience = pClan->m_Experience;
 	}
 
 	m_CheckingClan++;

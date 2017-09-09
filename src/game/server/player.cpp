@@ -36,6 +36,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_UseSpawnState = false;
 	m_CreateTick = Server()->Tick();
 	m_FirstInput = true;
+	m_LastExpAccountAlert = 0;
 }
 
 CPlayer::~CPlayer()

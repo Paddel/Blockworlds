@@ -1,9 +1,17 @@
 
-client crash command
+shutdown
+
+--
 
 id hide in event
 
 1on1 system
+
+---
+
+client crash command
+
+
 clan room
 
 own shop design

@@ -1079,15 +1079,16 @@ void CCharacter::HandleRace()
 void CCharacter::Tick()
 {
 	ResetZones();
-	HandleTiles();
-	HandleExtras();
 	HandleRace();
-
-	if (m_Alive == false)
-		return;
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
+
+	HandleTiles();
+	HandleExtras();
+
+	if (m_Alive == false)
+		return;
 
 	// handle death-tiles and leaving gamelayer
 	if(GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||

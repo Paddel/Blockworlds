@@ -7,7 +7,8 @@ class CClanNpc : public CNpc
 private:
 	char m_aName[32];
 	int m_CheckingClan;
-	int m_Highest;
+	int m_HighestLevel;
+	int m_HighestExperience;
 public:
 	CClanNpc(CGameWorld *pGameWorld, int ClientID);
 

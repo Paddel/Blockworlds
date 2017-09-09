@@ -32,7 +32,6 @@ void CExperience::Tick()
 	if(Distance < 28.0f)
 	{
 		GameServer()->GiveExperience(m_TargetID, m_Amount);
-		GameServer()->GiveClanExperience(m_TargetID, m_Amount);
 		GameWorld()->DestroyEntity(this);
 		GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH, CmaskOne(m_TargetID));
 		return;

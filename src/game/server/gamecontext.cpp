@@ -413,6 +413,10 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 			pPlayer->m_UnblockedTick = Server()->Tick();
 			ExperienceAmount = 3;
 
+			if(Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_pClan != 
+				Server()->GetClientInfo(ClientID)->m_pClan)
+				GiveClanExperience(pPlayer->m_AttackedBy, 3);
+
 			if (Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_LoggedIn == true)
 				Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_AccountData.m_BlockPoints++;
 		}
@@ -527,8 +531,12 @@ void CGameContext::GiveExperience(int ClientID, int Amount)
 		if (pAccountData->m_Experience >= NeededExp(pAccountData->m_Level))
 			SetLevel(ClientID, pAccountData->m_Level + 1);
 	}
-	else
+	else if (m_apPlayers[ClientID] && 
+		m_apPlayers[ClientID]->m_LastExpAccountAlert + Server()->TickSpeed() * 300 < Server()->Tick())
+	{
 		SendChatTarget(ClientID, "Login/Register an account to receive your experience points");
+		m_apPlayers[ClientID]->m_LastExpAccountAlert = Server()->Tick();
+	}
 }
 
 void CGameContext::SetLevel(int ClientID, int Level)
@@ -576,7 +584,7 @@ void CGameContext::SetClanLevel(int ClientID, int Level)
 		if (Level > pClanData->m_Level)
 		{
 			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), ">- Clan %s reaches level %d! -<", pClanData->m_aName, Level);
+			str_format(aBuf, sizeof(aBuf), ">- Clan '%s' reaches level %d! -<", pClanData->m_aName, Level);
 			SendChat(-1, aBuf);
 		}
 
