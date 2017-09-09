@@ -186,9 +186,8 @@ void CChatCommandsHandler::ComEmote(CConsole::CResult *pResult, CGameContext *pG
 		return;
 	}
 
-	CCharacter *pChr = pGameServer->GetPlayerChar(ClientID);
-	if (pChr)
-		pChr->SetEmote(Emote, pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * Time);
+	pGameServer->Server()->GetClientInfo(ClientID)->m_EmoteType = Emote;
+	pGameServer->Server()->GetClientInfo(ClientID)->m_EmoteStop = pGameServer->Server()->Tick() + pGameServer->Server()->TickSpeed() * Time;
 }
 
 void CChatCommandsHandler::ComClan(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
@@ -285,12 +284,12 @@ void CChatCommandsHandler::ComLobby(CConsole::CResult *pResult, CGameContext *pG
 		pGameServer->SendChatTarget(ClientID, "You could not be moved to the lobby");
 }
 
-void CChatCommandsHandler::ComDetatch(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+void CChatCommandsHandler::ComDetach(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 
-	pGameServer->Server()->GetClientInfo(ClientID)->m_Detatched = !pGameServer->Server()->GetClientInfo(ClientID)->m_Detatched;
-	if(pGameServer->Server()->GetClientInfo(ClientID)->m_Detatched)
-		pGameServer->SendChatTarget(ClientID, "Your player has been detatched");
+	pGameServer->Server()->GetClientInfo(ClientID)->m_Detached = !pGameServer->Server()->GetClientInfo(ClientID)->m_Detached;
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_Detached)
+		pGameServer->SendChatTarget(ClientID, "Your player has been detached");
 	else
 		pGameServer->SendChatTarget(ClientID, "Your player has been attached");
 }
@@ -648,7 +647,7 @@ void CChatCommandsHandler::Init()
 	Register("pages", "", 0, ComPages, "Informs you the use of your deathnote");
 	Register("weaponkit", "", 0, ComWeaponkit, "Use a weaponkit");
 	Register("lobby", "", 0, ComLobby, "Moves you to the lobby");
-	Register("detatch", "", 0, ComDetatch, "Allows you to be on a different map as your dummy");
+	Register("detach", "", 0, ComDetach, "Allows you to be on a different map as your dummy");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

@@ -978,7 +978,7 @@ void CCharacter::HandleTiles()
 
 	if (Tile == TILE_GIVEPASSIVE && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime < Server()->Tick())
 	{
-		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Passive-Mode has beed activated for half an hour");
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Passive-Mode has been activated for half an hour");
 		Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime = Server()->Tick() + Server()->TickSpeed() * 60 * 30.0f;
 	}
 
@@ -1169,6 +1169,8 @@ void CCharacter::TickPaused()
 		++m_LastAction;
 	if(m_EmoteStop > -1)
 		++m_EmoteStop;
+	if (m_EmoteStop > -1)
+		++m_EmoteStop;
 }
 
 void CCharacter::Die(int Killer, int Weapon)
@@ -1288,6 +1290,9 @@ void CCharacter::Snap(int SnappingClient)
 			pCharacter->m_Emote = EMOTE_BLINK;
 		pCharacter->m_Weapon = WEAPON_NINJA;
 	}
+
+	if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType != EMOTE_NORMAL && Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteStop > Server()->Tick())
+		pCharacter->m_Emote = Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType;
 
 	//translate hook
 	if (pCharacter->m_HookedPlayer != -1)

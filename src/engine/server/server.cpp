@@ -358,14 +358,6 @@ void CServer::SetClientName(int ClientID, const char *pName)
 	}
 }
 
-void CServer::SetClientClan(int ClientID, const char *pClan)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY || !pClan)
-		return;
-
-	str_copy(m_aClients[ClientID].m_aClan, pClan, MAX_CLAN_LENGTH);
-}
-
 void CServer::SetClientCountry(int ClientID, int Country)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
@@ -411,7 +403,6 @@ int CServer::Init()
 	{
 		m_aClients[i].m_State = CClient::STATE_EMPTY;
 		m_aClients[i].m_aName[0] = 0;
-		m_aClients[i].m_aClan[0] = 0;
 		m_aClients[i].m_Country = -1;
 		m_aClients[i].m_Snapshots.Init();
 		m_aClients[i].m_ClientInfo.Reset();
@@ -452,12 +443,9 @@ const char *CServer::ClientName(int ClientID)
 
 const char *CServer::ClientClan(int ClientID)
 {
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY || m_aClients[ClientID].m_ClientInfo.m_pClan == 0x0)
 		return "";
-	if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME)
-		return m_aClients[ClientID].m_aClan;
-	else
-		return "";
+	return m_aClients[ClientID].m_ClientInfo.m_pClan->m_aName;
 }
 
 int CServer::ClientCountry(int ClientID)
@@ -711,7 +699,6 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	CServer *pThis = (CServer *)pUser;
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
-	pThis->m_aClients[ClientID].m_aClan[0] = 0;
 	pThis->m_aClients[ClientID].m_Country = -1;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
@@ -744,7 +731,6 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
-	pThis->m_aClients[ClientID].m_aClan[0] = 0;
 	pThis->m_aClients[ClientID].m_Country = -1;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
@@ -791,13 +777,13 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if (m_aClients[i].m_State == CClient::STATE_EMPTY || i == ClientID ||
-			m_aClients[i].m_ClientInfo.m_Detatched == true || m_aClients[i].m_pMap != pCurrentMap)
+			m_aClients[i].m_ClientInfo.m_Detached == true || m_aClients[i].m_pMap != pCurrentMap)
 			continue;
 
 
 		if (CompClientAddr(ClientID, i) == true)
 			if(MovePlayer(i, pMap) == false)
-				DropClient(i, "Could not move Dummy. Use '/detatch' if you're not using a dummy.");
+				DropClient(i, "Could not move Dummy. Use '/detach' if you're not using a dummy.");
 	}
 
 	return true;

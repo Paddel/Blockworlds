@@ -165,12 +165,8 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	const char *pClan = "";
-	if (ClientInfo()->m_LoggedIn == true && ClientInfo()->m_pClan != 0)
-		pClan = ClientInfo()->m_pClan->m_aName;
-
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Clan0, 3, pClan);
+	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);

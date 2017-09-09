@@ -96,7 +96,9 @@ void CTranslator::SortMap(void *pData)
 		{
 			long double Distance;
 			CTranslateItem *pTranslateItem = &pSortionData->m_aTranslateItems[i];
-			if (pTranslateItem->m_Team == TEAM_SPECTATORS)
+			if (pTranslateItem->m_ClientID == pSortionData->m_ClientID)
+				Distance = 0.0f;
+			else if (pTranslateItem->m_Team == TEAM_SPECTATORS)
 				Distance = LDBL_MAX - 1;
 			else
 			{

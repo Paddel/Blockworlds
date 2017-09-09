@@ -592,7 +592,7 @@ void CGameContext::ResultBuySkinmani(int OptionID, const unsigned char *pData, i
 	const char *pName = (const char *)pData;
 
 
-	char aBuf[64];
+	char aBuf[128];
 	int Effect = pGameServer->m_CosmeticsHandler.FindSkinmani(pName);
 	if (Effect == -1)
 		return;
@@ -640,7 +640,7 @@ void CGameContext::ResultBuySkinmani(int OptionID, const unsigned char *pData, i
 
 void CGameContext::OnBuySkinmani(int ClientID, const char *pName)
 {
-	char aBuf[64];
+	char aBuf[128];
 	int Effect = m_CosmeticsHandler.FindSkinmani(pName);
 	if (Effect == -1)
 		return;
@@ -706,7 +706,7 @@ void CGameContext::ResultBuyGundesign(int OptionID, const unsigned char *pData, 
 
 	const char *pName = (const char *)pData;
 
-	char aBuf[64];
+	char aBuf[128];
 	int Effect = pGameServer->m_CosmeticsHandler.FindGundesign(pName);
 	if (Effect == -1)
 		return;
@@ -754,7 +754,7 @@ void CGameContext::ResultBuyGundesign(int OptionID, const unsigned char *pData, 
 
 void CGameContext::OnBuyGundesign(int ClientID, const char *pName)
 {
-	char aBuf[64];
+	char aBuf[128];
 	int Effect = m_CosmeticsHandler.FindGundesign(pName);
 	if (Effect == -1)
 		return;
@@ -820,7 +820,7 @@ void CGameContext::ResultBuyKnockouteffect(int OptionID, const unsigned char *pD
 
 	const char *pName = (const char *)pData;
 
-	char aBuf[64];
+	char aBuf[128];
 	int Effect = pGameServer->m_CosmeticsHandler.FindKnockoutEffect(pName);
 	if (Effect == -1)
 		return;
@@ -868,7 +868,7 @@ void CGameContext::ResultBuyKnockouteffect(int OptionID, const unsigned char *pD
 
 void CGameContext::OnBuyKnockout(int ClientID, const char *pName)
 {
-	char aBuf[64];
+	char aBuf[128];
 	int Effect = m_CosmeticsHandler.FindKnockoutEffect(pName);
 	if (Effect == -1)
 		return;
@@ -934,7 +934,7 @@ void CGameContext::ResultBuyExtra(int OptionID, const unsigned char *pData, int 
 
 	const char *pName = (const char *)pData;
 
-	char aBuf[64];
+	char aBuf[128];
 
 	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
@@ -983,7 +983,7 @@ void CGameContext::ResultBuyExtra(int OptionID, const unsigned char *pData, int 
 
 void CGameContext::OnBuyExtra(int ClientID, const char *pName)
 {
-	char aBuf[64];
+	char aBuf[128];
 
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
@@ -1374,7 +1374,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		else if (MsgID == NETMSGTYPE_CL_CHANGEINFO)
 		{
-			if(g_Config.m_SvSpamprotection && pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*5 > Server()->Tick())
+			if(g_Config.m_SvSpamprotection && pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*7.5f > Server()->Tick())
 				return;
 
 			CNetMsg_Cl_ChangeInfo *pMsg = (CNetMsg_Cl_ChangeInfo *)pRawMsg;
@@ -1390,12 +1390,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				str_format(aChatText, sizeof(aChatText), "'%s' changed name to '%s'", aOldName, Server()->ClientName(ClientID));
 				pGameMap->SendChat(-1, aChatText);
 			}
-			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 			str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
 			pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
 			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+			//ignore clan
 		}
 		else if (MsgID == NETMSGTYPE_CL_EMOTICON)
 		{
@@ -1470,7 +1470,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			// set start infos
 			Server()->SetClientName(ClientID, pMsg->m_pName);
-			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 			str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
 			pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;

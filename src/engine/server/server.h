@@ -130,7 +130,6 @@ public:
 		int m_CurrentInput;
 
 		char m_aName[MAX_NAME_LENGTH];
-		char m_aClan[MAX_CLAN_LENGTH];
 		int m_Country;
 		int m_Authed;
 		int m_AuthTries;
@@ -175,7 +174,6 @@ public:
 	void HandleMutes();
 
 	virtual void SetClientName(int ClientID, const char *pName);
-	virtual void SetClientClan(int ClientID, char const *pClan);
 	virtual void SetClientCountry(int ClientID, int Country);
 
 	virtual void Kick(int ClientID, const char *pReason);

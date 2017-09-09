@@ -445,6 +445,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_FEET_WATER)
 	{
@@ -452,6 +453,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_FEET_POISON)
 	{
@@ -459,6 +461,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_FEET_BLACKWHITE)
 	{
@@ -466,6 +469,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.s = 0.0f;
 		HSLBody.l = (sinf(TickDef / 255.0f) + 3.0f) / 4.0f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_NIGHTBLUE)
 	{
@@ -473,6 +477,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.s = 0.7f * clamp((sinf(TickDef / 50.0f) + 1.2f), 0.2f, 0.7f);
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorBody = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_VIP_RAINBOW)
 	{
@@ -481,6 +486,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorBody = HslToCc(HSLBody);
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_VIP_RAINBOW_EPI)
 	{
@@ -489,6 +495,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 		HSLBody.l = 0.5f;
 		pClientInfo->m_ColorBody = HslToCc(HSLBody);
 		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		pClientInfo->m_UseCustomColor = 1;
 	}
 }
 

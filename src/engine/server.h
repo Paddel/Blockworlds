@@ -65,7 +65,9 @@ public:
 		int m_CurrentSkinmani;
 		int64 m_InviolableTime;
 		bool m_UseInviolable;
-		bool m_Detatched;
+		bool m_Detached;
+		int m_EmoteType;
+		int m_EmoteStop;
 
 		void Reset()
 		{
@@ -74,6 +76,7 @@ public:
 			m_CurrentGundesign = -1;
 			m_CurrentSkinmani = -1;
 			m_UseInviolable = true;
+			m_EmoteStop = -1;
 		}
 	};
 
@@ -171,7 +174,6 @@ public:
 	}
 
 	virtual void SetClientName(int ClientID, char const *pName) = 0;
-	virtual void SetClientClan(int ClientID, char const *pClan) = 0;
 	virtual void SetClientCountry(int ClientID, int Country) = 0;
 
 	virtual int SnapNewID() = 0;
