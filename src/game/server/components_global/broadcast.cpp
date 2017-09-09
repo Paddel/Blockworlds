@@ -80,7 +80,7 @@ void CBroadcastHandler::AddWhitespace(char *pDst, int Size, const char *pSrc)
 
 bool CBroadcastHandler::StateEmpty(CBroadState *pState)
 {
-	return pState->m_lpSideCasts.size() == 0 && pState->m_lpMainCasts.size();
+	return pState->m_lpSideCasts.size() == 0 && pState->m_lpMainCasts.size() == 0;
 }
 
 bool CBroadcastHandler::NeedRefresh(int ClientID)
@@ -92,7 +92,7 @@ bool CBroadcastHandler::NeedRefresh(int ClientID)
 		return true; //joined
 
 	if (m_LastUpdate[ClientID] + Server()->TickSpeed() * 3.0f < Server()->Tick() &&
-		StateEmpty(m_pCurrentState[ClientID]) && StateEmpty(m_pLastState[ClientID]))
+		StateEmpty(m_pCurrentState[ClientID]) == false && StateEmpty(m_pLastState[ClientID]) == false)
 		return true;
 
 	return false;
