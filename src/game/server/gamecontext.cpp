@@ -570,13 +570,13 @@ void CGameContext::GiveClanExperience(int ClientID, int Amount)
 
 void CGameContext::SetClanLevel(int ClientID, int Level)
 {
-	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false && Server()->GetClientInfo(ClientID)->m_pClan)
+	if (Server()->GetClientInfo(ClientID)->m_pClan)
 	{
 		IServer::CClanData *pClanData = Server()->GetClientInfo(ClientID)->m_pClan;
 		if (Level > pClanData->m_Level)
 		{
 			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), ">- Clan %s reached level %d! -<", pClanData->m_aName, Level);
+			str_format(aBuf, sizeof(aBuf), ">- Clan %s reaches level %d! -<", pClanData->m_aName, Level);
 			SendChat(-1, aBuf);
 		}
 
