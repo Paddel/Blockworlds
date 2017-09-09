@@ -158,6 +158,9 @@ void CShop::TickPrice(CShopItem *pItem)
 
 void CShop::Tick()
 {
+	if (GameMap()->IsShopMap() == false)
+		return;
+
 	for (int i = 0; i < m_lpShopItems.size(); i++)
 	{
 		switch (m_lpShopItems[i]->m_Type)
@@ -169,25 +172,15 @@ void CShop::Tick()
 		TickPrice(m_lpShopItems[i]);
 	}
 
-	//TODO extra broadcast class
-	if (GameMap()->IsShopMap() == true)
+	
+	char aBuf[256];
+	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		char aBuf[256];
-		static int64 s_LastSent = Server()->Tick();
-		if (s_LastSent < Server()->Tick())
-		{
-			s_LastSent = Server()->Tick() + Server()->TickSpeed();
-			for (int i = 0; i < MAX_CLIENTS; i++)
-			{
-				if (GameMap()->m_apPlayers[i] == 0x0 || Server()->GetClientInfo(i)->m_LoggedIn == false)
-					continue;
+		if (GameMap()->m_apPlayers[i] == 0x0 || Server()->GetClientInfo(i)->m_LoggedIn == false)
+			continue;
 
-				str_format(aBuf, sizeof(aBuf), "Blockpoints: %d", Server()->GetClientInfo(i)->m_AccountData.m_BlockPoints);
-				str_fcat(aBuf, sizeof(aBuf), "                                                                           "
-					"                                                                                                    ");
-				GameServer()->SendBroadcast(aBuf, i);
-			}
-		}
+		str_format(aBuf, sizeof(aBuf), "Blockpoints: %d", Server()->GetClientInfo(i)->m_AccountData.m_BlockPoints);
+		GameServer()->BroadcastHandler()->AddSideCast(i, aBuf);
 	}
 }
 

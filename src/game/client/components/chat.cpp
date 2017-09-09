@@ -339,6 +339,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 		const char *pHL = str_find_nocase(pLine, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aName);
 		if(pHL)
 		{
+			dbg_msg(0, "(%i || %i) && (%i || %i || (%i && %i))", pLine == pHL, pHL[-1] == ' ', pHL[Length] == 0,  pHL[Length] == ' ', pHL[Length] == ':', pHL[Length + 1] == ' ');
 			int Length = str_length(m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aName);
 			if((pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || (pHL[Length] == ':' && pHL[Length+1] == ' ')))
 				Highlighted = true;

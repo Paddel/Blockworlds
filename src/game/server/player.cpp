@@ -431,6 +431,8 @@ void CPlayer::TryRespawn()
 			m_pCharacter->Core()->m_Pos = m_SpawnState.m_Pos;
 			m_pCharacter->m_Pos = m_SpawnState.m_Pos;
 			m_pCharacter->Unfreeze();
+			m_pCharacter->SetEndlessHook(m_SpawnState.m_Endless);
+			m_pCharacter->Core()->m_MaxAirJumps = m_SpawnState.m_NumJumps;
 		}
 		m_UseSpawnState = false;
 	}

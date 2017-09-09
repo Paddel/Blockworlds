@@ -652,6 +652,38 @@ void CCharacter::ReleaseExtraCollision()
 	GameMap()->Collision()->ReleaseExtraCollision(TILE_BARRIER_LEVEL_999);
 }
 
+int CCharacter::GetCurrentEmote()
+{
+	int Emote = -1;
+
+	if (IsFreezed())
+	{
+		if (m_DeepFreeze == true)
+			Emote = EMOTE_PAIN;
+		else
+			Emote = EMOTE_BLINK;
+	}
+
+	Emote = m_EmoteType;
+
+	if (Emote == EMOTE_NORMAL)
+	{
+		if (250 - ((Server()->Tick() - m_LastAction) % (250)) < 5)
+			Emote = EMOTE_BLINK;
+	}
+
+	if (GetPlayer()->GetPause() == true)
+		Emote = EMOTE_BLINK;
+
+	if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType != EMOTE_NORMAL && Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteStop > Server()->Tick())
+		Emote = Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType;
+
+	if (GetPlayer()->InEvent() == true)
+		Emote = EMOTE_NORMAL;
+
+	return Emote;
+}
+
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
 	// check for changes
@@ -1247,15 +1279,6 @@ void CCharacter::Snap(int SnappingClient)
 		m_SendCore.Write(pCharacter);
 	}
 
-	// set emote
-	if (m_EmoteStop < Server()->Tick())
-	{
-		m_EmoteType = EMOTE_NORMAL;
-		m_EmoteStop = -1;
-	}
-
-	pCharacter->m_Emote = m_EmoteType;
-
 	pCharacter->m_AmmoCount = 0;
 	pCharacter->m_Health = 0;
 	pCharacter->m_Armor = 0;
@@ -1271,36 +1294,22 @@ void CCharacter::Snap(int SnappingClient)
 	{
 		pCharacter->m_Health = 10;
 		pCharacter->m_Armor = (IsFreezed()) ? 10 - (m_FreezeTime / 15) : 0;
-		pCharacter->m_AmmoCount = 0;
+		pCharacter->m_AmmoCount = 1;
 	}
 
-	if(pCharacter->m_Emote == EMOTE_NORMAL)
+	// set emote
+	if (m_EmoteStop < Server()->Tick())
 	{
-		if(250 - ((Server()->Tick() - m_LastAction)%(250)) < 5)
-			pCharacter->m_Emote = EMOTE_BLINK;
+		m_EmoteType = EMOTE_NORMAL;
+		m_EmoteStop = -1;
 	}
+
+	pCharacter->m_Emote = GetCurrentEmote();
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
 
-	if (GetPlayer()->InEvent() == true)
-		pCharacter->m_Emote = EMOTE_NORMAL;
-
-	if (GetPlayer()->GetPause() == true)
-	{
-		pCharacter->m_Emote = EMOTE_BLINK;
-	}
-
 	if (IsFreezed())
-	{
-		if(m_DeepFreeze == true)
-			pCharacter->m_Emote = EMOTE_PAIN;
-		else
-			pCharacter->m_Emote = EMOTE_BLINK;
 		pCharacter->m_Weapon = WEAPON_NINJA;
-	}
-
-	if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType != EMOTE_NORMAL && Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteStop > Server()->Tick())
-		pCharacter->m_Emote = Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType;
 
 	//translate hook
 	if (pCharacter->m_HookedPlayer != -1)

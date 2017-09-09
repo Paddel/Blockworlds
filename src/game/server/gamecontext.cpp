@@ -49,6 +49,7 @@ void CGameContext::InitComponents()
 	m_apComponents[m_NumComponents++] = &m_InquiriesHandler;
 	m_apComponents[m_NumComponents++] = &m_VoteMenuHandler;
 	m_apComponents[m_NumComponents++] = &m_CosmeticsHandler;
+	m_apComponents[m_NumComponents++] = &m_BroadcastHandler;
 
 	for (int i = 0; i < m_NumComponents; i++)
 	{
@@ -69,7 +70,8 @@ bool CGameContext::TryJoinTeam(int Team, int ClientID)
 	if (m_apPlayers[ClientID] != 0x0 && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS &&
 		Team == 0 && g_Config.m_SvAccountForce == 1 && Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
-		SendBroadcast("Register/Login first to join the game", ClientID);
+		SendChatTarget(ClientID, "You have to register/login into an account to join the game.");
+		SendChatTarget(ClientID, "Write '/register name password' to register a new account");
 		return false;
 	}
 
@@ -330,9 +332,14 @@ void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
 
 void CGameContext::SendBroadcast(const char *pText, int ClientID)
 {
-	CNetMsg_Sv_Broadcast Msg;
+	if(ClientID != -1)
+		m_BroadcastHandler.AddMainCast(ClientID, pText, Server()->TickSpeed() * 10);
+	else
+		for(int i = 0; i < MAX_CLIENTS; i++)
+			m_BroadcastHandler.AddMainCast(i, pText, Server()->TickSpeed() * 10);
+	/*CNetMsg_Sv_Broadcast Msg;
 	Msg.m_pMessage = pText;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);*/
 }
 
 void CGameContext::SpreadTuningParams()

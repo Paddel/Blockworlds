@@ -16,6 +16,8 @@ struct CCharState
 	vec2 m_Pos;
 	bool m_aWeapons[NUM_WEAPONS];
 	int m_ActiveWeapon;
+	bool m_Endless;
+	int m_NumJumps;
 };
 
 // player object

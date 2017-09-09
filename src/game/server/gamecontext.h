@@ -17,6 +17,9 @@
 #include <game/server/components_global/chatcommands.h>
 #include <game/server/components_global/votemenu.h>
 #include <game/server/components_global/cosmetics.h>
+#include <game/server/components_global/broadcast.h>
+
+//TODO: remove includes
 
 #include "player.h"
 
@@ -31,6 +34,7 @@ class CGameContext : public IGameServer
 	CInquiriesHandler m_InquiriesHandler;
 	CVoteMenuHandler m_VoteMenuHandler;
 	CCosmeticsHandler m_CosmeticsHandler;
+	CBroadcastHandler m_BroadcastHandler;
 
 	class CComponentGlobal *m_apComponents[16];
 	int m_NumComponents;
@@ -70,6 +74,7 @@ public:
 	CInquiriesHandler *InquiriesHandler() { return &m_InquiriesHandler; }
 	CVoteMenuHandler *VoteMenuHandler() { return &m_VoteMenuHandler; }
 	CCosmeticsHandler *CosmeticsHandler() { return &m_CosmeticsHandler; }
+	CBroadcastHandler *BroadcastHandler() { return &m_BroadcastHandler; }
 
 	CGameContext();
 	~CGameContext();

@@ -143,10 +143,26 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 	{
 		char aBuf[512];
 		pMessage += str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
-		str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
-		pGameServer->SendChatTarget(ClientID, aBuf);
-		str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowLeft, pGameServer->Server()->ClientName(ClientID), pMessage);
-		pGameServer->SendChatTarget(TargetID, aBuf);
+
+		if (g_Config.m_SvWhisperSrv == 1)
+		{
+			str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
+			pGameServer->SendChatTarget(ClientID, aBuf);
+			str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowLeft, pGameServer->Server()->ClientName(ClientID), pMessage);
+			pGameServer->SendChatTarget(TargetID, aBuf);
+		}
+		else
+		{
+			str_format(aBuf, sizeof(aBuf), "[ %s %s %s ] %s", pGameServer->Server()->ClientName(ClientID), SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
+
+			CNetMsg_Sv_Chat Msg;
+			Msg.m_Team = 0;
+			Msg.m_pMessage = aBuf;
+			Msg.m_ClientID = pGameServer->Server()->UsingMapItems(ClientID) - 1;
+			pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, ClientID);
+			Msg.m_ClientID = pGameServer->Server()->UsingMapItems(TargetID) - 1;
+			pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, TargetID);
+		}
 	}
 }
 
@@ -233,7 +249,7 @@ void CChatCommandsHandler::ComWeaponkit(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 
-	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits == 0)
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == false && pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits == 0)
 	{
 		pGameServer->SendChatTarget(ClientID, "You do not have any weaponkits");
 		return;
@@ -247,7 +263,7 @@ void CChatCommandsHandler::ComWeaponkit(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 
-	if(pChr->InSpawnZone() == false)
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == false && pChr->InSpawnZone() == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You have to be at the spawn to use a weaponkit");
 		return;
@@ -269,8 +285,8 @@ void CChatCommandsHandler::ComWeaponkit(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 
-
-	pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits--;
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == false)
+		pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits--;
 
 	str_format(aBuf, sizeof(aBuf), "Successfully used a weaponkit! %i kit%s remaining",
 		pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits, pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_WeaponKits == 1 ? "" : "s");
@@ -296,7 +312,10 @@ void CChatCommandsHandler::ComDetach(CConsole::CResult *pResult, CGameContext *p
 
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
+	if (pResult->NumArguments() == 2)
+		pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
+	else
+		pGameServer->SendChatTarget(ClientID, "Use '/login name password' to login. If you dont have an account, you need to register one first with '/register'");
 }
 
 void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
@@ -315,7 +334,10 @@ void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *p
 
 void CChatCommandsHandler::ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	pGameServer->AccountsHandler()->Register(ClientID, pResult->GetString(0), pResult->GetString(1));
+	if (pResult->NumArguments() == 2)
+		pGameServer->AccountsHandler()->Register(ClientID, pResult->GetString(0), pResult->GetString(1));
+	else
+		pGameServer->SendChatTarget(ClientID, "Use '/register name password' to register a new account");
 }
 
 void CChatCommandsHandler::ComChangePassword(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
@@ -652,9 +674,9 @@ void CChatCommandsHandler::Init()
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
 	Register("w", "r", CHATCMDFLAG_HIDDEN, ComWhisper, "Personal message to anybody on this server");
-	Register("login", "ss", CHATCMDFLAG_HIDDEN, ComLogin, "Login into your Blockworlds account. For more informatino write /account");
+	Register("login", "?ss", CHATCMDFLAG_HIDDEN, ComLogin, "Login into your Blockworlds account. For more informatino write /account");
 	Register("logout", "", CHATCMDFLAG_HIDDEN, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
-	Register("register", "ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
+	Register("register", "?ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
 	Register("password", "ss", CHATCMDFLAG_HIDDEN, ComChangePassword, "Set a password to your Blockworlds account. For more informatino write /account");
 	Register("clan_create", "r", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
 	Register("clan_invite", "r", CHATCMDFLAG_HIDDEN, ComClanInvite, "Invite a player to your clan. For more informatino write /clan");
@@ -666,6 +688,7 @@ void CChatCommandsHandler::Init()
 	Register("subscribe", "", CHATCMDFLAG_HIDDEN, ComSubscribe, "Subscribe to a event to take part");
 	Register("sub", "", CHATCMDFLAG_HIDDEN, ComSubscribe, "Subscribe to a event to take part");
 	Register("hub", "", CHATCMDFLAG_HIDDEN, ComLobby, "Moves you to the lobby");
+	Register("weapons", "", CHATCMDFLAG_HIDDEN, ComWeaponkit, "Use a weaponkit");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)

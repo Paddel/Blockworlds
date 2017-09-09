@@ -72,12 +72,12 @@ inline bool ShopInfoGundesign(int Index, int& Price, int& Level)
 		Level = 85;
 		return true;
 	}
-	else if (Index == CCosmeticsHandler::GUNDESIGN_INVISBULLET)
+	/*else if (Index == CCosmeticsHandler::GUNDESIGN_INVISBULLET)
 	{
 		Price = 700;
 		Level = 95;
 		return true;
-	}
+	}*/
 	else
 		return false;
 }

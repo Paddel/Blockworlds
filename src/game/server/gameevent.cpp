@@ -41,7 +41,6 @@ void CGameEvent::Init()
 void CGameEvent::Start()
 {
 	OnStarted();
-	GameMap()->SendBroadcast("");
 
 	mem_zero(&m_CharState, sizeof(m_CharState));
 
@@ -56,6 +55,8 @@ void CGameEvent::Start()
 			m_CharState[i].m_Pos = GameMap()->m_apPlayers[i]->GetCharacter()->m_Pos;
 			mem_copy(&m_CharState[i].m_aWeapons, GameMap()->m_apPlayers[i]->GetCharacter()->Weapons(), sizeof(m_CharState[i].m_aWeapons));
 			m_CharState[i].m_ActiveWeapon = GameMap()->m_apPlayers[i]->GetCharacter()->GetActiveWeapon();
+			m_CharState[i].m_Endless = GameMap()->m_apPlayers[i]->GetCharacter()->GetEndlessHook();
+			m_CharState[i].m_NumJumps = GameMap()->m_apPlayers[i]->GetCharacter()->Core()->m_MaxAirJumps;
 		}
 
 		if (GameMap()->m_apPlayers[i]->TryRespawnEvent() == false)
@@ -88,19 +89,18 @@ void CGameEvent::Tick()
 
 	if (OnCountdown() == true)
 	{
-		static int64 s_BroadcastUpdate = 0;
-		if (s_BroadcastUpdate < Server()->Tick())
-		{
-			char aBuf[512];
-			str_format(aBuf, sizeof(aBuf), "Event %s starts in ", EventName());
-			GameServer()->StringTime(m_CreateTick + Server()->TickSpeed() * TIME_COUNTDOWN, aBuf, sizeof(aBuf));
-			str_fcat(aBuf, sizeof(aBuf), "\n%i participants (min %i)", m_NumParticipants, MINIMUM_PLAYERS);
-			str_fcat(aBuf, sizeof(aBuf), "\nWrite '/sub' to take part!");
-			str_fcat(aBuf, sizeof(aBuf), "\n                                                                           "
-				"                                                                                                    ");
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "Event %s starts in ", EventName());
+		GameServer()->StringTime(m_CreateTick + Server()->TickSpeed() * TIME_COUNTDOWN, aBuf, sizeof(aBuf));
+		str_fcat(aBuf, sizeof(aBuf), "\n%i participants (min %i)", m_NumParticipants, MINIMUM_PLAYERS);
+		str_fcat(aBuf, sizeof(aBuf), "\nWrite '/sub' to take part!");
 
-			GameMap()->SendBroadcast(aBuf);
-			s_BroadcastUpdate = Server()->Tick() + Server()->TickSpeed() * 0.4f;
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (GameMap()->m_apPlayers[i] == 0x0)
+				continue;
+
+			GameServer()->BroadcastHandler()->AddSideCast(i, aBuf);
 		}
 	}
 	else

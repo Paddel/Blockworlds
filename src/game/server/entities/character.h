@@ -86,6 +86,7 @@ public:
 
 	void SetExtraCollision();
 	void ReleaseExtraCollision();
+	int GetCurrentEmote();
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
@@ -96,6 +97,8 @@ public:
 	bool InSpawnZone() const { return m_ZoneSpawn; }
 	bool *Weapons() { return m_aGotWeapon; }
 	int GetActiveWeapon() const { return m_ActiveWeapon; }
+	bool GetEndlessHook() const { return m_EndlessHook; }
+	void SetEndlessHook(bool Endless) { m_EndlessHook = Endless; }
 
 private:
 	// player controlling this character

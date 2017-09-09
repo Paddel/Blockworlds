@@ -408,9 +408,7 @@ void CGameMap::SendBroadcast(const char *pText)
 		if (m_apPlayers[i] == 0x0)
 			continue;
 
-		CNetMsg_Sv_Broadcast Msg;
-		Msg.m_pMessage = pText;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_apPlayers[i]->GetCID());
+		GameServer()->SendBroadcast(pText, i);
 	}
 }
 
