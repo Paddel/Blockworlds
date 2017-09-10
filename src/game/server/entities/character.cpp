@@ -1090,9 +1090,9 @@ void CCharacter::HandleRace()
 void CCharacter::Tick()
 {
 	ResetZones();
-	HandleRace();
 	HandleTiles();
 	HandleExtras();
+	HandleRace();
 
 	if (m_Alive == false)
 		return;
