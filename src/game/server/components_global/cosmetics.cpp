@@ -18,6 +18,8 @@ const char *CCosmeticsHandler::ms_KnockoutNames[NUM_KNOCKOUTS] = {
 	"KO RIP",
 	"KO EZ",
 	"KO NOOB",
+
+	"Sorry c: (Teemo)",
 };
 
 const char *CCosmeticsHandler::ms_GundesignNames[NUM_GUNDESIGNS] = {
@@ -160,6 +162,8 @@ void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGam
 		pGameMap->AnimationHandler()->Laserwrite("EZ", Pos + vec2(0, 30.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_KONOOB)
 		pGameMap->AnimationHandler()->Laserwrite("NOOB", Pos + vec2(0, 30.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+	else if (Effect == KNOCKOUT_SORRY)
+		pGameMap->AnimationHandler()->Laserwrite("SORRY c:", Pos + vec2(0, 30.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else
 		dbg_msg("cosmetics", "ERROR: Knockouteffect '%s' not implemented!", ms_KnockoutNames[Effect]);
 }
