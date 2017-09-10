@@ -178,6 +178,7 @@ public:
 
 	virtual bool IsClientReady(int ClientID);
 	virtual bool IsClientPlayer(int ClientID);
+	virtual bool HideIDsFor(int ClientID);
 
 	virtual bool CanShutdown();
 

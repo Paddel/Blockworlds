@@ -396,10 +396,10 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 		return;
 
 	if (pPlayer->m_AttackedBy != -1 && pPlayer->m_AttackedByTick + Server()->TickSpeed() * 6.5f > Server()->Tick() &&// if getting attacked more than 6.5 seconds ago does not count
-		pChr->IsFreezed())
+		pChr->IsFreezed() && ((Server()->Tick() - pChr->GetSpawnTime()) / (float)Server()->TickSpeed()) > 5.0f)
 	{
 		CCharacter *pChrAttacker = GetPlayerChar(pPlayer->m_AttackedBy);
-		if (pChrAttacker == 0x0 || pChrAttacker->IsFreezed())//do not give blocked exp
+		if (pChrAttacker == 0x0 || pChrAttacker->IsFreezed() || ((Server()->Tick() - pChrAttacker->GetSpawnTime()) / (float)Server()->TickSpeed()) <= 5.0f)//do not give blocked exp
 			return;
 
 		int ExperienceAmount = 0;
@@ -447,7 +447,8 @@ void CGameContext::BlockSystemAttack(int Attacker, int Victim, bool Hook)
 {
 	CPlayer *pPlayerVictim = m_apPlayers[Victim];
 	CCharacter *pChrVictim = GetPlayerChar(Victim);
-	if (pPlayerVictim == 0x0 || pChrVictim == 0x0 || pChrVictim->IsFreezed() == true || Attacker == Victim)
+	if (pPlayerVictim == 0x0 || pChrVictim == 0x0 || pChrVictim->IsFreezed() == true || Attacker == Victim || 
+		((Server()->Tick() - pChrVictim->GetLastUnfreeze()) / (float)Server()->TickSpeed()) <= 2.0f)
 		return;
 
 	float Renew = 2.0f;
@@ -465,6 +466,7 @@ void CGameContext::BlockSystemAttack(int Attacker, int Victim, bool Hook)
 
 void CGameContext::HandleBlockSystem()
 {
+
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		CPlayer *pPlayer = m_apPlayers[i];
@@ -526,15 +528,28 @@ void CGameContext::OnTick()
 		else
 		{
 			char aBuf[256];
+			bool AdminOnly = ((m_ShutdownTimer - Server()->Tick()) / Server()->TickSpeed()) > 60 * 3;
 			str_copy(aBuf, "Server shuts down in ", sizeof(aBuf));
 			StringTime(m_ShutdownTimer, aBuf, sizeof(aBuf));
+			if (AdminOnly)
+				str_append(aBuf, " (A)", sizeof(aBuf));
+
 			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (AdminOnly == true && Server()->GetClientAuthed(i) == IServer::AUTHED_NO)
+					continue;
 				m_BroadcastHandler.AddSideCast(i, aBuf);
+			}
 			if (m_aShutdownReason[0] != '\0')
 			{
 				str_format(aBuf, sizeof(aBuf), "Reason: %s", m_aShutdownReason);
 				for (int i = 0; i < MAX_CLIENTS; i++)
+				{
+					if (AdminOnly == true && Server()->GetClientAuthed(i) == IServer::AUTHED_NO)
+						continue;
+
 					m_BroadcastHandler.AddSideCast(i, aBuf);
+				}
 			}
 		}
 	}
@@ -1847,6 +1862,9 @@ void CGameContext::ConShutdown(IConsole::IResult *pResult, void *pUser)
 		pThis->m_ShutdownTimer = pThis->Server()->Tick() + pThis->Server()->TickSpeed() * pResult->GetInteger(0);
 		str_copy(pThis->m_aShutdownReason, pResult->GetString(1), sizeof(pThis->m_aShutdownReason));
 	}
+
+	if (pResult->NumArguments() >= 1 && pResult->GetInteger(0) <= 0)
+		pThis->m_ShutdownTimer = 0;
 }
 
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -2003,6 +2021,11 @@ bool CGameContext::IsClientReady(int ClientID)
 bool CGameContext::IsClientPlayer(int ClientID)
 {
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+}
+
+bool CGameContext::HideIDsFor(int ClientID)
+{
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->InEvent() ? true : false;
 }
 
 bool CGameContext::CanShutdown()

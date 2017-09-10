@@ -99,6 +99,8 @@ public:
 	int GetActiveWeapon() const { return m_ActiveWeapon; }
 	bool GetEndlessHook() const { return m_EndlessHook; }
 	void SetEndlessHook(bool Endless) { m_EndlessHook = Endless; }
+	int64 GetLastUnfreeze() const { return m_LastUnfreeze; }
+	int64 GetSpawnTime() const { return m_SpawnTime; }
 
 private:
 	// player controlling this character
@@ -119,7 +121,11 @@ private:
 	bool m_ZoneSpawn;
 	bool m_ZoneUntouchable;
 
+	bool m_UnfreezeInput;
+
 	int64 m_ProtectionTime;
+	int64 m_LastUnfreeze;
+	int64 m_SpawnTime;
 
 	vec2 m_LastPos;
 

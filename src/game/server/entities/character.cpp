@@ -77,6 +77,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ZoneSpawn = false;
 	m_ZoneUntouchable = false;
 
+	m_UnfreezeInput = false;
+
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
 
@@ -96,6 +98,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	GiveWeapon(WEAPON_HAMMER);
 	if(GameMap()->IsShopMap() == false)
 		GiveWeapon(WEAPON_GUN);
+
+	m_SpawnTime = Server()->Tick();
 
 	return true;
 }
@@ -296,7 +300,7 @@ void CCharacter::FireWeapon()
 	if (GetPlayer()->GetPause())
 		return;
 
-	if (IsFreezed())
+	if (IsFreezed() && m_UnfreezeInput == false)
 	{
 		if (CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses && m_FreezeCryTick < Server()->Tick())
 		{
@@ -474,6 +478,7 @@ void CCharacter::Unfreeze()
 		return;
 
 	m_FreezeTime = 0;
+	m_UnfreezeInput = true;
 }
 
 void CCharacter::Freeze(float Seconds)
@@ -1054,9 +1059,15 @@ void CCharacter::HandleRace()
 	//ignore input
 	if (IsFreezed())
 	{
-		m_Input.m_Jump = 0;
-		m_Input.m_Direction = 0;
+		if (m_UnfreezeInput == false)//allow one input on unfreeze
+		{
+			m_Input.m_Jump = 0;
+			m_Input.m_Direction = 0;
+		}
+
 		m_Input.m_Hook = 0;
+
+		m_LastUnfreeze = Server()->Tick();
 	}
 
 	//counting stars
@@ -1075,18 +1086,21 @@ void CCharacter::HandleRace()
 
 	if(m_ZoneUntouchable && m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookTick >= Server()->TickSpeed() * 10.0f)
 		m_Core.m_HookState = HOOK_RETRACTED;
+
+	if (GetPlayer()->InEvent() && m_Core.m_HookState == HOOK_GRABBED
+		&& m_Core.m_HookedPlayer == -1 && m_Core.m_HookTick >= Server()->TickSpeed() * 2.5f)
+		Freeze(1.0f);
 }
 
 void CCharacter::Tick()
 {
+	ResetZones();
 	HandleRace();
+	HandleTiles();
+	HandleExtras();
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
-
-	ResetZones();
-	HandleTiles();
-	HandleExtras();
 
 	if (m_Alive == false)
 		return;
@@ -1104,6 +1118,9 @@ void CCharacter::Tick()
 
 	// handle Weapons
 	HandleWeapons();
+
+	if (m_UnfreezeInput == true)
+		m_UnfreezeInput = false;
 
 	// Previnput
 	m_PrevInput = m_Input;

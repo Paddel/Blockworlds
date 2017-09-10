@@ -79,6 +79,7 @@ public:
 	bool TryVoteRandomEvent(int ClientID);
 	void StartRandomEvent();
 	void EndEvent();
+	void SetEventCooldown();
 	void ClientSubscribeEvent(int ClientID);
 	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
 	void PlayerKilled(int ClientID);

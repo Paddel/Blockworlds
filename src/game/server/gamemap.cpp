@@ -345,7 +345,10 @@ void CGameMap::EndEvent()
 
 	delete m_pGameEvent;
 	m_pGameEvent = 0x0;
+}
 
+void CGameMap::SetEventCooldown()
+{
 	m_RandomEventTime = Server()->Tick();
 }
 

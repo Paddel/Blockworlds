@@ -1032,6 +1032,29 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		if(m_GridFactor < 15)
 			m_GridFactor++;
 	}
+
+	TB_Bottom.VSplitLeft(30.0f, &Button, &TB_Bottom);
+	TB_Bottom.VSplitLeft(45.0f, &Button, &TB_Bottom);
+
+	static int s_RemoveBA = 0;
+	if (DoButton_Ex(&s_RemoveBA, "Rem BA", 0, &Button, 0, "Remove BlockAreas", CUI::CORNER_ALL))
+	{
+		for (int i = 0; i < m_Map.m_pGameGroup->m_lLayers.size(); i++)
+		{
+			if (m_Map.m_pGameGroup->m_lLayers[i]->m_Type != LAYERTYPE_EXTRAS)
+				continue;
+
+			CLayerExtras *pExtrasLayer = (CLayerExtras *)m_Map.m_pGameGroup->m_lLayers[i];
+			for (int i = 0; i < pExtrasLayer->m_Width*pExtrasLayer->m_Height; i++)
+			{
+				if (pExtrasLayer->m_pTiles[i].m_Index == 8)
+				{
+					pExtrasLayer->m_pTiles[i].m_Index = 0;
+					mem_zero(&pExtrasLayer->m_pExtrasData[i], sizeof(CExtrasData));
+				}
+			}
+		}
+	}
 }
 
 static void Rotate(const CPoint *pCenter, CPoint *pPoint, float Rotation)
@@ -1700,21 +1723,15 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 		}
 
 		//and the extras too
-		for (int g = 0; g < m_Map.m_lGroups.size(); g++)
+		for (int i = 0; i < m_Map.m_pGameGroup->m_lLayers.size(); i++)
 		{
-			if (m_Map.m_lGroups[g]->m_Visible == false)
+			if (m_Map.m_pGameGroup->m_Visible == false)
 				continue;
 
-			for (int i = 0; i < m_Map.m_lGroups[g]->m_lLayers.size(); i++)
-			{
-				if (m_Map.m_lGroups[g]->m_Visible == false)
-					continue;
-
-				CLayer *pLayer = m_Map.m_lGroups[g]->m_lLayers[i];
-				m_Map.m_lGroups[g]->MapScreen();
-				if (pLayer->m_Visible && pLayer->m_Type == LAYERTYPE_EXTRAS)
-					pLayer->Render();
-			}
+			CLayer *pLayer = m_Map.m_pGameGroup->m_lLayers[i];
+			m_Map.m_pGameGroup->MapScreen();
+			if (pLayer->m_Visible && pLayer->m_Type == LAYERTYPE_EXTRAS)
+				pLayer->Render();
 		}
 
 		// render the game above everything else
