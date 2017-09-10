@@ -1019,8 +1019,8 @@ void CCharacter::HandleTiles()
 
 	if (Tile == TILE_GIVEPASSIVE && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime < Server()->Tick())
 	{
-		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Passive-Mode has been activated for half an hour");
-		Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime = Server()->Tick() + Server()->TickSpeed() * 60 * 30.0f;
+		GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Passive-Mode has been activated for two hours");
+		Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime = Server()->Tick() + Server()->TickSpeed() * 60 * 60 * 2;
 	}
 
 	if(NewTile == TILE_EXTRAJUMP)
@@ -1079,12 +1079,12 @@ void CCharacter::HandleRace()
 
 void CCharacter::Tick()
 {
-	ResetZones();
 	HandleRace();
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
+	ResetZones();
 	HandleTiles();
 	HandleExtras();
 
