@@ -1287,10 +1287,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 				}
 
-				if(Team)
-					SendChatClan(ClientID, pMsg->m_pMessage);
-				else if(pPlayer->InEvent() == false)
-					pGameMap->SendChat(ClientID, pMsg->m_pMessage);
+				if (pPlayer->InEvent() == false)
+				{
+					if (Team)
+						SendChatClan(ClientID, pMsg->m_pMessage);
+					else
+						pGameMap->SendChat(ClientID, pMsg->m_pMessage);
+				}
 			}
 		}
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)

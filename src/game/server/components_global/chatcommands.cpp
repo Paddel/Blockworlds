@@ -108,6 +108,9 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 	const char *pMessage = pResult->GetString(0);
 	int Length = str_length(pMessage);
 
+	if (pGameServer->m_apPlayers[ClientID] == 0x0 || pGameServer->m_apPlayers[ClientID]->InEvent() == true)
+		return;
+
 	int NumPersons = 0;
 	int TargetID = -1;
 	for (int i = 0; i < MAX_CLIENTS; i++)
@@ -689,6 +692,7 @@ void CChatCommandsHandler::Init()
 	Register("sub", "", CHATCMDFLAG_HIDDEN, ComSubscribe, "Subscribe to a event to take part");
 	Register("hub", "", CHATCMDFLAG_HIDDEN, ComLobby, "Moves you to the lobby");
 	Register("weapons", "", CHATCMDFLAG_HIDDEN, ComWeaponkit, "Use a weaponkit");
+	Register("spec", "", CHATCMDFLAG_HIDDEN|CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)
