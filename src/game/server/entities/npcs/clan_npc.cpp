@@ -22,7 +22,7 @@ void CClanNpc::Tick()
 
 	IServer::CClanData *pClan = GameServer()->AccountsHandler()->m_lpClans[m_CheckingClan];
 
-	if (pClan->m_Level > m_HighestLevel || pClan->m_Experience > m_HighestExperience)
+	if (pClan->m_Level > m_HighestLevel || (pClan->m_Level == m_HighestLevel && pClan->m_Experience > m_HighestExperience))
 	{
 		str_copy(m_aName, pClan->m_aName, sizeof(m_aName));
 		m_HighestLevel = pClan->m_Level;
