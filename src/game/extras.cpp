@@ -9,7 +9,7 @@ const char *gs_ExtrasNames[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 {},									//EXTRAS_UNFREEZE
 { "ID", "Dir", "Dflt", "Freeze"},	//EXTRAS_DOOR
 { "ID", "Delay", "Activate"},		//EXTRAS_DOOR_HANDLE
-{},									//EXTRAS_ZONE_BLOCK
+{},									//
 {},									//EXTRAS_ZONE_PROTECTION
 {},									//EXTRAS_ZONE_SPAWN
 {},									//EXTRAS_ZONE_UNTOUCHABLE
@@ -39,7 +39,7 @@ int gs_ExtrasSizes[NUM_EXTRAS][EXTRATILE_DATA / 2] = { {},
 {},				//EXTRAS_UNFREEZE
 { 4, 2, 3, 3},	//EXTRAS_DOOR
 { 4, 8, 3},		//EXTRAS_DOOR_HANDLE
-{},				//EXTRAS_ZONE_BLOCK
+{},				//
 {},				//EXTRAS_ZONE_PROTECTION
 {},				//EXTRAS_ZONE_SPAWN
 {},				//EXTRAS_ZONE_UNTOUCHABLE

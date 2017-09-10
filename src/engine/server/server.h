@@ -227,7 +227,7 @@ public:
 
 	void PumpNetwork();
 
-	CMap *AddMap(const char *pMapName, int Port);
+	CMap *AddMap(const char *pMapName, int Port, bool Blockmap);
 	bool RemoveMap(const char *pMapName);
 	bool ReloadMap(const char *pMapName);
 

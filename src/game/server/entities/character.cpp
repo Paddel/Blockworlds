@@ -73,7 +73,6 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	m_RaceStart = 0;
 
-	m_ZoneBlock = false;
 	m_ZoneSpawn = false;
 	m_ZoneUntouchable = false;
 
@@ -737,7 +736,6 @@ void CCharacter::ResetInput()
 
 void CCharacter::ResetZones()
 {
-	m_ZoneBlock = false;
 	m_ZoneSpawn = false;
 	m_ZoneUntouchable = false;
 }
@@ -801,9 +799,6 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 
 	if (Tile == EXTRAS_UNFREEZE)
 		Unfreeze();
-
-	if (Tile == EXTRAS_ZONE_BLOCK)
-		m_ZoneBlock = true;
 
 	if (Tile == EXTRAS_ZONE_SPAWN)
 		m_ZoneSpawn = true;
@@ -1099,11 +1094,11 @@ void CCharacter::Tick()
 	HandleTiles();
 	HandleExtras();
 
-	m_Core.m_Input = m_Input;
-	m_Core.Tick(true);
-
 	if (m_Alive == false)
 		return;
+
+	m_Core.m_Input = m_Input;
+	m_Core.Tick(true);
 
 	// handle death-tiles and leaving gamelayer
 	if(GameMap()->Collision()->GetTileAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f) == TILE_DEATH ||

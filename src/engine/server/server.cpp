@@ -1365,7 +1365,7 @@ void CServer::PumpNetwork()
 	m_Econ.Update();
 }
 
-CMap *CServer::AddMap(const char *pMapName, int Port)
+CMap *CServer::AddMap(const char *pMapName, int Port, bool Blockmap)
 {
 	CMap *pMap;
 	
@@ -1373,7 +1373,7 @@ CMap *CServer::AddMap(const char *pMapName, int Port)
 		return 0x0;
 
 	pMap = new CMap(this);
-	if (pMap->Init(pMapName, Port) == false)
+	if (pMap->Init(pMapName, Port, Blockmap) == false)
 	{
 		delete pMap;
 		return 0x0;
@@ -1441,7 +1441,7 @@ bool CServer::ReloadMap(const char *pMapName)
 
 	m_lpMaps.remove_index(Index);
 
-	CMap *pNewMap = AddMap(pMapName, 0);
+	CMap *pNewMap = AddMap(pMapName, 0, pMap->IsBlockMap());
 	if (pNewMap == 0x0)
 	{
 		delete pNewMap;
@@ -1479,7 +1479,7 @@ int CServer::Run()
 		if (m_lpMaps.size() == 0)
 		{
 			dbg_msg("server", "No maps found. Use \'add_map name port\' in config.");
-			pMap = AddMap("dm1", 8303);
+			pMap = AddMap("dm1", 8303, false);
 			if (!pMap)
 				return -1;
 		}
@@ -1614,8 +1614,8 @@ int CServer::Run()
 			}
 
 			// wait for incomming data
-			/*for(int i = 0; i < m_lpMaps.size(); i++)
-				net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));*/
+			for(int i = 0; i < m_lpMaps.size(); i++)
+				net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));
 		}
 	}
 	// disconnect all clients on shutdown
@@ -1742,9 +1742,10 @@ void CServer::ConAddMap(IConsole::IResult *pResult, void *pUser)
 	CServer* pThis = static_cast<CServer *>(pUser);
 	const char *pMapName = pResult->GetString(0);
 	int Port = pResult->GetInteger(1);
+	bool Blockmap = (bool)pResult->GetInteger(2);
 	char aBuf[256];
 
-	if (pThis->AddMap(pMapName, Port) != 0x0)
+	if (pThis->AddMap(pMapName, Port, Blockmap) != 0x0)
 		str_format(aBuf, sizeof(aBuf), "Map '%s' added", pMapName);
 	else
 		str_format(aBuf, sizeof(aBuf), "Could not load map '%s'", pMapName);
@@ -1903,9 +1904,9 @@ void CServer::RegisterCommands()
 	Console()->Register("status_acc", "", CFGFLAG_SERVER, ConStatusAccounts, this, "All account infos");
 	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
 
-	Console()->Register("add_map", "si", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
-	Console()->Register("remove_map", "s", CFGFLAG_SERVER, ConRemoveMap, this, "Add a Map");
-	Console()->Register("reload_map", "s", CFGFLAG_SERVER, ConReloadMap, this, "Add a Map");
+	Console()->Register("add_map", "sii", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
+	Console()->Register("remove_map", "s", CFGFLAG_SERVER, ConRemoveMap, this, "Remove a Map");
+	Console()->Register("reload_map", "s", CFGFLAG_SERVER, ConReloadMap, this, "Reload a Map");
 	Console()->Register("list_maps", "", CFGFLAG_SERVER, ConListMaps, this, "List added Maps");
 	Console()->Register("move_player", "is", CFGFLAG_SERVER, ConMovePlayer, this, "Move a Player to a Map");
 	Console()->Register("databases_reconnect", "", CFGFLAG_SERVER, ConReconnectDatabases, this, "Reconnects all databases");

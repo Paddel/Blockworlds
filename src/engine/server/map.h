@@ -30,7 +30,7 @@ public:
 	CMap(CServer *pServer);
 	~CMap();
 
-	bool Init(const char *pFileName, int Port);
+	bool Init(const char *pFileName, int Port, int BlockMap);
 	void BlockNet();
 	void UnblockNet(NETSOCKET Socket, int Port);
 	void Tick();
@@ -39,6 +39,7 @@ public:
 
 	bool HasNetSocket();
 	bool ClientOnMap(int ClientID);
+	bool IsBlockMap();
 
 	const char *GetFileName() const { return m_aFileName; };
 	unsigned GetMapCrc() const { return m_MapCrc; };

@@ -54,12 +54,13 @@ bool CMap::LoadMapFile()
 	return true;
 }
 
-bool CMap::Init(const char *pFileName, int Port)
+bool CMap::Init(const char *pFileName, int Port, int BlockMap)
 {
 	char aBuf[128];
 
 	mem_copy(m_aFileName, pFileName, sizeof(m_aFileName));
 	m_Port = Port;
+	m_pGameMap->SetBlockMap(BlockMap);
 
 	if (LoadMapFile() == false)
 		return false;
@@ -134,4 +135,9 @@ bool CMap::HasNetSocket()
 bool CMap::ClientOnMap(int ClientID)
 {
 	return GameMap()->PlayerOnMap(ClientID);
+}
+
+bool CMap::IsBlockMap()
+{
+	return GameMap()->IsBlockMap();
 }

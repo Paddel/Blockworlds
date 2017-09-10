@@ -67,9 +67,7 @@ void CGameMap::FindMapType()
 				//CExtrasData ExtrasData = Layers()->GetExtrasData(l)[Index];
 				//vec2 Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
 
-				if (Tile == EXTRAS_ZONE_BLOCK)
-					m_BlockMap = true;
-				else if (Tile == EXTRAS_SELL_SKINMANI || Tile == EXTRAS_SELL_GUNDESIGN || Tile == EXTRAS_SELL_KNOCKOUT || Tile == EXTRAS_SELL_EXTRAS)
+				if (Tile == EXTRAS_SELL_SKINMANI || Tile == EXTRAS_SELL_GUNDESIGN || Tile == EXTRAS_SELL_KNOCKOUT || Tile == EXTRAS_SELL_EXTRAS)
 					m_ShopMap = true;
 			}
 		}

@@ -403,7 +403,7 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 			return;
 
 		int ExperienceAmount = 0;
-		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 90 < Server()->Tick() && pChr->InBlockZone() &&
+		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 90 < Server()->Tick() &&
 			pChr->GameMap()->NumPlayers() >= 8 &&
 			Server()->CompClientAddr(ClientID, pPlayer->m_AttackedBy) == false)
 		{
@@ -420,7 +420,7 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 
 		//ranking
 		if (Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_LoggedIn == true &&
-			Server()->GetClientInfo(ClientID)->m_LoggedIn == true && pChr->InBlockZone())
+			Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
 		{
 			NewRankings(Server()->GetClientInfo(pPlayer->m_AttackedBy)->m_AccountData.m_Ranking,
 				Server()->GetClientInfo(ClientID)->m_AccountData.m_Ranking);
