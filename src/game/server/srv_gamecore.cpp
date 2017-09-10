@@ -1,4 +1,5 @@
 
+#include <engine/shared/config.h>
 #include <game/mapitems.h>
 #include <game/server/entities/npc.h>
 
@@ -651,6 +652,35 @@ void CSrvCharacterCore::Move()
 	m_pCollision->MoveBox(&NewPos, &m_Vel, vec2(28.0f, 28.0f), 0);
 
 	m_Vel.x = m_Vel.x*(1.0f / RampValue);
+
+	if (m_pWorld && m_pWorld->m_Tuning.m_PlayerCollision && g_Config.m_SvInterPlayercol)
+	{
+		// check player collision
+		float Distance = distance(m_Pos, NewPos);
+		int End = Distance + 1;
+		vec2 LastPos = m_Pos;
+		for (int i = 0; i < End; i++)
+		{
+			float a = i / Distance;
+			vec2 Pos = mix(m_Pos, NewPos, a);
+			LOOP_CORES(pCharCore, p)
+			{
+				//CCharacterCore *pCharCore = m_pWorld->m_apCharacters[p];
+				if (!pCharCore || pCharCore == this)
+					continue;
+				float D = distance(Pos, pCharCore->m_Pos);
+				if (within_reach(Pos, pCharCore->m_Pos, 28.0f) == true)//D < 28.0f && D > 0.0f)
+				{
+					if (a > 0.0f)
+						m_Pos = LastPos;
+					else if (distance(NewPos, pCharCore->m_Pos) > D)
+						m_Pos = NewPos;
+					return;
+				}
+			}
+			LastPos = Pos;
+		}
+	}
 
 	m_Pos = NewPos;
 }

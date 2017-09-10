@@ -71,6 +71,7 @@ MACRO_CONFIG_INT(SvDeathNoteCoolDown, sv_deathnote_cooldown, 180, 180, 1800, CFG
 MACRO_CONFIG_INT(SvEventCooldown, sv_event_cooldown, 60*60, 60, 60*60*24, CFGFLAG_SERVER, "Time to wait until player can start another random event")
 MACRO_CONFIG_INT(SvMuteSpam, sv_mute_spam, 30, 0, 120, CFGFLAG_SERVER, "Time to wait until player can start another random event")
 MACRO_CONFIG_INT(SvWhisperSrv, sv_whispersrv, 0, 0, 1, CFGFLAG_SERVER, "Whisper as servermsg")
+MACRO_CONFIG_INT(SvInterPlayercol, sv_inter_playercol, 1, 0, 1, CFGFLAG_SERVER, "Calculates playercollision as interpolation")
 
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
