@@ -142,10 +142,10 @@ bool CGameMap::PlayerJoin(int ClientID)
 	if (FreePlayerSlot() == false)
 		return false;
 
+	m_NumPlayers++;
+
 	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = pPlayer;
-
-	m_NumPlayers++;
 
 	// send active vote
 	if (m_MapVoting.GetVoteCloseTime())
@@ -155,6 +155,9 @@ bool CGameMap::PlayerJoin(int ClientID)
 
 void CGameMap::PlayerLeave(int ClientID)
 {
+	if (m_apPlayers[ClientID] == 0x0)
+		return;
+
 	m_apPlayers[ClientID] = 0x0;
 	m_NumPlayers--;
 	m_MapVoting.UpdateVotes();

@@ -663,18 +663,6 @@ void CServer::DoSnapshot()
 void CServer::SetMapOnConnect(int ClientID)
 {
 	CMap *pMap = 0x0;
-	//dummy connect
-	for (int i = 0; i < m_NetServer.MaxClients(); i++)
-	{
-		if (m_aClients[i].m_State == CClient::STATE_EMPTY || i == ClientID)
-			continue;
-
-		if (CompClientAddr(ClientID, i) == true)
-		{
-			m_aClients[ClientID].m_pMap = m_aClients[i].m_pMap;
-			return;
-		}
-	}
 
 	//connect via serverbrowser
 	if (g_Config.m_SvLobbyOnly == false)
@@ -685,6 +673,19 @@ void CServer::SetMapOnConnect(int ClientID)
 			NETSOCKET ClientSocket = m_NetServer.ClientSocket(ClientID);
 			if (mem_comp(&ClientSocket, &MapSocket, sizeof(NETSOCKET)) == 0)
 				pMap = m_lpMaps[i];
+		}
+	}
+
+	//dummy connect
+	for (int i = 0; i < m_NetServer.MaxClients(); i++)
+	{
+		if (m_aClients[i].m_State == CClient::STATE_EMPTY || i == ClientID)
+			continue;
+
+		if (CompClientAddr(ClientID, i) == true)
+		{
+			pMap = m_aClients[i].m_pMap;
+			break;
 		}
 	}
 
@@ -1184,7 +1185,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 	char aBuf[128];
 
 	int WantingMaxClients = Info64 ? 64 : 16;
-	int MaxClientsOnMap = pMap == m_pDefaultMap ? MAX_CLIENTS : g_Config.m_SvMaxClientsPerMap;
+	int MaxClientsOnMap = min(g_Config.m_SvMaxClientsPerMap, m_NetServer.MaxClients());
 	int MaxClients = min(WantingMaxClients, MaxClientsOnMap);
 
 	// count the players
@@ -1194,15 +1195,15 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 	{
 		if (m_aClients[i].m_State != CClient::STATE_EMPTY)
 			TotalClients++;
-		if (m_aClients[i].m_State != CClient::STATE_EMPTY && (pMap == m_pDefaultMap || pMap->ClientOnMap(i)))
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY && ((pMap == m_pDefaultMap && m_aClients[i].m_pMap->GetPort() <= 0) || pMap->ClientOnMap(i)))
 			ClientCount++;
 	}
 	bool ServerFull = (TotalClients == m_NetServer.MaxClients());
-	bool MapFull = (pMap == m_pDefaultMap ? ServerFull : ClientCount >= MaxClientsOnMap);
+	//bool MapFull = (pMap == m_pDefaultMap ? ServerFull : ClientCount >= MaxClientsOnMap);
 	int ClientsOnMap = ClientCount;
 
 	if(ClientCount >= MaxClients)
-		ClientCount = MaxClients - (int)(!MapFull);
+		ClientCount = MaxClients - (int)(!ServerFull);
 
 	if (ServerFull)
 		MaxClients = ClientCount;
@@ -1228,8 +1229,16 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 			str_fcat(aBuf, sizeof(aBuf), "%c", g_Config.m_SvName[i]);
 	}
 
-	if (MaxClientsOnMap > WantingMaxClients)
-		str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", ClientsOnMap, MaxClientsOnMap);
+	if (pMap == m_pDefaultMap)
+	{
+		if (MAX_CLIENTS > WantingMaxClients)
+			str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", TotalClients, m_NetServer.MaxClients());
+	}
+	else
+	{
+		if (MaxClientsOnMap > WantingMaxClients)
+			str_fcat(aBuf, sizeof(aBuf), " [%i/%i]", ClientsOnMap, MaxClientsOnMap);
+	}
 	p.AddString(aBuf, 64);
 
 	p.AddString(pMap->GetFileName(), 32);
@@ -1273,7 +1282,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 
 	for (int i = 0, Clients = 0; i < MAX_CLIENTS && Clients < ClientCount; i++)
 	{
-		if (m_aClients[i].m_State != CClient::STATE_EMPTY && (pMap == m_pDefaultMap || pMap->ClientOnMap(i)))
+		if (m_aClients[i].m_State != CClient::STATE_EMPTY && ((pMap == m_pDefaultMap && m_aClients[i].m_pMap->GetPort() <= 0) || pMap->ClientOnMap(i)))
 		{
 			if (Skip-- > 0)
 				continue;
