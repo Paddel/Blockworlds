@@ -669,7 +669,7 @@ void CSrvCharacterCore::Move()
 				if (!pCharCore || pCharCore == this)
 					continue;
 				float D = distance(Pos, pCharCore->m_Pos);
-				if (within_reach(Pos, pCharCore->m_Pos, 28.0f) == true)//D < 28.0f && D > 0.0f)
+				if (within_reach(Pos, pCharCore->m_Pos, 28.0f) == true && Pos != pCharCore->m_Pos && pCharCore->m_Inviolable == false && m_Inviolable == false)//D < 28.0f && D > 0.0f)
 				{
 					if (a > 0.0f)
 						m_Pos = LastPos;
