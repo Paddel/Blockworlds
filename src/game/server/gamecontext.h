@@ -36,6 +36,9 @@ class CGameContext : public IGameServer
 	CCosmeticsHandler m_CosmeticsHandler;
 	CBroadcastHandler m_BroadcastHandler;
 
+	int64 m_ShutdownTimer;
+	char m_aShutdownReason[128];
+
 	class CComponentGlobal *m_apComponents[16];
 	int m_NumComponents;
 
@@ -57,6 +60,7 @@ class CGameContext : public IGameServer
 	static void ConUnmutePlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConPassivePlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConVIPSet(IConsole::IResult *pResult, void *pUserData);
+	static void ConShutdown(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAccountsystemupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAccountForceupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -64,7 +68,6 @@ class CGameContext : public IGameServer
 
 	void InitComponents();
 
-	bool m_Resetting;
 public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
@@ -96,7 +99,6 @@ public:
 		VOTE_ENFORCE_NO,
 		VOTE_ENFORCE_YES,
 	};
-	CHeap *m_pVoteOptionHeap;
 	CVoteOptionServer *m_pVoteOptionFirst;
 	CVoteOptionServer *m_pVoteOptionLast;
 

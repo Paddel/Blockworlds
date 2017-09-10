@@ -200,8 +200,8 @@ void CBroadcastHandler::AddMainCast(int ClientID, const char *pText, int Time)
 
 void CBroadcastHandler::AddSideCast(int ClientID, const char *pText)
 {
-	if (m_pCurrentState[ClientID] == 0x0)
-		return;//offline or not ready yet
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS || m_pCurrentState[ClientID] == 0x0)
+		return;
 
 	int Length = str_length(pText);
 	char *pBuf = new char[Length + 1];

@@ -182,6 +182,8 @@ public:
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
 
+	virtual void Shutdown() = 0;
+
 	enum
 	{
 		RCON_CID_SERV=-1,

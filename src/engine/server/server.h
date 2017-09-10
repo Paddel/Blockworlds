@@ -236,7 +236,6 @@ public:
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
 	static void ConStatusAccounts(IConsole::IResult *pResult, void *pUser);
-	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConAddMap(IConsole::IResult *pResult, void *pUser);
 	static void ConRemoveMap(IConsole::IResult *pResult, void *pUser);
@@ -257,6 +256,8 @@ public:
 	virtual void SnapFreeID(int ID);
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
+
+	void Shutdown();
 
 	CMap *CurrentMap(int ClientID);
 	int CurrentMapIndex(int ClientID);

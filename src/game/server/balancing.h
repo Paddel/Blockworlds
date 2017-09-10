@@ -37,8 +37,23 @@ inline bool ShopInfoSkinmani(int Index, int& Price, int& Level)
 	}
 	else if (Index == CCosmeticsHandler::SKINMANI_FEET_BLACKWHITE)
 	{
-		Price = 450;
-		Level = 75;
+		Price = 550;
+		Level = 105;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::SKINMANI_FEET_RGB || 
+		Index == CCosmeticsHandler::SKINMANI_FEET_CMY)
+	{
+		Price = 750;
+		Level = 145;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::SKINMANI_BODY_FIRE ||
+		Index == CCosmeticsHandler::SKINMANI_BODY_WATER ||
+		Index == CCosmeticsHandler::SKINMANI_BODY_POISON)
+	{
+		Price = 1600;
+		Level = 250;
 		return true;
 	}
 	else
@@ -62,22 +77,40 @@ inline bool ShopInfoGundesign(int Index, int& Price, int& Level)
 	}
 	else if (Index == CCosmeticsHandler::GUNDESIGN_BLINKING)
 	{
-		Price = 450;
-		Level = 75;
+		Price = 600;
+		Level = 115;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::GUNDESIGN_STARX)
+	{
+		Price = 750;
+		Level = 145;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::GUNDESIGN_REVERSE)
 	{
-		Price = 500;
-		Level = 85;
+		Price = 900;
+		Level = 175;
 		return true;
 	}
-	/*else if (Index == CCosmeticsHandler::GUNDESIGN_INVISBULLET)
+	else if (Index == CCosmeticsHandler::GUNDESIGN_ARMOR)
 	{
-		Price = 700;
-		Level = 95;
+		Price = 1000;
+		Level = 205;
 		return true;
-	}*/
+	}
+	else if (Index == CCosmeticsHandler::GUNDESIGN_HEART)
+	{
+		Price = 1500;
+		Level = 245;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::GUNDESIGN_PEW)
+	{
+		Price = 2000;
+		Level = 285;
+		return true;
+	}
 	else
 		return false;
 }
@@ -94,14 +127,44 @@ inline bool ShopInfoKnockout(int Index, int& Price, int& Level)
 	}
 	else if (Index == CCosmeticsHandler::KNOCKOUT_STARRING)
 	{
-		Price = 450;
-		Level = 75;
+		Price = 600;
+		Level = 115;
 		return true;
 	}
 	else if (Index == CCosmeticsHandler::KNOCKOUT_STAREXPLOSION)
 	{
-		Price = 500;
-		Level = 85;
+		Price = 700;
+		Level = 135;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::KNOCKOUT_THUNDERSTORM)
+	{
+		Price = 900;
+		Level = 175;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::KNOCKOUT_LOVE)
+	{
+		Price = 1300;
+		Level = 225;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::KNOCKOUT_KORIP)
+	{
+		Price = 1600;
+		Level = 255;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::KNOCKOUT_KOEZ)
+	{
+		Price = 2000;
+		Level = 295;
+		return true;
+	}
+	else if (Index == CCosmeticsHandler::KNOCKOUT_KONOOB)
+	{
+		Price = 2100;
+		Level = 305;
 		return true;
 	}
 	else

@@ -18,7 +18,6 @@
 
 CGameContext::CGameContext()
 {
-	m_Resetting = 0;
 	m_pServer = 0;
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
@@ -28,16 +27,14 @@ CGameContext::CGameContext()
 	m_pVoteOptionLast = 0;
 	m_NumVoteOptions = 0;
 	m_LockTeams = 0;
-
-	m_pVoteOptionHeap = new CHeap();
+	m_ShutdownTimer = 0;
+	mem_zero(&m_aShutdownReason, sizeof(m_aShutdownReason));
 }
 
 CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
-	if(!m_Resetting)
-		delete m_pVoteOptionHeap;
 }
 
 void CGameContext::InitComponents()
@@ -518,6 +515,27 @@ void CGameContext::OnTick()
 		{
 			m_apPlayers[i]->Tick();
 			m_apPlayers[i]->PostTick();
+		}
+	}
+
+	//shutdown timer
+	if (m_ShutdownTimer != 0)
+	{
+		if (m_ShutdownTimer < Server()->Tick())
+			Server()->Shutdown();
+		else
+		{
+			char aBuf[256];
+			str_copy(aBuf, "Server shuts down in ", sizeof(aBuf));
+			StringTime(m_ShutdownTimer, aBuf, sizeof(aBuf));
+			for (int i = 0; i < MAX_CLIENTS; i++)
+				m_BroadcastHandler.AddSideCast(i, aBuf);
+			if (m_aShutdownReason[0] != '\0')
+			{
+				str_format(aBuf, sizeof(aBuf), "Reason: %s", m_aShutdownReason);
+				for (int i = 0; i < MAX_CLIENTS; i++)
+					m_BroadcastHandler.AddSideCast(i, aBuf);
+			}
 		}
 	}
 }
@@ -1389,7 +1407,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		else if (MsgID == NETMSGTYPE_CL_CHANGEINFO)
 		{
-			if(g_Config.m_SvSpamprotection && pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*7.5f > Server()->Tick())
+			if(g_Config.m_SvSpamprotection && pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*15 > Server()->Tick())
 				return;
 
 			CNetMsg_Cl_ChangeInfo *pMsg = (CNetMsg_Cl_ChangeInfo *)pRawMsg;
@@ -1811,6 +1829,23 @@ void CGameContext::ConVIPSet(IConsole::IResult *pResult, void *pUser)
 	pThis->m_AccountsHandler.Save(ClientID);
 }
 
+void CGameContext::ConShutdown(IConsole::IResult *pResult, void *pUser)
+{
+	CGameContext *pThis = (CGameContext *)pUser;
+	if (pResult->NumArguments() == 0)
+		pThis->Server()->Shutdown();
+	else if (pResult->NumArguments() == 1)
+	{
+		pThis->m_ShutdownTimer = pThis->Server()->Tick() + pThis->Server()->TickSpeed() * pResult->GetInteger(0);
+		pThis->m_aShutdownReason[0] = '\0';
+	}
+	else if (pResult->NumArguments() == 2)
+	{
+		pThis->m_ShutdownTimer = pThis->Server()->Tick() + pThis->Server()->TickSpeed() * pResult->GetInteger(0);
+		str_copy(pThis->m_aShutdownReason, pResult->GetString(1), sizeof(pThis->m_aShutdownReason));
+	}
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -1912,11 +1947,12 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("unmute_player", "i", CFGFLAG_SERVER, ConUnmutePlayer, this, "Unmutes a player to chat");
 	Console()->Register("passive_player", "ii", CFGFLAG_SERVER, ConPassivePlayer, this, "Forbids a player to chat");
 	Console()->Register("vip_player", "ii", CFGFLAG_SERVER, ConVIPSet, this, "Sets vip status for a player");
+	Console()->Register("shutdown", "?i?is", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 	Console()->Chain("sv_accountsystem", ConchainAccountsystemupdate, this);
 	Console()->Chain("sv_account_force", ConchainAccountForceupdate, this);
-	Console()->Chain("shutdown", ConchainShutdownupdate, this);
+	//Console()->Chain("shutdown", ConchainShutdownupdate, this);
 }
 
 void CGameContext::OnInit(/*class IKernel *pKernel*/)

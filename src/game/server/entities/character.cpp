@@ -664,7 +664,8 @@ int CCharacter::GetCurrentEmote()
 			Emote = EMOTE_BLINK;
 	}
 
-	Emote = m_EmoteType;
+	if(m_EmoteType != EMOTE_NORMAL)
+		Emote = m_EmoteType;
 
 	if (Emote == EMOTE_NORMAL)
 	{

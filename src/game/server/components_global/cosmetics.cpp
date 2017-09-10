@@ -13,8 +13,11 @@ const char *CCosmeticsHandler::ms_KnockoutNames[NUM_KNOCKOUTS] = {
 	"KO Stars",
 	"Star Ring",
 	"Starexplosion",
-	"Love",
 	"Thunderstorm",
+	"Love",
+	"KO RIP",
+	"KO EZ",
+	"KO NOOB",
 };
 
 const char *CCosmeticsHandler::ms_GundesignNames[NUM_GUNDESIGNS] = {
@@ -23,8 +26,10 @@ const char *CCosmeticsHandler::ms_GundesignNames[NUM_GUNDESIGNS] = {
 	"TwoOClock",
 	"Blinking Bullet",
 	"Reverse",
+	"StarX",
 	"Invis Bullet",
-	"Heart",
+	"Armorgun",
+	"Heartgun",
 	"Pew",
 	"1337 gun",
 };
@@ -34,6 +39,11 @@ const char *CCosmeticsHandler::ms_SkinmaniNames[NUM_SKINMANIS] = {
 	"Feet Water",
 	"Feet Poison",
 	"Feet Blackwhite",
+	"Feet RGB",
+	"Feet CMY",
+	"Body Fire",
+	"Body Water",
+	"Body Poison",
 	"Nightblue",
 	"Rainbow (VIP)",
 	"Epi Rainbow (VIP)",
@@ -144,6 +154,12 @@ void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGam
 		pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_LOVE);
 	else if (Effect == KNOCKOUT_THUNDERSTORM)
 		pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_THUNDERSTORM);
+	else if (Effect == KNOCKOUT_KORIP)
+		pGameMap->AnimationHandler()->Laserwrite("RIP", Pos + vec2(0, 30.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+	else if (Effect == KNOCKOUT_KOEZ)
+		pGameMap->AnimationHandler()->Laserwrite("EZ", Pos + vec2(0, 30.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+	else if (Effect == KNOCKOUT_KONOOB)
+		pGameMap->AnimationHandler()->Laserwrite("NOOB", Pos + vec2(0, 30.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else
 		dbg_msg("cosmetics", "ERROR: Knockouteffect '%s' not implemented!", ms_KnockoutNames[Effect]);
 }
@@ -254,6 +270,11 @@ bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap,
 			GameServer()->CreateDamageInd(pGameMap, Pos + GetDir(AngleTo - 5.1f) * 85.0f, AngleTo + pi, 1);
 		}
 	}
+	else if (Effect == GUNDESIGN_STARX)
+	{
+		GameServer()->CreateDamageInd(pGameMap, Pos + vec2(1, 1) * 28.0f, 2.7f, 1);
+		GameServer()->CreateDamageInd(pGameMap, Pos + vec2(-1, 1) * 28.0f, 2.7f + pi * 0.5f, 1);
+	}
 	else if (Effect == GUNDESIGN_CLOCKWISE)
 	{
 		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_CW, Direction);
@@ -319,6 +340,18 @@ bool CCosmeticsHandler::SnapGundesignRaw(vec2 Pos, int Effect, int EntityID)
 			pP->m_X = (int)Pos.x;
 			pP->m_Y = (int)Pos.y;
 			pP->m_Type = POWERUP_HEALTH;
+			pP->m_Subtype = 0;
+		}
+		return true;
+	}
+	else if (Effect == GUNDESIGN_ARMOR)
+	{
+		CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, EntityID, sizeof(CNetObj_Pickup)));
+		if (pP != 0x0)
+		{
+			pP->m_X = (int)Pos.x;
+			pP->m_Y = (int)Pos.y;
+			pP->m_Type = POWERUP_ARMOR;
 			pP->m_Subtype = 0;
 		}
 		return true;
@@ -437,38 +470,78 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 {
 	int64 TickDef = Server()->Tick() - Tick;//only work with Tickdef
 	vec3 HSLBody = CcToHsl(pClientInfo->m_ColorBody);
-	//vec3 HSLFeet = CcToHsl(pClientInfo->m_ColorFeet);
+	vec3 HSLFeet = CcToHsl(pClientInfo->m_ColorFeet);
 
 	if (Effect == SKINMANI_FEET_FIRE)
 	{
-		HSLBody.h = 0.0f;
-		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
-		HSLBody.l = 0.5f;
-		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		HSLFeet.h = 0.0f;
+		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_FEET_WATER)
 	{
-		HSLBody.h = 0.6f;
-		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
-		HSLBody.l = 0.5f;
-		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		HSLFeet.h = 0.6f;
+		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_FEET_POISON)
 	{
-		HSLBody.h = 0.3f;
-		HSLBody.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
-		HSLBody.l = 0.5f;
-		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		HSLFeet.h = 0.3f;
+		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_FEET_BLACKWHITE)
 	{
-		HSLBody.h = 0.0f;
-		HSLBody.s = 0.0f;
-		HSLBody.l = (sinf(TickDef / 255.0f) + 3.0f) / 4.0f;
-		pClientInfo->m_ColorFeet = HslToCc(HSLBody);
+		HSLFeet.h = 0.0f;
+		HSLFeet.s = 0.0f;
+		HSLFeet.l = (sinf(TickDef / 255.0f) + 3.0f) / 4.0f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
+		pClientInfo->m_UseCustomColor = 1;
+	}
+	else if (Effect == SKINMANI_FEET_RGB)
+	{
+		HSLFeet.h = 0.3f * ((int)(Server()->Tick() / (Server()->TickSpeed() * 2)) % 3);
+		HSLFeet.s = 1.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
+		pClientInfo->m_UseCustomColor = 1;
+	}
+	else if (Effect == SKINMANI_FEET_CMY)
+	{
+		HSLFeet.h = 0.15f + 0.3f * ((int)(Server()->Tick() / (Server()->TickSpeed() * 2)) % 3);
+		HSLFeet.s = 1.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
+		pClientInfo->m_UseCustomColor = 1;
+	}
+	if (Effect == SKINMANI_BODY_FIRE)
+	{
+		HSLFeet.h = 0.0f;
+		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorBody = HslToCc(HSLFeet);
+		pClientInfo->m_UseCustomColor = 1;
+	}
+	else if (Effect == SKINMANI_BODY_WATER)
+	{
+		HSLFeet.h = 0.6f;
+		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorBody = HslToCc(HSLFeet);
+		pClientInfo->m_UseCustomColor = 1;
+	}
+	else if (Effect == SKINMANI_BODY_POISON)
+	{
+		HSLFeet.h = 0.3f;
+		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.l = 0.5f;
+		pClientInfo->m_ColorBody = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
 	}
 	else if (Effect == SKINMANI_NIGHTBLUE)

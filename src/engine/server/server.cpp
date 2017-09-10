@@ -1706,11 +1706,6 @@ void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 	}
 }
 
-void CServer::ConShutdown(IConsole::IResult *pResult, void *pUser)
-{
-	((CServer *)pUser)->m_RunServer = 0;
-}
-
 void CServer::ConLogout(IConsole::IResult *pResult, void *pUser)
 {
 	CServer *pServer = (CServer *)pUser;
@@ -1897,7 +1892,6 @@ void CServer::RegisterCommands()
 	Console()->Register("kick", "i?r", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");
 	Console()->Register("status", "", CFGFLAG_SERVER, ConStatus, this, "List players");
 	Console()->Register("status_acc", "", CFGFLAG_SERVER, ConStatusAccounts, this, "All account infos");
-	Console()->Register("shutdown", "", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
 	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
 
 	Console()->Register("add_map", "si", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
@@ -1941,6 +1935,11 @@ void *CServer::SnapNewItem(int Type, int ID, int Size)
 void CServer::SnapSetStaticsize(int ItemType, int Size)
 {
 	m_SnapshotDelta.SetStaticsize(ItemType, Size);
+}
+
+void CServer::Shutdown()
+{
+	m_RunServer = 0;
 }
 
 CMap *CServer::CurrentMap(int ClientID)
