@@ -1,6 +1,5 @@
 
-shutdown
-cosmic
+shutdown abbort
 
 --
 

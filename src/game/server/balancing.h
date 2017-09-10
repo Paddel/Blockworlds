@@ -143,13 +143,13 @@ inline bool ShopInfoKnockout(int Index, int& Price, int& Level)
 		Level = 175;
 		return true;
 	}
-	else if (Index == CCosmeticsHandler::KNOCKOUT_LOVE)
+	else if (Index == CCosmeticsHandler::KNOCKOUT_KORIP)
 	{
 		Price = 1300;
 		Level = 225;
 		return true;
 	}
-	else if (Index == CCosmeticsHandler::KNOCKOUT_KORIP)
+	else if (Index == CCosmeticsHandler::KNOCKOUT_LOVE)
 	{
 		Price = 1600;
 		Level = 255;
