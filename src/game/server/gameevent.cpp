@@ -135,6 +135,12 @@ bool CGameEvent::OnCountdown()
 	return m_CreateTick + Server()->TickSpeed() * TIME_COUNTDOWN > Server()->Tick();
 }
 
+void CGameEvent::TestStartEvent()
+{
+	m_CreateTick = Server()->Tick() - Server()->TickSpeed() * TIME_COUNTDOWN;
+	Start();
+}
+
 void CGameEvent::SetWinner(int ClientID)
 {
 	if (Server()->ClientIngame(ClientID) == false || GameMap()->m_apPlayers[ClientID] == 0x0)

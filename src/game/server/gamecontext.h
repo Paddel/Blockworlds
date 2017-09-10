@@ -61,6 +61,7 @@ class CGameContext : public IGameServer
 	static void ConPassivePlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConVIPSet(IConsole::IResult *pResult, void *pUserData);
 	static void ConShutdown(IConsole::IResult *pResult, void *pUserData);
+	static void ConTestEvent(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAccountsystemupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAccountForceupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);

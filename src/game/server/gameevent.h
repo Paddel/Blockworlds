@@ -51,6 +51,7 @@ public:
 	
 	void Tick();
 	bool OnCountdown();
+	void TestStartEvent();
 	void SetWinner(int ClientID);
 	void ClientSubscribe(int ClientID);
 	void ResumeClient(int ClientID);

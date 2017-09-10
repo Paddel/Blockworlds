@@ -7,8 +7,8 @@
 #include <engine/mapengine.h>
 #include <engine/console.h>
 #include <game/version.h>
-#include <game/collision.h>
 #include <game/gamecore.h>
+#include <game/server/gameevent.h>
 #include <game/server/entities/experience.h>
 
 #include "component.h"
@@ -1867,6 +1867,34 @@ void CGameContext::ConShutdown(IConsole::IResult *pResult, void *pUser)
 		pThis->m_ShutdownTimer = 0;
 }
 
+void CGameContext::ConTestEvent(IConsole::IResult *pResult, void *pUser)
+{
+	CGameContext *pThis = (CGameContext *)pUser;
+	if (g_Config.m_Debug == 0)
+		return;
+
+	int ClientID = pThis->Server()->RconClientID();
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+		return;
+
+	CGameMap *pGameMap = pThis->Server()->CurrentGameMap(ClientID);
+	if (pGameMap == 0x0)
+		return;
+
+	pGameMap->StartRandomEvent();
+	if (pGameMap->GetEvent() == 0x0)
+		return;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pGameMap->m_apPlayers[i] == 0x0)
+			continue;
+		pGameMap->m_apPlayers[i]->m_SubscribeEvent = true;
+	}
+
+	pGameMap->GetEvent()->TestStartEvent();
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -1969,6 +1997,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("passive_player", "ii", CFGFLAG_SERVER, ConPassivePlayer, this, "Forbids a player to chat");
 	Console()->Register("vip_player", "ii", CFGFLAG_SERVER, ConVIPSet, this, "Sets vip status for a player");
 	Console()->Register("shutdown", "?i?is", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
+	Console()->Register("test_event", "", CFGFLAG_SERVER, ConTestEvent, this, "Shut down");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 	Console()->Chain("sv_accountsystem", ConchainAccountsystemupdate, this);
