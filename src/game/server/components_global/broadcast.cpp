@@ -196,7 +196,7 @@ void CBroadcastHandler::AddMainCast(int ClientID, const char *pText, int Time)
 //	pMainCast->m_pText = pBuf;
 //	pMainCast->m_Ticks = Server()->Tick() + Time;
 //	m_pCurrentState[ClientID]->m_lpMainCasts.add(pMainCast);
-//}
+}
 
 void CBroadcastHandler::AddSideCast(int ClientID, const char *pText)
 {
