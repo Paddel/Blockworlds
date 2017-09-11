@@ -60,7 +60,7 @@ CBroadcastHandler::CMainCast::~CMainCast()
 CBroadcastHandler::CBroadState::~CBroadState()
 {
 	m_lpSideCasts.delete_all();
-	m_lpMainCasts.delete_all();
+	//m_lpMainCasts.delete_all();
 }
 
 CBroadcastHandler::CBroadcastHandler()
@@ -80,7 +80,7 @@ void CBroadcastHandler::AddWhitespace(char *pDst, int Size, const char *pSrc)
 
 bool CBroadcastHandler::StateEmpty(CBroadState *pState)
 {
-	return pState->m_lpSideCasts.size() == 0 && pState->m_lpMainCasts.size() == 0;
+	return pState->m_lpSideCasts.size() == 0 /*&& pState->m_lpMainCasts.size() == 0*/;
 }
 
 bool CBroadcastHandler::NeedRefresh(int ClientID)
@@ -103,17 +103,17 @@ bool CBroadcastHandler::CompareStates(int ClientID)
 	if (m_pCurrentState[ClientID] == 0x0 || m_pLastState[ClientID] == 0x0)
 		return false;
 
-	if (m_pCurrentState[ClientID]->m_lpSideCasts.size() != m_pLastState[ClientID]->m_lpSideCasts.size() ||
-		m_pCurrentState[ClientID]->m_lpMainCasts.size() != m_pLastState[ClientID]->m_lpMainCasts.size())
+	if (m_pCurrentState[ClientID]->m_lpSideCasts.size() != m_pLastState[ClientID]->m_lpSideCasts.size() /*||
+		m_pCurrentState[ClientID]->m_lpMainCasts.size() != m_pLastState[ClientID]->m_lpMainCasts.size()*/)
 		return true;
 
 	for (int i = 0; i < m_pCurrentState[ClientID]->m_lpSideCasts.size(); i++)
 		if (str_comp(m_pCurrentState[ClientID]->m_lpSideCasts[i], m_pLastState[ClientID]->m_lpSideCasts[i]) != 0)
 			return true;
 
-	for(int i = 0; i < m_pCurrentState[ClientID]->m_lpMainCasts.size(); i++)
+	/*for(int i = 0; i < m_pCurrentState[ClientID]->m_lpMainCasts.size(); i++)
 		if (str_comp(m_pCurrentState[ClientID]->m_lpMainCasts[i]->m_pText, m_pLastState[ClientID]->m_lpMainCasts[i]->m_pText) != 0)
-			return true;
+			return true;*/
 
 	return false;
 }
@@ -130,11 +130,11 @@ void CBroadcastHandler::UpdateClient(int ClientID)
 	for (int i = 0; i < m_pCurrentState[ClientID]->m_lpSideCasts.size(); i++)
 		str_fcat(aText, sizeof(aText), "%s\n", m_pCurrentState[ClientID]->m_lpSideCasts[i]);
 
-	for (int i = 0; i < m_pCurrentState[ClientID]->m_lpMainCasts.size(); i++)
+	/*for (int i = 0; i < m_pCurrentState[ClientID]->m_lpMainCasts.size(); i++)
 	{
 		AddWhitespace(aText, sizeof(aText), m_pCurrentState[ClientID]->m_lpMainCasts[i]->m_pText);
 		str_fcat(aText, sizeof(aText), "%s\n", m_pCurrentState[ClientID]->m_lpMainCasts[i]->m_pText);
-	}
+	}*/
 
 	str_fcat(aText, sizeof(aText), "                                                                           "
 		"                                                                                                    ");
@@ -153,14 +153,14 @@ void CBroadcastHandler::TickClient(int ClientID)
 
 	if (m_pLastState[ClientID] != 0x0)
 	{
-		for (int i = 0; i < m_pLastState[ClientID]->m_lpMainCasts.size(); i++)
-		{
-			if (m_pLastState[ClientID]->m_lpMainCasts[i]->m_Ticks + 1 > Server()->Tick())
-			{
-				m_pLastState[ClientID]->m_lpMainCasts.remove_index(i);//do not delete
-				i--;
-			}
-		}
+		//for (int i = 0; i < m_pLastState[ClientID]->m_lpMainCasts.size(); i++)
+		//{
+		//	if (m_pLastState[ClientID]->m_lpMainCasts[i]->m_Ticks + 1 > Server()->Tick())
+		//	{
+		//		m_pLastState[ClientID]->m_lpMainCasts.remove_index(i);//do not delete
+		//		i--;
+		//	}
+		//}
 
 		delete m_pLastState[ClientID];
 	}
@@ -170,11 +170,11 @@ void CBroadcastHandler::TickClient(int ClientID)
 
 	if (m_pLastState[ClientID] != 0x0)
 	{
-		for (int i = 0; i < m_pLastState[ClientID]->m_lpMainCasts.size(); i++)
+		/*for (int i = 0; i < m_pLastState[ClientID]->m_lpMainCasts.size(); i++)
 		{
 			if (m_pLastState[ClientID]->m_lpMainCasts[i]->m_Ticks > Server()->Tick())
 				m_pCurrentState[ClientID]->m_lpMainCasts.add(m_pLastState[ClientID]->m_lpMainCasts[i]);
-		}
+		}*/
 	}
 }
 
@@ -188,15 +188,15 @@ void CBroadcastHandler::AddMainCast(int ClientID, const char *pText, int Time)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS || m_pCurrentState[ClientID] == 0x0)
 		return;
-
-	int Length = str_length(pText);
-	char *pBuf = new char[Length + 1];
-	str_copy(pBuf, pText, Length + 1);
-	CMainCast *pMainCast = new CMainCast();
-	pMainCast->m_pText = pBuf;
-	pMainCast->m_Ticks = Server()->Tick() + Time;
-	m_pCurrentState[ClientID]->m_lpMainCasts.add(pMainCast);
-}
+//
+//	int Length = str_length(pText);
+//	char *pBuf = new char[Length + 1];
+//	str_copy(pBuf, pText, Length + 1);
+//	CMainCast *pMainCast = new CMainCast();
+//	pMainCast->m_pText = pBuf;
+//	pMainCast->m_Ticks = Server()->Tick() + Time;
+//	m_pCurrentState[ClientID]->m_lpMainCasts.add(pMainCast);
+//}
 
 void CBroadcastHandler::AddSideCast(int ClientID, const char *pText)
 {

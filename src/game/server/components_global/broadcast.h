@@ -16,7 +16,7 @@ class CBroadcastHandler : public CComponentGlobal
 	struct CBroadState
 	{
 		array<char *> m_lpSideCasts;
-		array<CMainCast *> m_lpMainCasts;
+		//array<CMainCast *> m_lpMainCasts;
 		~CBroadState();
 	};
 

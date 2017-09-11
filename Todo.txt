@@ -3,6 +3,10 @@ save last cosmetics
 last action antifarm
 statistics
 level info
+clientversion
+clan level
+/converse
+max länge von chat erhöhen
 
 --
 
