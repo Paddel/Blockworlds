@@ -1,6 +1,8 @@
 
 save last cosmetics
 last action antifarm
+statistics
+level info
 
 --
 

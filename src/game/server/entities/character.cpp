@@ -668,23 +668,23 @@ int CCharacter::GetCurrentEmote()
 			Emote = EMOTE_BLINK;
 	}
 
-	if(m_EmoteType != EMOTE_NORMAL)
+	if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType != EMOTE_NORMAL && Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteStop > Server()->Tick())
+		Emote = Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType;
+
+	if (m_EmoteType != EMOTE_NORMAL)
 		Emote = m_EmoteType;
+
+	if (GetPlayer()->GetPause() == true)
+		Emote = EMOTE_BLINK;
+
+	if (GetPlayer()->InEvent() == true)
+		Emote = EMOTE_NORMAL;
 
 	if (Emote == EMOTE_NORMAL)
 	{
 		if (250 - ((Server()->Tick() - m_LastAction) % (250)) < 5)
 			Emote = EMOTE_BLINK;
 	}
-
-	if (GetPlayer()->GetPause() == true)
-		Emote = EMOTE_BLINK;
-
-	if (Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType != EMOTE_NORMAL && Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteStop > Server()->Tick())
-		Emote = Server()->GetClientInfo(GetPlayer()->GetCID())->m_EmoteType;
-
-	if (GetPlayer()->InEvent() == true)
-		Emote = EMOTE_NORMAL;
 
 	return Emote;
 }
