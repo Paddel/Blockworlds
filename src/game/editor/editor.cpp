@@ -1037,9 +1037,9 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 	TB_Bottom.VSplitLeft(45.0f, &Button, &TB_Bottom);
 
 	static int s_RemoveBA = 0;
-	if (DoButton_Ex(&s_RemoveBA, "Rem BA", 0, &Button, 0, "Remove BlockAreas", CUI::CORNER_ALL))
+	if (DoButton_Ex(&s_RemoveBA, "CF", 0, &Button, 0, "Convert Freeze", CUI::CORNER_ALL))
 	{
-		for (int i = 0; i < m_Map.m_pGameGroup->m_lLayers.size(); i++)
+		/*for (int i = 0; i < m_Map.m_pGameGroup->m_lLayers.size(); i++)
 		{
 			if (m_Map.m_pGameGroup->m_lLayers[i]->m_Type != LAYERTYPE_EXTRAS)
 				continue;
@@ -1053,7 +1053,15 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 					mem_zero(&pExtrasLayer->m_pExtrasData[i], sizeof(CExtrasData));
 				}
 			}
+		}*/
+
+
+		for (int i = 0; i < m_Map.m_pGameLayer->m_Width*m_Map.m_pGameLayer->m_Height; i++)
+		{
+			if (m_Map.m_pGameLayer->m_pTiles[i].m_Index == TILE_RACE_FINISH)
+				m_Map.m_pGameLayer->m_pTiles[i].m_Index = TILE_NOHOOK;
 		}
+		
 	}
 }
 
