@@ -1059,7 +1059,7 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		for (int i = 0; i < m_Map.m_pGameLayer->m_Width*m_Map.m_pGameLayer->m_Height; i++)
 		{
 			if (m_Map.m_pGameLayer->m_pTiles[i].m_Index == TILE_RACE_FINISH)
-				m_Map.m_pGameLayer->m_pTiles[i].m_Index = TILE_NOHOOK;
+				m_Map.m_pGameLayer->m_pTiles[i].m_Index = TILE_FREEZE;
 		}
 		
 	}
