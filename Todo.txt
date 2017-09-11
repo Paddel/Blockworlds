@@ -1,7 +1,5 @@
 
-event time(testing)
-
-id hide in event
+save last cosmetics
 
 --
 

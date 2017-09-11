@@ -1322,6 +1322,9 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
 
+	if(GetPlayer()->InEvent())
+		pCharacter->m_PlayerFlags &= ~(1 << 4);//forbit hook coll
+
 	if (IsFreezed())
 		pCharacter->m_Weapon = WEAPON_NINJA;
 

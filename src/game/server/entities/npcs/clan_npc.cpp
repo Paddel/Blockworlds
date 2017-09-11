@@ -7,29 +7,22 @@ CClanNpc::CClanNpc(CGameWorld *pGameWorld, int ClientID)
 : CNpc(pGameWorld, ClientID)
 {
 	str_copy(m_aName, "ERROR", sizeof(m_aName));
-	m_CheckingClan = 0;
-	m_HighestLevel = 0;
-	m_HighestExperience = 0;
 }
 
 void CClanNpc::Tick()
 {
-	if (GameServer()->AccountsHandler()->m_lpClans.size() == 0)
-		return;
-
-	if (m_CheckingClan >= GameServer()->AccountsHandler()->m_lpClans.size())
-		m_CheckingClan = 0;
-
-	IServer::CClanData *pClan = GameServer()->AccountsHandler()->m_lpClans[m_CheckingClan];
-
-	if (pClan->m_Level > m_HighestLevel || (pClan->m_Level == m_HighestLevel && pClan->m_Experience > m_HighestExperience))
+	int Level = 0;
+	int Experience = 0;
+	for (int i = 0; i < GameServer()->AccountsHandler()->m_lpClans.size(); i++)
 	{
-		str_copy(m_aName, pClan->m_aName, sizeof(m_aName));
-		m_HighestLevel = pClan->m_Level;
-		m_HighestExperience = pClan->m_Experience;
+		IServer::CClanData *pClan = GameServer()->AccountsHandler()->m_lpClans[i];
+		if (pClan->m_Level > Level || (pClan->m_Level == Level && pClan->m_Experience > Experience))
+		{
+			str_copy(m_aName, pClan->m_aName, sizeof(m_aName));
+			Level = pClan->m_Level;
+			Experience = pClan->m_Experience;
+		}
 	}
-
-	m_CheckingClan++;
 }
 
 void CClanNpc::Snap(int SnappingClient)
