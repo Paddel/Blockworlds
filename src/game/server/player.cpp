@@ -360,7 +360,7 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	if(DoChatMsg)
 	{
 		str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->GetTeamName(Team));
-		GameServer()->SendChat(-1, aBuf);
+		GameMap()->SendChat(-1, aBuf);
 	}
 
 	KillCharacter();

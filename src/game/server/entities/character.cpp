@@ -3,6 +3,7 @@
 #include <new>
 #include <engine/server/map.h>
 #include <engine/shared/config.h>
+#include <engine/shared/external_defines.h>
 #include <game/mapitems.h>
 #include <game/extras.h>
 #include <game/server/gamecontext.h>
@@ -1323,7 +1324,7 @@ void CCharacter::Snap(int SnappingClient)
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
 
 	if(GetPlayer()->InEvent())
-		pCharacter->m_PlayerFlags &= ~(1 << 4);//forbit hook coll
+		pCharacter->m_PlayerFlags &= ~DDNET_PLAYERFLAG_AIM;//forbit hook coll
 
 	if (IsFreezed())
 		pCharacter->m_Weapon = WEAPON_NINJA;

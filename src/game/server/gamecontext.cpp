@@ -3,6 +3,7 @@
 #include <new>
 #include <base/math.h>
 #include <engine/server/map.h>
+#include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <engine/mapengine.h>
 #include <engine/console.h>
@@ -405,7 +406,8 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 		int ExperienceAmount = 0;
 		if (pPlayer->m_UnblockedTick + Server()->TickSpeed() * 90 < Server()->Tick() &&
 			pChr->GameMap()->NumPlayers() >= 8 &&
-			Server()->CompClientAddr(ClientID, pPlayer->m_AttackedBy) == false)
+			Server()->CompClientAddr(ClientID, pPlayer->m_AttackedBy) == false &&
+			Server()->Tick() < pPlayer->m_LastActionTick + 7 * Server()->TickSpeed())
 		{
 			pPlayer->m_UnblockedTick = Server()->Tick();
 			ExperienceAmount = 3;
@@ -1218,7 +1220,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	CPlayer *pPlayer = m_apPlayers[ClientID];
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
 
-	if(!pRawMsg)
+	//TODO: handle this more general
+	if(!pRawMsg && MsgID != DDNET_NETMSGTYPE_CL_DDNETVERSION)
 	{
 		if(g_Config.m_Debug)
 		{
@@ -1507,6 +1510,18 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			pPlayer->m_LastKill = Server()->Tick();
 			pPlayer->KillCharacter(WEAPON_SELF);
+		}
+		else if (MsgID == DDNET_NETMSGTYPE_CL_DDNETVERSION)//NETMSGTYPE_CL_ISDDNET
+		{
+			int Version = pUnpacker->GetInt();
+
+			if (pUnpacker->Error())
+			{
+				if (pPlayer->ClientInfo()->m_DDNetVersion < VERSION_DDRACE)
+					pPlayer->ClientInfo()->m_DDNetVersion = VERSION_DDRACE;
+			}
+			else if (pPlayer->ClientInfo()->m_DDNetVersion < Version)
+				pPlayer->ClientInfo()->m_DDNetVersion = Version;
 		}
 	}
 	else

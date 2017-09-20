@@ -17,6 +17,7 @@
 #include <engine/shared/datafile.h>
 #include <engine/shared/filecollection.h>
 #include <engine/shared/packer.h>
+#include <engine/shared/external_defines.h>
 
 #include <mastersrv/mastersrv.h>
 
@@ -1050,6 +1051,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			if (Unpacker.Error() == 0 && str_comp(pCmd, "crashmeplx") == 0)
 			{
 				m_aClients[ClientID].m_MapitemUsage = max(64, m_aClients[ClientID].m_MapitemUsage);
+				if (m_aClients[ClientID].m_ClientInfo.m_DDNetVersion < VERSION_DDNET_OLD)
+					m_aClients[ClientID].m_ClientInfo.m_DDNetVersion = VERSION_DDNET_OLD;
 				return;
 			}
 			else if (Unpacker.Error() == 0 && str_comp(pCmd, "suckmeplx") == 0)
@@ -1667,8 +1670,8 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			{
 				const char *pAuthStr = pThis->m_aClients[i].m_Authed == CServer::AUTHED_ADMIN ? "(Admin)" :
 										pThis->m_aClients[i].m_Authed == CServer::AUTHED_MOD ? "(Mod)" : "";
-				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s' map='%s' %s", i, aAddrStr,
-					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_pMap->GetFileName(), pAuthStr);
+				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s' map='%s' customversion=%i %s", i, aAddrStr,
+					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_pMap->GetFileName(), pThis->m_aClients[i].m_ClientInfo.m_DDNetVersion, pAuthStr);
 			}
 			else if(pThis->m_aClients[i].m_Online == true)
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s switching map", i, aAddrStr);

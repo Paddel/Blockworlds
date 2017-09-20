@@ -1,4 +1,5 @@
 
+#include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <game/version.h>
 #include <game/server/gamecontext.h>
@@ -145,26 +146,27 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 	else
 	{
 		char aBuf[512];
-		pMessage += str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
+		str_format(aBuf, sizeof(aBuf), "[ %s %s %s ] %s", pGameServer->Server()->ClientName(ClientID), SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage + str_length(pGameServer->Server()->ClientName(TargetID)) + 1);
 
-		if (g_Config.m_SvWhisperSrv == 1)
+		for(int i = 0; i < 2; i++)
 		{
-			str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
-			pGameServer->SendChatTarget(ClientID, aBuf);
-			str_format(aBuf, sizeof(aBuf), "[%s %s] %s", SignArrowLeft, pGameServer->Server()->ClientName(ClientID), pMessage);
-			pGameServer->SendChatTarget(TargetID, aBuf);
-		}
-		else
-		{
-			str_format(aBuf, sizeof(aBuf), "[ %s %s %s ] %s", pGameServer->Server()->ClientName(ClientID), SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
-
+			int Recv = ClientID, Send = TargetID;
+			if (i == 1) { Recv = TargetID; Send = ClientID; }
 			CNetMsg_Sv_Chat Msg;
-			Msg.m_Team = 0;
-			Msg.m_pMessage = aBuf;
-			Msg.m_ClientID = pGameServer->Server()->UsingMapItems(ClientID) - 1;
-			pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, ClientID);
-			Msg.m_ClientID = pGameServer->Server()->UsingMapItems(TargetID) - 1;
-			pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, TargetID);
+			if (pGameServer->Server()->GetClientInfo(Recv)->m_DDNetVersion >= VERSION_DDNET_WHISPER)
+			{
+				Msg.m_Team = 2 + i;
+				Msg.m_pMessage = pMessage;
+				Msg.m_ClientID = Send;
+				pGameServer->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, Recv);
+			}
+			else
+			{
+				Msg.m_Team = 0;
+				Msg.m_pMessage = aBuf;
+				Msg.m_ClientID = pGameServer->Server()->UsingMapItems(Recv) - 1;
+				pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, Recv);
+			}
 		}
 	}
 }

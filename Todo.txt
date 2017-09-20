@@ -1,18 +1,20 @@
 
-save last cosmetics
-last action antifarm
 statistics
 level info
 clientversion
 clan level
 /converse
 max länge von chat erhöhen
+/tele
+voting
 
 --
 
 1on1 system
 
 ---
+
+save last cosmetics
 
 client crash command
 

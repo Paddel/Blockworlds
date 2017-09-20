@@ -68,6 +68,7 @@ public:
 		bool m_Detached;
 		int m_EmoteType;
 		int m_EmoteStop;
+		int m_DDNetVersion;
 
 		void Reset()
 		{
