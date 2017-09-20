@@ -204,7 +204,11 @@ void CPlayer::Snap(int SnappingClient)
 		pClientInfo->m_ColorBody = 0;
 		pClientInfo->m_ColorFeet = 0;
 
+		pPlayerInfo->m_Score = 0;
 		pPlayerInfo->m_Team = 1;
+
+		if (m_ClientID != SnappingClient)
+			pPlayerInfo->m_Latency = 0;
 	}
 
 	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo);

@@ -3,6 +3,7 @@
 #include <new>
 #include <base/math.h>
 #include <engine/server/map.h>
+#include <engine/server/statistics_performance.h>
 #include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <engine/mapengine.h>
@@ -538,6 +539,42 @@ void CGameContext::HandleBroadcasts()
 	}
 }
 
+void CGameContext::HandlePerformanceWarnings()
+{
+	if (g_Config.m_DbgPerf == 0)
+		return;
+
+	int WarningCPU = Server()->StatisticsPerformance()->AdminWarningCPU();
+	if (WarningCPU != -1)
+	{
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "Performance warning (CPU): %i hertz", WarningCPU);
+		dbg_msg("perf", aBuf);
+
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (Server()->ClientIngame(i) == false || Server()->GetClientAuthed(i) == IServer::AUTHED_NO)
+				continue;
+			SendChatTarget(i, aBuf);
+		}
+	}
+
+	int m_WarningRAM = Server()->StatisticsPerformance()->AdminWarningRAM();
+	if (m_WarningRAM != -1)
+	{
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "Performance Warning (RAM): %i MB", m_WarningRAM);
+		dbg_msg("perf", aBuf);
+
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (Server()->ClientIngame(i) == false || Server()->GetClientAuthed(i) == IServer::AUTHED_NO)
+				continue;
+			SendChatTarget(i, aBuf);
+		}
+	}
+}
+
 void CGameContext::DoGeneralTuning()
 {
 	m_Tuning.m_GunCurvature = 0.0f;
@@ -557,6 +594,7 @@ void CGameContext::OnTick()
 	HandleInactive();
 	HandleBlockSystem();
 	HandleBroadcasts();
+	HandlePerformanceWarnings();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{

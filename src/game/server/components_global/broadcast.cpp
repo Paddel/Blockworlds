@@ -113,8 +113,6 @@ void CBroadcastHandler::UpdateClient(int ClientID)
 	CNetMsg_Sv_Broadcast Msg;
 	Msg.m_pMessage = aText;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-
-	GameServer()->SendChatTarget(ClientID, "update");
 }
 
 void CBroadcastHandler::TickClient(int ClientID)

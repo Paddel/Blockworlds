@@ -29,8 +29,6 @@ public:
 	CPlayer(CGameContext *pGameServer, int ClientID, int Team);
 	~CPlayer();
 
-	void Init(int CID);
-
 	bool TryRespawnEvent();
 	void TryRespawn();
 	void Respawn();

@@ -37,6 +37,7 @@ private:
 	static void ComPause(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComInfo(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComWhisper(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComConverse(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComAccount(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComEmote(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClan(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
@@ -45,7 +46,9 @@ private:
 	static void ComWeaponkit(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLobby(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComDetach(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComExp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComPerformance(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
@@ -53,6 +56,7 @@ private:
 	static void ComClanCreate(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanInvite(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanLeave(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComClanExp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanLeader(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanList(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComClanKick(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);

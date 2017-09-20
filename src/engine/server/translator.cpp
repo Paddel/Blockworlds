@@ -83,7 +83,7 @@ void CTranslator::SortMap(void *pData)
 
 			}
 		}
-		delete aFillingList;
+		delete[] aFillingList;
 
 		pSortionData->m_aIDMap[pSortionData->m_UsingMapItems - 1] = -1;//last slot must be free
 
@@ -157,7 +157,7 @@ void CTranslator::SortMap(void *pData)
 
 		pSortionData->m_aIDMap[pSortionData->m_UsingMapItems - 1] = -1;//last slot must be free
 
-		delete aSortItems;
+		delete[] aSortItems;
 	}
 
 	pSortionData->m_Working = false;
@@ -166,7 +166,7 @@ void CTranslator::SortMap(void *pData)
 void CTranslator::UpdateMapInfos()
 {
 	if (m_aNumItems != 0x0)
-		delete m_aNumItems;
+		delete[] m_aNumItems;
 
 	m_aNumItems = new int[Server()->GetNumMaps()];
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
@@ -193,7 +193,7 @@ void CTranslator::UpdatePlayerMap(int ClientID)
 	m_Sortions[ClientID].m_NumTranslateItems = m_aNumItems[MapIndex];
 	m_Sortions[ClientID].m_UsingMapItems = Server()->UsingMapItems(ClientID);
 	if (m_Sortions[ClientID].m_aTranslateItems != 0x0)
-		delete m_Sortions[ClientID].m_aTranslateItems;
+		delete[] m_Sortions[ClientID].m_aTranslateItems;
 	m_Sortions[ClientID].m_aTranslateItems = new CTranslateItem[m_aNumItems[MapIndex]];
 	Server()->GetGameMap(MapIndex)->FillTranslateItems(m_Sortions[ClientID].m_aTranslateItems);
 	m_Sortions[ClientID].m_ClientID = ClientID;

@@ -69,6 +69,8 @@ public:
 		int m_EmoteType;
 		int m_EmoteStop;
 		int m_DDNetVersion;
+		int m_ConverseID;
+		int64 m_ConverseTick;
 
 		void Reset()
 		{
@@ -78,6 +80,8 @@ public:
 			m_CurrentSkinmani = -1;
 			m_UseInviolable = true;
 			m_EmoteStop = -1;
+			m_ConverseID = -1;
+			m_ConverseTick = 0;
 		}
 	};
 
@@ -197,6 +201,7 @@ public:
 
 	virtual int UsingMapItems(int ClientID) = 0;
 	virtual CGameMap *CurrentGameMap(int ClientID) = 0;
+	virtual int64 GetJoinTick(int ClientID) = 0;
 	virtual int GetNumMaps() = 0;
 	virtual CGameMap *GetGameMap(int Index) = 0;
 
@@ -206,6 +211,7 @@ public:
 
 	virtual int Translate(int For, int ClientID) = 0;
 	virtual int ReverseTranslate(int For, int ClientID) = 0;
+	virtual class  CStatisticsPerformance *StatisticsPerformance() = 0;
 };
 
 class IGameServer : public IInterface

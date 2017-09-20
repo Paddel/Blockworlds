@@ -1,4 +1,5 @@
 
+#include <engine/server/statistics_performance.h>
 #include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <game/version.h>
@@ -10,6 +11,16 @@
 
 static char SignArrowLeft[] = { '\xE2','\x86', '\x90', 0 };
 static char SignArrowRight[] = { '\xE2','\x86', '\x92', 0 };
+
+static char ExpTopLeft[] = { -30, -107, -108, 0 };
+static char ExpTopMidFull[] = { -30, -107, -90, 0 };
+static char ExpTopMidEmpty[] = { -30, -107, -112, 0 };
+static char ExpTopRight[] = { -30, -107, -105, 0 };
+
+static char ExpBotLeft[] = { -30, -107, -102, 0 };
+static char ExpBotMidFull[] = { -30, -107, -87, 0 };
+static char ExpBotMidEmpty[] = { -30, -107, -112, 0 };
+static char ExpBotRight[] = { -30, -107, -99, 0 };
 
 CChatCommandsHandler::CChatCommandsHandler()
 {
@@ -140,7 +151,7 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 	else if (NumPersons > 1)
 	{
 		char aBuf[32];
-		str_format(aBuf, sizeof(aBuf), "%i possible receivers found");
+		str_format(aBuf, sizeof(aBuf), "%i possible receivers found", NumPersons);
 		pGameServer->SendChatTarget(ClientID, aBuf);
 	}
 	else
@@ -167,6 +178,49 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 				Msg.m_ClientID = pGameServer->Server()->UsingMapItems(Recv) - 1;
 				pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, Recv);
 			}
+		}
+
+		pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseID = TargetID;
+		pGameServer->Server()->GetClientInfo(TargetID)->m_ConverseID = ClientID;
+		pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseTick = pGameServer->Server()->GetJoinTick(TargetID);
+		pGameServer->Server()->GetClientInfo(TargetID)->m_ConverseTick = pGameServer->Server()->GetJoinTick(ClientID);
+	}
+}
+
+void CChatCommandsHandler::ComConverse(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	const char *pMessage = pResult->GetString(0);
+
+	if(pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseID == -1 ||
+		pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseTick != pGameServer->Server()->GetJoinTick(pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseID))
+	{
+		pGameServer->SendChatTarget(ClientID, "Invalid conversation.");
+		return;
+	}
+
+	int TargetID = pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseID;
+
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "[ %s %s %s ] %s", pGameServer->Server()->ClientName(ClientID), SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage);
+
+	for (int i = 0; i < 2; i++)
+	{
+		int Recv = ClientID, Send = TargetID;
+		if (i == 1) { Recv = TargetID; Send = ClientID; }
+		CNetMsg_Sv_Chat Msg;
+		if (pGameServer->Server()->GetClientInfo(Recv)->m_DDNetVersion >= VERSION_DDNET_WHISPER)
+		{
+			Msg.m_Team = 2 + i;
+			Msg.m_pMessage = pMessage;
+			Msg.m_ClientID = Send;
+			pGameServer->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, Recv);
+		}
+		else
+		{
+			Msg.m_Team = 0;
+			Msg.m_pMessage = aBuf;
+			Msg.m_ClientID = pGameServer->Server()->UsingMapItems(Recv) - 1;
+			pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, Recv);
 		}
 	}
 }
@@ -217,6 +271,7 @@ void CChatCommandsHandler::ComClan(CConsole::CResult *pResult, CGameContext *pGa
 	pGameServer->SendChatTarget(ClientID, "By joining a clan your account gets linked to a clan.");
 	pGameServer->SendChatTarget(ClientID, "Use \"/clan_create name\" to create a clan and \"/clan_invite name\" to invite a player");
 	pGameServer->SendChatTarget(ClientID, "Use \"/clan_leave\" to leave your current clan. As a leader the clan will be closed!");
+	pGameServer->SendChatTarget(ClientID, "Use \"/clan_exp\" to see the level and the experience points of your clan");
 	pGameServer->SendChatTarget(ClientID, "Write \"/clan_leader\" to see all commands for a clan leader");
 }
 
@@ -314,6 +369,45 @@ void CChatCommandsHandler::ComDetach(CConsole::CResult *pResult, CGameContext *p
 		pGameServer->SendChatTarget(ClientID, "Your player has been attached");
 }
 
+void CChatCommandsHandler::ComExp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in.");
+		return;
+	}
+
+	static const int s_MaxNum = 17;
+	float a = (float)pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Experience / NeededExp(pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Level);
+	int num = round_to_int(a*s_MaxNum);
+	char aBarTop[64];
+	char aBarBot[64];
+	char aBuf[128];
+
+	//top
+	str_format(aBarTop, sizeof(aBarTop), "%s", ExpTopLeft);
+	for (int i = 0; i < num; i++)
+		str_fcat(aBarTop, sizeof(aBarTop), "%s", ExpTopMidFull);
+	for (int i = 0; i < s_MaxNum - num; i++)
+		str_fcat(aBarTop, sizeof(aBarTop), "%s", ExpTopMidEmpty);
+	str_fcat(aBarTop, sizeof(aBarTop), "%s", ExpTopRight);
+
+	//bot
+	str_format(aBarBot, sizeof(aBarBot), "%s", ExpBotLeft);
+	for (int i = 0; i < num; i++)
+		str_fcat(aBarBot, sizeof(aBarBot), "%s", ExpBotMidFull);
+	for (int i = 0; i < s_MaxNum - num; i++)
+		str_fcat(aBarBot, sizeof(aBarBot), "%s", ExpBotMidEmpty);
+	str_fcat(aBarBot, sizeof(aBarBot), "%s", ExpBotRight);
+
+	str_format(aBuf, sizeof(aBuf), "Account level: %i", pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Level);
+
+	pGameServer->SendChatTarget(ClientID, aBuf);
+	pGameServer->SendChatTarget(ClientID, aBarTop);
+	pGameServer->SendChatTarget(ClientID, aBarBot);
+}
+
+
 void CChatCommandsHandler::ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	if (g_Config.m_DbgGame == 0)
@@ -325,6 +419,21 @@ void CChatCommandsHandler::ComTele(CConsole::CResult *pResult, CGameContext *pGa
 
 	pChr->Core()->m_Pos = pChr->CursorPos();
 	pChr->Core()->m_Vel = vec2(0, -3);
+}
+
+void CChatCommandsHandler::ComPerformance(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (g_Config.m_DbgPerf == 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "Performance statistics disabled. Use dbg_perf 1 to enable");
+		return;
+	}
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "Server performance: %i hertz, %.2f MB RAM",
+		pGameServer->Server()->StatisticsPerformance()->LastTickResult(), mem_stats()->allocated / 1024.0f / 1024.0f);
+
+	pGameServer->SendChatTarget(ClientID, aBuf);
 }
 
 
@@ -494,6 +603,50 @@ void CChatCommandsHandler::ComClanLeave(CConsole::CResult *pResult, CGameContext
 		pInquiry->AddOption("no");
 		pGameServer->InquiriesHandler()->NewInquiry(ClientID, pInquiry, "Are you sure you want to leave your clan");
 	}
+}
+
+void CChatCommandsHandler::ComClanExp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are not logged in into an account");
+		return;
+	}
+
+	if (pGameServer->Server()->GetClientInfo(ClientID)->m_pClan == 0x0)
+	{
+		pGameServer->SendChatTarget(ClientID, "You are currently in no clan");
+		return;
+	}
+
+	static const int s_MaxNum = 17;
+	float a = (float)pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_Experience / NeededClanExp(pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_Level);
+	int num = round_to_int(a*s_MaxNum);
+	char aBarTop[64];
+	char aBarBot[64];
+	char aBuf[128];
+
+	//top
+	str_format(aBarTop, sizeof(aBarTop), "%s", ExpTopLeft);
+	for (int i = 0; i < num; i++)
+		str_fcat(aBarTop, sizeof(aBarTop), "%s", ExpTopMidFull);
+	for (int i = 0; i < s_MaxNum - num; i++)
+		str_fcat(aBarTop, sizeof(aBarTop), "%s", ExpTopMidEmpty);
+	str_fcat(aBarTop, sizeof(aBarTop), "%s", ExpTopRight);
+
+	//bot
+	str_format(aBarBot, sizeof(aBarBot), "%s", ExpBotLeft);
+	for (int i = 0; i < num; i++)
+		str_fcat(aBarBot, sizeof(aBarBot), "%s", ExpBotMidFull);
+	for (int i = 0; i < s_MaxNum - num; i++)
+		str_fcat(aBarBot, sizeof(aBarBot), "%s", ExpBotMidEmpty);
+	str_fcat(aBarBot, sizeof(aBarBot), "%s", ExpBotRight);
+
+	str_format(aBuf, sizeof(aBuf), "Clan level: %i", pGameServer->Server()->GetClientInfo(ClientID)->m_pClan->m_Level);
+
+	pGameServer->SendChatTarget(ClientID, aBuf);
+	pGameServer->SendChatTarget(ClientID, aBarTop);
+	pGameServer->SendChatTarget(ClientID, aBarBot);
 }
 
 void CChatCommandsHandler::ComClanLeader(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
@@ -680,6 +833,7 @@ void CChatCommandsHandler::Init()
 	Register("info", "", 0, ComInfo, "Gamemode BW364 made by 13x37");
 	Register("pause", "", CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
+	Register("converse", "r", 0, ComConverse, "Response to last whisper");
 	Register("account", "", 0, ComAccount, "Sends you all information about the account system");
 	Register("emote", "s?si", 0, ComEmote, "Lets your tee show emotions (normal/pain/happy/surprise/angry/blink)");
 	Register("clan", "", 0, ComClan, "Sends you all information about the clan system");
@@ -688,12 +842,15 @@ void CChatCommandsHandler::Init()
 	Register("weaponkit", "", 0, ComWeaponkit, "Use a weaponkit");
 	Register("lobby", "", 0, ComLobby, "Moves you to the lobby");
 	Register("detach", "", 0, ComDetach, "Allows you to be on a different map as your dummy");
+	Register("exp", "", 0, ComExp, "Visualizes you your current experience points");
 
-	Register("tele", "", CHATCMDFLAG_ADMIN|CHATCMDFLAG_SPAMABLE, ComTele, "Teleports you to your cursor");
+	Register("tele", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComTele, "Teleports you to your cursor");
+	Register("perf", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComPerformance, "Sends you performance infos");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
 	Register("w", "r", CHATCMDFLAG_HIDDEN, ComWhisper, "Personal message to anybody on this server");
+	Register("c", "r", CHATCMDFLAG_HIDDEN, ComConverse, "Response to last whisper");
 	Register("login", "?ss", CHATCMDFLAG_HIDDEN, ComLogin, "Login into your Blockworlds account. For more informatino write /account");
 	Register("logout", "", CHATCMDFLAG_HIDDEN, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
 	Register("register", "?ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
@@ -701,6 +858,7 @@ void CChatCommandsHandler::Init()
 	Register("clan_create", "r", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
 	Register("clan_invite", "r", CHATCMDFLAG_HIDDEN, ComClanInvite, "Invite a player to your clan. For more informatino write /clan");
 	Register("clan_leave", "", CHATCMDFLAG_HIDDEN, ComClanLeave, "Leave your clan. For more informatino write /clan");
+	Register("clan_exp", "", CHATCMDFLAG_HIDDEN, ComClanExp, "Visualizes you your current experience points");
 	Register("clan_leader", "", CHATCMDFLAG_HIDDEN, ComClanLeader, "Sends you all information about being a clan leader");
 	Register("clan_list", "", CHATCMDFLAG_HIDDEN, ComClanList, "Sends a list of all clan members");
 	Register("clan_kick", "r", CHATCMDFLAG_HIDDEN, ComClanKick, "Kicks a member out of your clan");
@@ -709,7 +867,7 @@ void CChatCommandsHandler::Init()
 	Register("sub", "", CHATCMDFLAG_HIDDEN, ComSubscribe, "Subscribe to a event to take part");
 	Register("hub", "", CHATCMDFLAG_HIDDEN, ComLobby, "Moves you to the lobby");
 	Register("weapons", "", CHATCMDFLAG_HIDDEN, ComWeaponkit, "Use a weaponkit");
-	Register("spec", "", CHATCMDFLAG_HIDDEN|CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
+	Register("spec", "", CHATCMDFLAG_HIDDEN | CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 }
 
 bool CChatCommandsHandler::ProcessMessage(const char *pMsg, int ClientID)

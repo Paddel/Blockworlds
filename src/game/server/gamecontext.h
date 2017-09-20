@@ -133,6 +133,7 @@ public:
 	void HandleInactive();
 	void HandleBlockSystem();
 	void HandleBroadcasts();
+	void HandlePerformanceWarnings();
 
 	void DoGeneralTuning();
 

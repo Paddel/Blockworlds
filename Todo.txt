@@ -1,11 +1,4 @@
 
-level info
-clan level
-/converse
-/tele
-voting
-statistics
-
 --
 
 1on1 system

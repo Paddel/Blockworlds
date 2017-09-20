@@ -68,13 +68,13 @@ void CMapVoting::UpdateVote()
 						No++;
 				}
 
-				if (m_aVoteCommand[0] == '%' && Yes >= 8)
-					m_VoteEnforce = VOTE_ENFORCE_YES;
-
 				if (Yes >= Total / 2 + 1)
 					m_VoteEnforce = VOTE_ENFORCE_YES;
 				else if (No >= (Total + 1) / 2)
 					m_VoteEnforce = VOTE_ENFORCE_NO;
+
+				if (time_get() > m_VoteCloseTime)
+					m_VoteEnforce = Yes > No;
 			}
 
 			if (m_VoteEnforce == VOTE_ENFORCE_YES)
@@ -93,7 +93,7 @@ void CMapVoting::UpdateVote()
 				if (GameMap()->m_apPlayers[m_VoteCreator])
 					GameMap()->m_apPlayers[m_VoteCreator]->m_LastVoteCall = 0;
 			}
-			else if (m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
+			else if (m_VoteEnforce == VOTE_ENFORCE_NO)
 			{
 				EndVote();
 				GameMap()->SendChat(-1, "Vote failed");

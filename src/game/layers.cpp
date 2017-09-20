@@ -23,8 +23,8 @@ CLayers::~CLayers()
 {
 	delete[] m_apExtrasData;
 	delete[] m_apExtrasTiles;
-	delete m_aExtrasWidth;
-	delete m_aExtrasHeight;
+	delete[] m_aExtrasWidth;
+	delete[] m_aExtrasHeight;
 }
 
 void CLayers::InitGameLayer()
@@ -66,6 +66,8 @@ void CLayers::InitGameLayer()
 
 void CLayers::InitExtraLayers()
 {
+	m_NumExtrasLayer = 0;
+
 	for (int g = 0; g < NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = GetGroup(g);
@@ -85,6 +87,9 @@ void CLayers::InitExtraLayers()
 			}
 		}
 	}
+
+	if (m_NumExtrasLayer == 0)
+		return;
 
 	m_apExtrasData = new CExtrasData*[m_NumExtrasLayer];
 	m_apExtrasTiles = new CTile*[m_NumExtrasLayer];

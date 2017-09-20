@@ -708,6 +708,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_MapitemUsage = 16;
 	pThis->m_aClients[ClientID].m_Online = false;
 	pThis->m_aClients[ClientID].Reset();
+	pThis->m_aClients[ClientID].m_JoinTick = time_get();
 	pThis->m_aClients[ClientID].m_ClientInfo.Reset();
 
 	pThis->SetMapOnConnect(ClientID);
@@ -1545,18 +1546,22 @@ int CServer::Run()
 			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
 		}
 
+		m_StatisticsPerformance.Init(m_TickSpeed);
+
 		while(m_RunServer)
 		{
 			int64 t = time_get();
 			int NewTicks = 0;
 
-			m_Translator.Tick();
+			if (g_Config.m_DbgPerf == 1)
+				m_StatisticsPerformance.OnTick();
 
 			while(t > TickStartTime(m_CurrentGameTick+1))
 			{
 				m_CurrentGameTick++;
 				NewTicks++;
 
+				m_Translator.Tick();
 				HandleMutes();
 
 				// apply new input
@@ -1988,6 +1993,13 @@ CGameMap *CServer::CurrentGameMap(int ClientID)
 	if (m_aClients[ClientID].m_State != CServer::CClient::STATE_EMPTY)
 		return m_aClients[ClientID].m_pMap->GameMap();
 	return 0x0;
+}
+
+int64 CServer::GetJoinTick(int ClientID)
+{
+	if (m_aClients[ClientID].m_State != CServer::CClient::STATE_EMPTY)
+		return m_aClients[ClientID].m_JoinTick;
+	return 0;
 }
 
 int CServer::GetNumMaps()
