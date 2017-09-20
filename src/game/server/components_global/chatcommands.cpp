@@ -307,13 +307,26 @@ void CChatCommandsHandler::ComLobby(CConsole::CResult *pResult, CGameContext *pG
 
 void CChatCommandsHandler::ComDetach(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-
 	pGameServer->Server()->GetClientInfo(ClientID)->m_Detached = !pGameServer->Server()->GetClientInfo(ClientID)->m_Detached;
 	if(pGameServer->Server()->GetClientInfo(ClientID)->m_Detached)
 		pGameServer->SendChatTarget(ClientID, "Your player has been detached");
 	else
 		pGameServer->SendChatTarget(ClientID, "Your player has been attached");
 }
+
+void CChatCommandsHandler::ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (g_Config.m_DbgGame == 0)
+		return;
+
+	CCharacter *pChr = pGameServer->GetPlayerChar(ClientID);
+	if (pChr == 0x0 || pChr->IsAlive() == false)
+		return;
+
+	pChr->Core()->m_Pos = pChr->CursorPos();
+	pChr->Core()->m_Vel = vec2(0, -3);
+}
+
 
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
@@ -675,6 +688,8 @@ void CChatCommandsHandler::Init()
 	Register("weaponkit", "", 0, ComWeaponkit, "Use a weaponkit");
 	Register("lobby", "", 0, ComLobby, "Moves you to the lobby");
 	Register("detach", "", 0, ComDetach, "Allows you to be on a different map as your dummy");
+
+	Register("tele", "", CHATCMDFLAG_ADMIN|CHATCMDFLAG_SPAMABLE, ComTele, "Teleports you to your cursor");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

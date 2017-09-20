@@ -28,7 +28,7 @@ void CDatabase::ExecuteQuery(void *pData)
 	pConn = mysql_init(0x0);
 	if (pConn == 0x0)
 	{
-		if (g_Config.m_Debug)
+		if (g_Config.m_DbgDatabase)
 			dbg_msg("Database", "Initialing connection failed: '%s'", mysql_error(pConn));
 		pThreadData->m_Error = true;
 		pThreadData->m_Working = false;
@@ -39,7 +39,7 @@ void CDatabase::ExecuteQuery(void *pData)
 
 	if (mysql_real_connect(pConn, pThreadData->m_aAddr, pThreadData->m_aUserName, pThreadData->m_aPass, pThreadData->m_aSchema, 0, 0x0, 0) == 0x0)
 	{
-		if (g_Config.m_Debug)
+		if (g_Config.m_DbgDatabase)
 			dbg_msg("Database", "Connecting failed: '%s'", mysql_error(pConn));
 		pThreadData->m_Error = true;
 		pThreadData->m_Working = false;
@@ -48,7 +48,7 @@ void CDatabase::ExecuteQuery(void *pData)
 	}
 
 	mysql_query(pConn, pThreadData->m_aCommand);//Main-cmd
-	if(g_Config.m_Debug)
+	if(g_Config.m_DbgDatabase)
 		dbg_msg("Database", pThreadData->m_aCommand);
 
 	pThreadData->m_AffectedRows = mysql_affected_rows(pConn);
@@ -57,7 +57,7 @@ void CDatabase::ExecuteQuery(void *pData)
 		int err = mysql_errno(pConn);
 		if(err)
 		{
-			if (g_Config.m_Debug)
+			if (g_Config.m_DbgDatabase)
 				dbg_msg("Database", "Query failed: '%s", mysql_error(pConn));
 			mysql_close(pConn);
 			pThreadData->m_Error = true;
@@ -307,7 +307,7 @@ void CDatabase::PreventInjectionAppend(char *pDst, const char *pStr, int DstSize
 	{
 		if (DstPos >= DstSize - 2)
 		{
-			if(g_Config.m_Debug == 1)
+			if(g_Config.m_DbgDatabase == 1)
 				dbg_msg("Database", "Error preventen injection Destination=%s/%i Source=%s/%i", pDst, DstSize, pStr, Len);
 			break;
 		}

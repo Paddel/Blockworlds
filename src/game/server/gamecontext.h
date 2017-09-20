@@ -132,6 +132,7 @@ public:
 	//handles
 	void HandleInactive();
 	void HandleBlockSystem();
+	void HandleBroadcasts();
 
 	void DoGeneralTuning();
 

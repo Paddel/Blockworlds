@@ -45,6 +45,7 @@ private:
 	static void ComWeaponkit(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLobby(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComDetach(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);

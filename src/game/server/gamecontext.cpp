@@ -494,34 +494,8 @@ void CGameContext::HandleBlockSystem()
 	}
 }
 
-void CGameContext::DoGeneralTuning()
+void CGameContext::HandleBroadcasts()
 {
-	m_Tuning.m_GunCurvature = 0.0f;
-	m_Tuning.m_GunSpeed = 1400.0f;
-}
-
-void CGameContext::OnTick()
-{
-	DoGeneralTuning();
-
-	for (int i = 0; i < m_NumComponents; i++)
-		m_apComponents[i]->Tick();
-
-	for (int i = 0; i < Server()->GetNumMaps(); i++)
-		Server()->GetGameMap(i)->Tick();
-
-	HandleInactive();
-	HandleBlockSystem();
-
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(m_apPlayers[i])
-		{
-			m_apPlayers[i]->Tick();
-			m_apPlayers[i]->PostTick();
-		}
-	}
-
 	//shutdown timer
 	if (m_ShutdownTimer != 0)
 	{
@@ -553,6 +527,43 @@ void CGameContext::OnTick()
 					m_BroadcastHandler.AddSideCast(i, aBuf);
 				}
 			}
+		}
+	}
+
+	//debugging
+	if (g_Config.m_DbgGame == 1)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+			m_BroadcastHandler.AddSideCast(i, "Debug-Mode");
+	}
+}
+
+void CGameContext::DoGeneralTuning()
+{
+	m_Tuning.m_GunCurvature = 0.0f;
+	m_Tuning.m_GunSpeed = 1400.0f;
+}
+
+void CGameContext::OnTick()
+{
+	DoGeneralTuning();
+
+	for (int i = 0; i < m_NumComponents; i++)
+		m_apComponents[i]->Tick();
+
+	for (int i = 0; i < Server()->GetNumMaps(); i++)
+		Server()->GetGameMap(i)->Tick();
+
+	HandleInactive();
+	HandleBlockSystem();
+	HandleBroadcasts();
+
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(m_apPlayers[i])
+		{
+			m_apPlayers[i]->Tick();
+			m_apPlayers[i]->PostTick();
 		}
 	}
 }
@@ -1261,7 +1272,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				else if(pEnd == 0)
 					pEnd = pStrOld;
 
-				if(++Length >= 127)
+				if(++Length >= 256)
 				{
 					*(const_cast<char *>(p)) = 0;
 					break;
@@ -1271,7 +1282,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				*(const_cast<char *>(pEnd)) = 0;
 
 			// drop empty and autocreated spam messages (more than 16 characters per second)
-			if(Length == 0 || (g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat+Server()->TickSpeed()*((15+Length)/16) > Server()->Tick()))
+			if(Length == 0 || (g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat+Server()->TickSpeed()*((31 + Length) / 32) > Server()->Tick()))
 				return;
 
 			pPlayer->m_LastChat = Server()->Tick();
@@ -1885,7 +1896,7 @@ void CGameContext::ConShutdown(IConsole::IResult *pResult, void *pUser)
 void CGameContext::ConTestEvent(IConsole::IResult *pResult, void *pUser)
 {
 	CGameContext *pThis = (CGameContext *)pUser;
-	if (g_Config.m_Debug == 0)
+	if (g_Config.m_DbgGame == 0)
 		return;
 
 	int ClientID = pThis->Server()->RconClientID();

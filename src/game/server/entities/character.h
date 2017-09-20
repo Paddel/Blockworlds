@@ -87,6 +87,7 @@ public:
 	void SetExtraCollision();
 	void ReleaseExtraCollision();
 	int GetCurrentEmote();
+	vec2 CursorPos();
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }

@@ -1,12 +1,10 @@
 
-statistics
 level info
-clientversion
 clan level
 /converse
-max länge von chat erhöhen
 /tele
 voting
+statistics
 
 --
 

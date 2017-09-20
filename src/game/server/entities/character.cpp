@@ -690,6 +690,11 @@ int CCharacter::GetCurrentEmote()
 	return Emote;
 }
 
+vec2 CCharacter::CursorPos()
+{
+	return m_Pos + vec2(clamp(m_Input.m_TargetX, -900, 900), clamp(m_Input.m_TargetY, -900, 900));
+}
+
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
 	// check for changes

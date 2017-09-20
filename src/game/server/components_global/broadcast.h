@@ -6,24 +6,29 @@
 
 class CBroadcastHandler : public CComponentGlobal
 {
+	enum
+	{
+		MAX_MAINCASTS = 8,
+	};
+
 	struct CMainCast
 	{
-		char *m_pText;
+		char m_aText[64];
 		int m_Ticks;
-		~CMainCast();
 	};
 
 	struct CBroadState
 	{
-		array<char *> m_lpSideCasts;
-		//array<CMainCast *> m_lpMainCasts;
-		~CBroadState();
+		int m_NumMainCasts;
+		CMainCast m_aMainCasts[MAX_MAINCASTS];
+		char m_aSideCast[512];
+		CBroadState() { m_NumMainCasts = 0; m_aSideCast[0] = '\0'; }
 	};
 
 private:
 	//array<CMainCast *> m_lpGlobalCasts;
-	CBroadState *m_pCurrentState[MAX_CLIENTS];
-	CBroadState *m_pLastState[MAX_CLIENTS];
+	CBroadState m_aCurrentState[MAX_CLIENTS];
+	CBroadState m_aLastState[MAX_CLIENTS];
 	int64 m_LastUpdate[MAX_CLIENTS];
 
 	void AddWhitespace(char *pDst, int Size, const char *pSrc);

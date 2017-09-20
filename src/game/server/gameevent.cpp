@@ -201,6 +201,8 @@ void CGameEvent::EndEvent()
 
 		ResumeClient(i);
 	}
+
+	GameMap()->SetEventCooldown();
 }
 
 void CGameEvent::PlayerKilled(int ClientID)

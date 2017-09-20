@@ -84,7 +84,7 @@ bool CCosmeticsHandler::HasKnockoutEffect(int ClientID, int Index)
 	if (Index < 0 || Index >= NUM_KNOCKOUTS)
 		return false;
 
-	if (Server()->GetClientAuthed(ClientID) == IServer::AUTHED_ADMIN)
+	if (Server()->GetClientAuthed(ClientID) == IServer::AUTHED_ADMIN && g_Config.m_DbgGame == 1)
 		return true;
 	
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
@@ -231,7 +231,7 @@ bool CCosmeticsHandler::HasGundesign(int ClientID, int Index)
 	if (Index < 0 || Index >= NUM_GUNDESIGNS)
 		return false;
 
-	if (Server()->GetClientAuthed(ClientID) == IServer::AUTHED_ADMIN)
+	if (Server()->GetClientAuthed(ClientID) == IServer::AUTHED_ADMIN && g_Config.m_DbgGame == 1)
 		return true;
 
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
@@ -419,7 +419,7 @@ bool CCosmeticsHandler::HasSkinmani(int ClientID, int Index)
 	if (Index < 0 || Index >= NUM_SKINMANIS)
 		return false;
 
-	if (Server()->GetClientAuthed(ClientID) == IServer::AUTHED_ADMIN)
+	if (Server()->GetClientAuthed(ClientID) == IServer::AUTHED_ADMIN && g_Config.m_DbgGame == 1)
 		return true;
 
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
