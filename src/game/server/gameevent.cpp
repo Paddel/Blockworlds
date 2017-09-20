@@ -46,7 +46,21 @@ void CGameEvent::Start()
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if (GameMap()->m_apPlayers[i] == 0x0 || GameMap()->m_apPlayers[i]->m_SubscribeEvent == false)
+		if (GameMap()->m_apPlayers[i] == 0x0)
+			continue;
+		//release hooks
+		CCharacter *pChr = GameServer()->GetPlayerChar(i);
+		if (pChr != 0x0 && pChr->IsAlive() &&
+			pChr->Core()->m_HookedPlayer >= 0 && pChr->Core()->m_HookedPlayer < MAX_CLIENTS &&
+			GameMap()->m_apPlayers[pChr->Core()->m_HookedPlayer] && 
+			GameMap()->m_apPlayers[pChr->Core()->m_HookedPlayer]->m_SubscribeEvent == true)
+		{
+			pChr->Core()->m_HookState = HOOK_RETRACTED;
+			pChr->Core()->m_HookedPlayer = -1;
+		}
+
+
+		if (GameMap()->m_apPlayers[i]->m_SubscribeEvent == false)
 			continue;
 
 		if (GameMap()->m_apPlayers[i]->GetCharacter())
