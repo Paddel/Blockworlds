@@ -35,7 +35,7 @@ void CStatisticsPerformance::OnTick()
 		m_CurTicks = 0;
 	}
 
-	int NewAllocations = m_LastMemState - mem_stats()->allocated;
+	//int NewAllocations = m_LastMemState - mem_stats()->allocated;
 	m_LastMemState = mem_stats()->allocated;
 
 	if (mem_stats()->allocated > m_HighestRam)

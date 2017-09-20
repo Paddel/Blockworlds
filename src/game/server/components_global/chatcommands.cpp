@@ -9,7 +9,7 @@
 
 #include "chatcommands.h"
 
-static char SignArrowLeft[] = { '\xE2','\x86', '\x90', 0 };
+//static char SignArrowLeft[] = { '\xE2','\x86', '\x90', 0 };
 static char SignArrowRight[] = { '\xE2','\x86', '\x92', 0 };
 
 static char ExpTopLeft[] = { -30, -107, -108, 0 };
