@@ -563,7 +563,7 @@ static void netaddr_to_sockaddr_in(const NETADDR *src, struct sockaddr_in *dest)
 	mem_zero(dest, sizeof(struct sockaddr_in));
 	if(src->type != NETTYPE_IPV4)
 	{
-		dbg_msg("system", "couldn't convert NETADDR of type %d to ipv4", src->type);
+		//dbg_msg("system", "couldn't convert NETADDR of type %d to ipv4", src->type);
 		return;
 	}
 
@@ -577,7 +577,7 @@ static void netaddr_to_sockaddr_in6(const NETADDR *src, struct sockaddr_in6 *des
 	mem_zero(dest, sizeof(struct sockaddr_in6));
 	if(src->type != NETTYPE_IPV6)
 	{
-		dbg_msg("system", "couldn't not convert NETADDR of type %d to ipv6", src->type);
+		//dbg_msg("system", "couldn't not convert NETADDR of type %d to ipv6", src->type);
 		return;
 	}
 
@@ -605,7 +605,7 @@ static void sockaddr_to_netaddr(const struct sockaddr *src, NETADDR *dst)
 	else
 	{
 		mem_zero(dst, sizeof(struct sockaddr));
-		dbg_msg("system", "couldn't convert sockaddr of family %d", src->sa_family);
+		//dbg_msg("system", "couldn't convert sockaddr of family %d", src->sa_family);
 	}
 }
 
@@ -860,15 +860,15 @@ static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, i
 	sock = socket(domain, type, 0);
 	if(sock < 0)
 	{
-#if defined(CONF_FAMILY_WINDOWS)
-		char buf[128];
-		int error = WSAGetLastError();
-		if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
-			buf[0] = 0;
-		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
-#else
-		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
-#endif
+//#if defined(CONF_FAMILY_WINDOWS)
+//		char buf[128];
+//		int error = WSAGetLastError();
+//		if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
+//			buf[0] = 0;
+//		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
+//#else
+//		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
+//#endif
 		return -1;
 	}
 
@@ -899,19 +899,19 @@ static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, i
 			break;
 		else
 		{
-#if defined(CONF_FAMILY_WINDOWS)
-			char buf[128];
-			int error = WSAGetLastError();
-			if(error == WSAEADDRINUSE && use_random_port)
-				continue;
-			if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
-				buf[0] = 0;
-			dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
-#else
-			if(errno == EADDRINUSE && use_random_port)
-				continue;
-			dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
-#endif
+//#if defined(CONF_FAMILY_WINDOWS)
+//			char buf[128];
+//			int error = WSAGetLastError();
+//			if(error == WSAEADDRINUSE && use_random_port)
+//				continue;
+//			if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
+//				buf[0] = 0;
+//			dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
+//#else
+//			if(errno == EADDRINUSE && use_random_port)
+//				continue;
+//			dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
+//#endif
 			priv_net_close_socket(sock);
 			return -1;
 		}
@@ -1000,8 +1000,8 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 
 			d = sendto((int)sock.ipv4sock, (const char*)data, size, 0, (struct sockaddr *)&sa, sizeof(sa));
 		}
-		else
-			dbg_msg("net", "can't sent ipv4 traffic to this socket");
+		/*else
+			dbg_msg("net", "can't sent ipv4 traffic to this socket");*/
 	}
 
 	if(addr->type&NETTYPE_IPV6)
@@ -1023,8 +1023,8 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 
 			d = sendto((int)sock.ipv6sock, (const char*)data, size, 0, (struct sockaddr *)&sa, sizeof(sa));
 		}
-		else
-			dbg_msg("net", "can't sent ipv6 traffic to this socket");
+		/*else
+			dbg_msg("net", "can't sent ipv6 traffic to this socket");*/
 	}
 	/*
 	else

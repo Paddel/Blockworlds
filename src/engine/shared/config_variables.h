@@ -98,6 +98,8 @@ MACRO_CONFIG_STR(SvDbAccPassword, sv_db_acc_password, 16, "", CFGFLAG_SERVER, "P
 MACRO_CONFIG_STR(SvDbAccAddress, sv_db_acc_address, 48, "localhost", CFGFLAG_SERVER, "Address for Account Database")
 MACRO_CONFIG_STR(SvDbAccSchema, sv_db_acc_schema, 16, "", CFGFLAG_SERVER, "Schema name for Account Database")
 MACRO_CONFIG_INT(SvLobbyOnly, sv_lobby_only, 0, 0, 1, CFGFLAG_SERVER, "Forces the player to join the lobby")
+MACRO_CONFIG_INT(SvVpnDetectorActive, sv_vpndetector_active, 1, 0, 1, CFGFLAG_SERVER, "Detects if a player uses a vpn")
+MACRO_CONFIG_INT(SvVpnDetectorBan, sv_vpndetector_ban, 1, 0, 1, CFGFLAG_SERVER, "Ban when VPN detected")
 
 MACRO_CONFIG_STR(EcBindaddr, ec_bindaddr, 128, "localhost", CFGFLAG_ECON, "Address to bind the external console to. Anything but 'localhost' is dangerous")
 MACRO_CONFIG_INT(EcPort, ec_port, 0, 0, 0, CFGFLAG_ECON, "Port to use for the external console")

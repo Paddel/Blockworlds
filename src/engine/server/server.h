@@ -16,6 +16,7 @@
 #include "statistics_performance.h"
 #include "translator.h"
 #include "map.h"
+#include "vpn_detector.h"
 
 struct CMute
 {
@@ -157,6 +158,7 @@ public:
 	CServerBan m_ServerBan;
 	CTranslator m_Translator;
 	CStatisticsPerformance m_StatisticsPerformance;
+	CVpnDetector m_VpnDetector;
 
 	int64 m_GameStartTime;
 	int m_RunServer;
@@ -205,6 +207,8 @@ public:
 
 	void DoSnapshot();
 
+	void HandleVpnDetector();
+
 	void SetMapOnConnect(int ClientID);
 
 	static int NewClientCallback(int ClientID, void *pUser);
@@ -239,6 +243,7 @@ public:
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
 	static void ConStatusAccounts(IConsole::IResult *pResult, void *pUser);
+	static void ConStatusVpn(IConsole::IResult *pResult, void *pUser);
 	static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConAddMap(IConsole::IResult *pResult, void *pUser);
 	static void ConRemoveMap(IConsole::IResult *pResult, void *pUser);

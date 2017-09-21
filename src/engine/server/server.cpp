@@ -696,6 +696,28 @@ void CServer::SetMapOnConnect(int ClientID)
 	m_aClients[ClientID].m_pMap = pMap;
 }
 
+void CServer::HandleVpnDetector()
+{
+	m_VpnDetector.Tick();
+
+	//look for results
+	if (g_Config.m_SvVpnDetectorBan == 1)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (m_aClients[i].m_State == CClient::STATE_EMPTY)
+				continue;
+
+			if (m_VpnDetector.GetVpnState(i) == CVpnDetector::STATE_BAD)
+			{
+				NETADDR Addr = *m_NetServer.ClientAddr(i);
+				DropClient(i, "");
+				m_NetServer.NetBan()->BanAddr(&Addr, 60, "VPN / Proxy is not allowed on this server");
+			}
+		}
+	}
+}
+
 int CServer::NewClientCallback(int ClientID, void *pUser)
 {
 	CServer *pThis = (CServer *)pUser;
@@ -1547,6 +1569,7 @@ int CServer::Run()
 		}
 
 		m_StatisticsPerformance.Init(m_TickSpeed);
+		m_VpnDetector.Init(this);
 
 		while(m_RunServer)
 		{
@@ -1563,6 +1586,7 @@ int CServer::Run()
 
 				m_Translator.Tick();
 				HandleMutes();
+				HandleVpnDetector();
 
 				// apply new input
 				for(int c = 0; c < MAX_CLIENTS; c++)
@@ -1675,13 +1699,13 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			{
 				const char *pAuthStr = pThis->m_aClients[i].m_Authed == CServer::AUTHED_ADMIN ? "(Admin)" :
 										pThis->m_aClients[i].m_Authed == CServer::AUTHED_MOD ? "(Mod)" : "";
-				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s name='%s' map='%s' customversion=%i %s", i, aAddrStr,
+				str_format(aBuf, sizeof(aBuf), "[%03i] addr=%s name='%s' map='%s' customversion=%i %s", i, aAddrStr,
 					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_pMap->GetFileName(), pThis->m_aClients[i].m_ClientInfo.m_DDNetVersion, pAuthStr);
 			}
 			else if(pThis->m_aClients[i].m_Online == true)
-				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s switching map", i, aAddrStr);
+				str_format(aBuf, sizeof(aBuf), "[%03i] addr=%s switching map", i, aAddrStr);
 			else
-				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s connecting", i, aAddrStr);
+				str_format(aBuf, sizeof(aBuf), "[%03i] addr=%s connecting", i, aAddrStr);
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
 		}
 	}
@@ -1696,7 +1720,7 @@ void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 	{
 		if (pThis->m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
-			str_format(aBuf, sizeof(aBuf), "id=%d name='%s' ", i, pThis->m_aClients[i].m_aName);
+			str_format(aBuf, sizeof(aBuf), "[%03i] name='%s' ", i, pThis->m_aClients[i].m_aName);
 
 			if (pThis->m_aClients[i].m_ClientInfo.m_LoggedIn == true)
 			{
@@ -1717,6 +1741,28 @@ void CServer::ConStatusAccounts(IConsole::IResult *pResult, void *pUser)
 			}
 			else
 				str_append(aBuf, "Not Logged In", sizeof(aBuf));
+
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		}
+	}
+}
+
+void CServer::ConStatusVpn(IConsole::IResult *pResult, void *pUser)
+{
+	char aBuf[1024];
+	char aAddrStr[NETADDR_MAXSTRSIZE];
+	CServer* pThis = static_cast<CServer *>(pUser);
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pThis->m_aClients[i].m_State != CClient::STATE_EMPTY)
+		{
+			net_addr_str(pThis->m_NetServer.ClientAddr(i), aAddrStr, sizeof(aAddrStr), false);
+
+			if (pThis->m_aClients[i].m_State == CClient::STATE_INGAME)
+				str_format(aBuf, sizeof(aBuf), "[%03i] %s:   addr= %s,   VPN-State=%s", i, pThis->ClientName(i), aAddrStr, pThis->m_VpnDetector.VpnState(i));
+			else
+				str_format(aBuf, sizeof(aBuf), "[%03i] addr= %s, VPN-State=%s, connecting...", i, aAddrStr, pThis->m_VpnDetector.VpnState(i));
 
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
 		}
@@ -1910,6 +1956,7 @@ void CServer::RegisterCommands()
 	Console()->Register("kick", "i?r", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");
 	Console()->Register("status", "", CFGFLAG_SERVER, ConStatus, this, "List players");
 	Console()->Register("status_acc", "", CFGFLAG_SERVER, ConStatusAccounts, this, "All account infos");
+	Console()->Register("status_vpn", "", CFGFLAG_SERVER, ConStatusVpn, this, "All vpn infos");
 	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
 
 	Console()->Register("add_map", "sii", CFGFLAG_SERVER, ConAddMap, this, "Add a Map");
