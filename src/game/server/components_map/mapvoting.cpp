@@ -31,7 +31,7 @@ void CMapVoting::UpdateVote()
 		else
 		{
 			int Total = 0, Yes = 0, No = 0;
-			if (m_VoteUpdate)
+			if (m_VoteUpdate || time_get() > m_VoteCloseTime)
 			{
 				// count votes
 				char aaBuf[MAX_CLIENTS][NETADDR_MAXSTRSIZE] = { { 0 } };
@@ -48,7 +48,7 @@ void CMapVoting::UpdateVote()
 					int ActVotePos = GameMap()->m_apPlayers[i]->m_VotePos;
 
 					// check for more players with the same ip (only use the vote of the one who voted first)
-					for (int j = i + 1; j < MAX_CLIENTS; ++j)
+					/*for (int j = i + 1; j < MAX_CLIENTS; ++j)
 					{
 						if (!GameMap()->m_apPlayers[j] || aVoteChecked[j] || str_comp(aaBuf[j], aaBuf[i]))
 							continue;
@@ -59,7 +59,7 @@ void CMapVoting::UpdateVote()
 							ActVote = GameMap()->m_apPlayers[j]->m_Vote;
 							ActVotePos = GameMap()->m_apPlayers[j]->m_VotePos;
 						}
-					}
+					}*/
 
 					Total++;
 					if (ActVote > 0)
@@ -74,7 +74,7 @@ void CMapVoting::UpdateVote()
 					m_VoteEnforce = VOTE_ENFORCE_NO;
 
 				if (time_get() > m_VoteCloseTime)
-					m_VoteEnforce = Yes > No;
+					m_VoteEnforce = Yes > No ? VOTE_ENFORCE_YES : VOTE_ENFORCE_NO;
 			}
 
 			if (m_VoteEnforce == VOTE_ENFORCE_YES)

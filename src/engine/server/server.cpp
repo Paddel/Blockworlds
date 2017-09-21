@@ -791,6 +791,12 @@ bool CServer::MovePlayer(int ClientID, CMap *pMap)
 
 	str_copy(aName, ClientName(ClientID), sizeof(aName));
 
+	CNetMsg_Sv_VoteSet Msg;
+	Msg.m_Timeout = 0;
+	Msg.m_pDescription = "";
+	Msg.m_pReason = "";
+	SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+
 	m_aClients[ClientID].m_pMap = pMap;
 
 	GameServer()->OnClientMapchange(ClientID, pCurrentMap->GameMap(), pMap->GameMap());
