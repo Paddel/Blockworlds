@@ -20,7 +20,7 @@ struct CThreadFeed
 	int m_Result;
 };
 
-static bool HttpRequest(char *pMethod, const char *pHost, const char *pPath, const char *pKey, char *pBuffer, int BufferSize)
+static bool HttpRequest(const char *pMethod, const char *pHost, const char *pPath, const char *pKey, char *pBuffer, int BufferSize)
 {
 	NETSOCKET Socket = invalid_socket;
 	NETADDR HostAddress;
@@ -121,7 +121,6 @@ CVpnDetector::CVpnDetector()
 
 void CVpnDetector::WorkStack()
 {
-	static int64 s_Time = time_get();
 	if (m_lRequestList.size() <= 0)
 		return;
 
