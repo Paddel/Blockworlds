@@ -1652,8 +1652,11 @@ int CServer::Run()
 			}
 
 			// wait for incomming data
-			for(int i = 0; i < m_lpMaps.size(); i++)
-				net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));
+			if (g_Config.m_SvNetThrottle == 1)
+			{
+				for (int i = 0; i < m_lpMaps.size(); i++)
+					net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));
+			}
 		}
 	}
 	// disconnect all clients on shutdown
