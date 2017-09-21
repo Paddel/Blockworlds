@@ -434,6 +434,10 @@ void CChatCommandsHandler::ComPerformance(CConsole::CResult *pResult, CGameConte
 		pGameServer->Server()->StatisticsPerformance()->LastTickResult(), mem_stats()->allocated / 1024.0f / 1024.0f);
 
 	pGameServer->SendChatTarget(ClientID, aBuf);
+
+#ifdef CONF_DEBUG
+	pGameServer->SendChatTarget(ClientID, "Running in debug mode!");
+#endif
 }
 
 

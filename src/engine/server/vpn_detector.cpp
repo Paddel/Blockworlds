@@ -98,7 +98,6 @@ void CVpnDetector::VpnCheckThread(void *pData)
 	else
 	{
 		pRequest->m_ResultState = STATE_ERROR;
-		dbg_msg(0, aBuf);
 		const char *pBlock = str_find(aBuf, "\"block\":");
 		if (pBlock != 0x0)
 		{

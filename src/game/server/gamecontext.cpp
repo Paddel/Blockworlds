@@ -563,7 +563,7 @@ void CGameContext::HandlePerformanceWarnings()
 	if (m_WarningRAM != -1)
 	{
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "Performance Warning (RAM): %i MB", m_WarningRAM);
+		str_format(aBuf, sizeof(aBuf), "Performance warning (RAM): %i MB", m_WarningRAM);
 		dbg_msg("perf", aBuf);
 
 		for (int i = 0; i < MAX_CLIENTS; i++)
