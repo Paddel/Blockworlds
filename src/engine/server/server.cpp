@@ -745,8 +745,14 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	net_addr_str(pThis->m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "client dropped. cid=%d addr=%s reason='%s'", ClientID, aAddrStr, pReason);
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
+	if (g_Config.m_Debug == 1)
+	{
+		str_format(aBuf, sizeof(aBuf), "client dropped. cid=%x addr=%s reason='%s'", ClientID, aAddrStr, pReason);
+		dbg_msg("server", aBuf);
+	}
+
+	str_format(aBuf, sizeof(aBuf), "Client LEAVE [%03i] Addr=%s Name='%s' Reason='%s'", ClientID, aAddrStr, pThis->m_aClients[ClientID].m_aName, pReason);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
 	pThis->GameServer()->OnClientLeave(ClientID, pReason);
 
@@ -1005,10 +1011,16 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				char aAddrStr[NETADDR_MAXSTRSIZE];
 				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 
-				if (m_aClients[ClientID].m_Online == 0 /*&& g_Config.m_Debug == 1*/)
+				if (m_aClients[ClientID].m_Online == 0)
 				{
 					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%x addr=%s", ClientID, aAddrStr);
+					if (g_Config.m_Debug == 1)
+					{
+						str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%x addr=%s", ClientID, aAddrStr);
+						dbg_msg("server", aBuf);
+					}
+
+					str_format(aBuf, sizeof(aBuf), "Client JOINING [%03i] Addr=%s Name='%s'", ClientID, aAddrStr, m_aClients[ClientID].m_aName);
 					Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 				}
 
@@ -2005,6 +2017,13 @@ int CServer::CurrentMapIndex(int ClientID)
 CMap *CServer::GetMap(int Index)
 {
 	return m_lpMaps[Index];
+}
+
+bool CServer::ClientOnline(int ClientID)
+{
+	if (m_aClients[ClientID].m_State != CServer::CClient::STATE_EMPTY)
+		return m_aClients[ClientID].m_Online;
+	return false;
 }
 
 int CServer::UsingMapItems(int ClientID)//hook for game

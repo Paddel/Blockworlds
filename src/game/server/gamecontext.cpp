@@ -1577,20 +1577,22 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
-			dbg_msg(0, "now");
 			if(pPlayer->m_IsReady)
 				return;
 
-			CNetMsg_Cl_StartInfo *pMsg = (CNetMsg_Cl_StartInfo *)pRawMsg;
-			pPlayer->m_LastChangeInfo = Server()->Tick();
+			if (Server()->ClientOnline(ClientID) == false)//ignore packet on mapchange
+			{
+				CNetMsg_Cl_StartInfo *pMsg = (CNetMsg_Cl_StartInfo *)pRawMsg;
+				pPlayer->m_LastChangeInfo = Server()->Tick();
 
-			// set start infos
-			Server()->SetClientName(ClientID, pMsg->m_pName);
-			Server()->SetClientCountry(ClientID, pMsg->m_Country);
-			str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
-			pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+				// set start infos
+				Server()->SetClientName(ClientID, pMsg->m_pName);
+				Server()->SetClientCountry(ClientID, pMsg->m_Country);
+				str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
+				pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
+				pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
+				pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+			}
 
 			m_VoteMenuHandler.OnClientJoin(ClientID);
 

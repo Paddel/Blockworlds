@@ -271,6 +271,7 @@ public:
 	int CurrentMapIndex(int ClientID);
 	CMap *GetMap(int Index);
 
+	virtual bool ClientOnline(int ClientID);
 	virtual int UsingMapItems(int ClientID);
 	virtual CGameMap *CurrentGameMap(int ClientID);
 	virtual int64 GetJoinTick(int ClientID);

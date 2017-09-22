@@ -199,6 +199,7 @@ public:
 	virtual void DropClient(int ClientID, const char *pReason) = 0;
 	virtual int RconClientID() = 0;
 
+	virtual bool ClientOnline(int ClientID) = 0;
 	virtual int UsingMapItems(int ClientID) = 0;
 	virtual CGameMap *CurrentGameMap(int ClientID) = 0;
 	virtual int64 GetJoinTick(int ClientID) = 0;
