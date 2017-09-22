@@ -479,6 +479,9 @@ void CCharacter::Unfreeze()
 
 	m_FreezeTime = 0;
 	m_UnfreezeInput = true;
+
+	if (m_ZoneProtection == false && m_ProtectionTime > 1)
+		m_ProtectionTime = 0;
 }
 
 void CCharacter::Freeze(float Seconds)
@@ -742,8 +745,10 @@ void CCharacter::ResetInput()
 
 void CCharacter::ResetZones()
 {
+	m_ZoneTournament = false;
 	m_ZoneSpawn = false;
 	m_ZoneUntouchable = false;
+	m_ZoneProtection = false;
 }
 
 bool CCharacter::HandleExtrasLayer(int Layer)
@@ -806,6 +811,9 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	if (Tile == EXTRAS_UNFREEZE)
 		Unfreeze();
 
+	if (Tile == EXTRAS_ZONE_TOURNAMENT)
+		m_ZoneTournament = true;
+
 	if (Tile == EXTRAS_ZONE_SPAWN)
 		m_ZoneSpawn = true;
 
@@ -819,6 +827,9 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Passive mode enabled");
 	if(LastTile == EXTRAS_ZONE_PROTECTION && Tile != EXTRAS_ZONE_PROTECTION && m_ProtectionTime != 0 && Server()->GetClientInfo(GetPlayer()->GetCID())->m_InviolableTime > Server()->Tick())
 		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Passive mode will be disabled in 3 seconds");
+
+	if (Tile == EXTRAS_ZONE_PROTECTION)
+		m_ZoneProtection = true;
 
 	if (Tile == EXTRAS_ZONE_PROTECTION && m_ProtectionTime != 0)//TODO: ugly
 		m_ProtectionTime = Server()->Tick() + Server()->TickSpeed() * 3;

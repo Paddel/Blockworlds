@@ -117,9 +117,10 @@ private:
 	bool m_HookLock;
 
 	//zones
-	bool m_ZoneBlock;
+	bool m_ZoneTournament;
 	bool m_ZoneSpawn;
 	bool m_ZoneUntouchable;
+	bool m_ZoneProtection;
 
 	bool m_UnfreezeInput;
 
