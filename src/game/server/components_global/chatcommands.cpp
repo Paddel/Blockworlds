@@ -280,6 +280,7 @@ void CChatCommandsHandler::ComRules(CConsole::CResult *pResult, CGameContext *pG
 	pGameServer->SendChatTarget(ClientID, "1. Do not abuse buggs");
 	pGameServer->SendChatTarget(ClientID, "2. Do not cheat");
 	pGameServer->SendChatTarget(ClientID, "3. Be fair at events");
+	pGameServer->SendChatTarget(ClientID, "4. Do not fake other names or clans");
 	pGameServer->SendChatTarget(ClientID, "Violating these rules may result in a punishment");
 }
 
