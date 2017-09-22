@@ -42,7 +42,7 @@ public:
 	int GetExtrasWidth(int Index) const { return m_aExtrasWidth[Index]; };
 	int GetExtrasHeight(int Index) const { return m_aExtrasHeight[Index]; };
 
-	bool IsHookThrough(vec2 Last, vec2 Pos);
+	bool IsHookThrough(vec2 Pos, vec2 Dir);
 };
 
 #endif

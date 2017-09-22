@@ -53,12 +53,13 @@ int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *p
 	float Distance = distance(Pos0, Pos1);
 	int End(Distance+1);
 	vec2 Last = Pos0;
+	vec2 Dir = Pos1 - Pos0;
 
 	for(int i = 0; i < End; i++)
 	{
 		float a = i/Distance;
 		vec2 Pos = mix(Pos0, Pos1, a);
-		if(CheckPoint(Pos) && (Hook == false || m_pLayers->IsHookThrough(Last, Pos) == false))
+		if(CheckPoint(Pos) && (Hook == false || m_pLayers->IsHookThrough(Pos, Dir) == false))
 		{
 			if(pOutCollision)
 				*pOutCollision = Pos;

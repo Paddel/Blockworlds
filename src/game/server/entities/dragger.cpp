@@ -45,7 +45,7 @@ void CDragger::Tick()
 		CCharacter *pChr = GameServer()->GetPlayerChar(m_Target);
 		if (pChr == 0x0 || pChr->IsAlive() == false ||
 			within_reach(m_Pos, pChr->m_Pos, RANGE) == false ||
-			GameMap()->Collision()->IntersectLine(m_Pos, pChr->m_Pos, 0x0, 0x0) == TILE_BARRIER_ENTITIES)
+			GameMap()->Collision()->IntersectLine(m_Pos, pChr->m_Pos, 0x0, 0x0) != 0)
 		{
 			m_Target = -1;
 			m_DragPos = m_Pos;
