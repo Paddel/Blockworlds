@@ -3,7 +3,7 @@
 #include <new>
 #include <base/math.h>
 #include <engine/server/map.h>
-#include <engine/server/statistics_performance.h>
+#include <engine/server/performance.h>
 #include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <engine/mapengine.h>
@@ -498,7 +498,7 @@ void CGameContext::HandleBlockSystem()
 void CGameContext::HandleBroadcasts()
 {
 	//shutdown timer
-	if (m_ShutdownTimer != 0)
+	if (m_ShutdownTimer > 0)
 	{
 		if (m_ShutdownTimer < Server()->Tick())
 			Server()->Shutdown();
@@ -1577,6 +1577,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
+			dbg_msg(0, "now");
 			if(pPlayer->m_IsReady)
 				return;
 

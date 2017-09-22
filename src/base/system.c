@@ -2051,6 +2051,15 @@ void random_timeseet()
 	srand(time(0));
 }
 
+void set_highest_cpu_priority()
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+#elif defined(CONF_FAMILY_UNIX)
+	setpriority(PRIO_PROCESS, 0, -20);
+#endif
+}
+
 #if defined(__cplusplus)
 }
 #endif

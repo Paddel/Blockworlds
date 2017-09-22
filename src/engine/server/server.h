@@ -13,7 +13,7 @@
 #include <engine/shared/network.h>
 #include <engine/shared/econ.h>
 
-#include "statistics_performance.h"
+#include "performance.h"
 #include "translator.h"
 #include "map.h"
 #include "vpn_detector.h"
@@ -157,7 +157,7 @@ public:
 	CEcon m_Econ;
 	CServerBan m_ServerBan;
 	CTranslator m_Translator;
-	CStatisticsPerformance m_StatisticsPerformance;
+	CStatisticsPerformance m_Performance;
 	CVpnDetector m_VpnDetector;
 
 	int64 m_GameStartTime;
@@ -284,7 +284,7 @@ public:
 
 	virtual int Translate(int For, int ClientID) { return m_Translator.Translate(For, ClientID); };
 	virtual int ReverseTranslate(int For, int ClientID) { return m_Translator.ReverseTranslate(For, ClientID); };
-	virtual CStatisticsPerformance *StatisticsPerformance() { return &m_StatisticsPerformance; }
+	virtual CStatisticsPerformance *StatisticsPerformance() { return &m_Performance; }
 };
 
 #endif

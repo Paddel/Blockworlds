@@ -19,6 +19,7 @@ void CClanNpc::Tick()
 		if (pClan->m_Level > Level || (pClan->m_Level == Level && pClan->m_Experience > Experience))
 		{
 			str_copy(m_aName, pClan->m_aName, sizeof(m_aName));
+			m_Level = Level;
 			Level = pClan->m_Level;
 			Experience = pClan->m_Experience;
 		}
@@ -38,7 +39,13 @@ void CClanNpc::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	StrToInts(&pClientInfo->m_Name0, 4, m_aName);
+	char aBuf[32];
+	if ((Server()->Tick() / int(Server()->TickSpeed() * 1.75f)) % 2)
+		str_copy(aBuf, m_aName, sizeof(aBuf));
+	else
+		str_format(aBuf, sizeof(aBuf), "Level: %i", m_Level);
+
+	StrToInts(&pClientInfo->m_Name0, 4, aBuf);
 	StrToInts(&pClientInfo->m_Clan0, 3, "");
 	pClientInfo->m_Country = -1;
 	StrToInts(&pClientInfo->m_Skin0, 6, "default");

@@ -1,5 +1,5 @@
 
-#include <engine/server/statistics_performance.h>
+#include <engine/server/performance.h>
 #include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <game/version.h>

@@ -1005,7 +1005,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				char aAddrStr[NETADDR_MAXSTRSIZE];
 				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 
-				if (m_aClients[ClientID].m_Online == 0)
+				if (m_aClients[ClientID].m_Online == 0 /*&& g_Config.m_Debug == 1*/)
 				{
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%x addr=%s", ClientID, aAddrStr);
@@ -1561,104 +1561,75 @@ int CServer::Run()
 	m_pConsole->StoreCommands(false);
 
 	// start game
+	m_Lastheartbeat = 0;
+	m_GameStartTime = time_get();
+
+	if(g_Config.m_Debug)
 	{
-		int64 ReportTime = time_get();
-		int ReportInterval = 3;
+		str_format(aBuf, sizeof(aBuf), "baseline memory usage %dk", mem_stats()->allocated/1024);
+		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
+	}
 
-		m_Lastheartbeat = 0;
-		m_GameStartTime = time_get();
+	m_Performance.Init(m_TickSpeed);
+	m_VpnDetector.Init(this);
 
-		if(g_Config.m_Debug)
+	while(m_RunServer)
+	{
+		int64 t = time_get();
+		int NewTicks = 0;
+
+		m_Performance.OnTick();
+
+		while(t > TickStartTime(m_CurrentGameTick+1))
 		{
-			str_format(aBuf, sizeof(aBuf), "baseline memory usage %dk", mem_stats()->allocated/1024);
-			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
-		}
+			m_CurrentGameTick++;
+			NewTicks++;
 
-		m_StatisticsPerformance.Init(m_TickSpeed);
-		m_VpnDetector.Init(this);
+			m_Translator.Tick();
+			HandleMutes();
+			HandleVpnDetector();
 
-		while(m_RunServer)
-		{
-			int64 t = time_get();
-			int NewTicks = 0;
-
-			if (g_Config.m_DbgPerf == 1)
-				m_StatisticsPerformance.OnTick();
-
-			while(t > TickStartTime(m_CurrentGameTick+1))
+			// apply new input
+			for(int c = 0; c < MAX_CLIENTS; c++)
 			{
-				m_CurrentGameTick++;
-				NewTicks++;
-
-				m_Translator.Tick();
-				HandleMutes();
-				HandleVpnDetector();
-
-				// apply new input
-				for(int c = 0; c < MAX_CLIENTS; c++)
+				if(m_aClients[c].m_State == CClient::STATE_EMPTY)
+					continue;
+				for(int i = 0; i < 200; i++)
 				{
-					if(m_aClients[c].m_State == CClient::STATE_EMPTY)
-						continue;
-					for(int i = 0; i < 200; i++)
+					if(m_aClients[c].m_aInputs[i].m_GameTick == Tick())
 					{
-						if(m_aClients[c].m_aInputs[i].m_GameTick == Tick())
-						{
-							if(m_aClients[c].m_State == CClient::STATE_INGAME)
-								GameServer()->OnClientPredictedInput(c, m_aClients[c].m_aInputs[i].m_aData);
-							break;
-						}
+						if(m_aClients[c].m_State == CClient::STATE_INGAME)
+							GameServer()->OnClientPredictedInput(c, m_aClients[c].m_aInputs[i].m_aData);
+						break;
 					}
 				}
-
-				GameServer()->OnTick();
 			}
 
-			// snap game
-			if(NewTicks)
-			{
-				if(g_Config.m_SvHighBandwidth || (m_CurrentGameTick%2) == 0)
-					DoSnapshot();
+			GameServer()->OnTick();
+		}
 
-				UpdateClientRconCommands();
-			}
+		// snap game
+		if(NewTicks)
+		{
+			if(g_Config.m_SvHighBandwidth || (m_CurrentGameTick%2) == 0)
+				DoSnapshot();
 
+			UpdateClientRconCommands();
+		}
+
+		for (int i = 0; i < m_lpMaps.size(); i++)
+			m_lpMaps[i]->Tick();
+
+		PumpNetwork();
+
+		// wait for incomming data
+		if (g_Config.m_SvNetThrottle == 1)
+		{
 			for (int i = 0; i < m_lpMaps.size(); i++)
-				m_lpMaps[i]->Tick();
-
-			PumpNetwork();
-
-			if(ReportTime < time_get())
-			{
-				if(g_Config.m_Debug)
-				{
-					
-					/*static NETSTATS prev_stats;
-					NETSTATS stats;
-					netserver_stats(net, &stats);
-
-					perf_next();
-
-					if(config.dbg_pref)
-						perf_dump(&rootscope);
-
-					dbg_msg("server", "send=%8d recv=%8d",
-						(stats.send_bytes - prev_stats.send_bytes)/reportinterval,
-						(stats.recv_bytes - prev_stats.recv_bytes)/reportinterval);
-
-					prev_stats = stats;*/
-				}
-
-				ReportTime += time_freq()*ReportInterval;
-			}
-
-			// wait for incomming data
-			if (g_Config.m_SvNetThrottle == 1)
-			{
-				for (int i = 0; i < m_lpMaps.size(); i++)
-					net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));
-			}
+				net_socket_read_wait(m_lpMaps[i]->GetSocket(), max(6 - m_lpMaps.size(), 1));
 		}
 	}
+
 	// disconnect all clients on shutdown
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -2153,6 +2124,7 @@ int main(int argc, const char **argv) // ignore_convention
 	IKernel *pKernel = IKernel::Create();
 
 	random_timeseet();
+	set_highest_cpu_priority();
 
 	// create the components
 	IEngine *pEngine = CreateEngine("Teeworlds");

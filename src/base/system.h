@@ -1314,6 +1314,8 @@ int str_utf8_check(const char *str);
 
 void random_timeseet();
 
+void set_highest_cpu_priority();
+
 #ifdef __cplusplus
 }
 #endif
