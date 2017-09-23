@@ -11,6 +11,7 @@
 
 #if defined(CONF_FAMILY_UNIX)
 	#include <sys/time.h>
+	#include <sys/resource.h>
 	#include <unistd.h>
 
 	/* unix net includes */
