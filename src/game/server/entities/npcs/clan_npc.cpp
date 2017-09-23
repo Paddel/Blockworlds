@@ -19,7 +19,7 @@ void CClanNpc::Tick()
 		if (pClan->m_Level > Level || (pClan->m_Level == Level && pClan->m_Experience > Experience))
 		{
 			str_copy(m_aName, pClan->m_aName, sizeof(m_aName));
-			m_Level = Level;
+			m_Level = pClan->m_Level;
 			Level = pClan->m_Level;
 			Experience = pClan->m_Experience;
 		}
