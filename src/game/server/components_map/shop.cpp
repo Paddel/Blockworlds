@@ -24,7 +24,7 @@ CShopItemGundesign::~CShopItemGundesign()
 CShopItemSkinmani::CShopItemSkinmani(vec2 Pos, int Effect, CGameMap *pGameMap, int Price, int Level)
 	: CShopItem(SHOPITEM_SKINMANI, Pos, Effect, Price, Level)
 {
-	m_Npc = new CShopNpc(pGameMap->World(), pGameMap->FreeNpcSlot(), Effect);
+	m_Npc = new CShopNpc(pGameMap->MainWorld(), pGameMap->FreeNpcSlot(), Effect);
 	m_Npc->Spawn(Pos - vec2(0, 192));
 }
 

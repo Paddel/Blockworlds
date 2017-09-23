@@ -36,7 +36,6 @@ void CGameMap::InitComponents()
 	m_NumComponents = 0;
 
 	m_apComponents[m_NumComponents++] = &m_Events;
-	m_apComponents[m_NumComponents++] = &m_World;
 	m_apComponents[m_NumComponents++] = &m_Shop;
 	m_apComponents[m_NumComponents++] = &m_AnimationHandler;
 	m_apComponents[m_NumComponents++] = &m_Lobby;
@@ -94,17 +93,20 @@ void CGameMap::FindMapType()
 
 void CGameMap::DoMapTunings()
 {
-	if (m_BlockMap == false)
+	for (int i = 0; i < m_lpWorlds.size(); i++)
 	{
-		m_World.m_Core.m_Tuning.m_PlayerCollision = 0;
-		m_World.m_Core.m_Tuning.m_PlayerHooking = 0;
-	}
-	if (m_ShopMap == true)
-	{
-		m_World.m_Core.m_Tuning.m_ShotgunSpeed = 0;
-		m_World.m_Core.m_Tuning.m_ShotgunLifetime = 100;
-		m_World.m_Core.m_Tuning.m_GunSpeed = 0;
-		m_World.m_Core.m_Tuning.m_GunLifetime = 100;
+		if (m_BlockMap == false)
+		{
+			m_lpWorlds[i]->m_Core.m_Tuning.m_PlayerCollision = 0;
+			m_lpWorlds[i]->m_Core.m_Tuning.m_PlayerHooking = 0;
+		}
+		if (m_ShopMap == true)
+		{
+			m_lpWorlds[i]->m_Core.m_Tuning.m_ShotgunSpeed = 0;
+			m_lpWorlds[i]->m_Core.m_Tuning.m_ShotgunLifetime = 100;
+			m_lpWorlds[i]->m_Core.m_Tuning.m_GunSpeed = 0;
+			m_lpWorlds[i]->m_Core.m_Tuning.m_GunLifetime = 100;
+		}
 	}
 }
 
@@ -113,6 +115,9 @@ bool CGameMap::Init(CGameContext *pGameServer)
 	m_pGameServer = pGameServer;
 	m_pServer = pGameServer->Server();
 	m_pConsole = pGameServer->Console();
+
+	//Create Mainworld as index 0!
+	m_lpWorlds.add(new CGameWorld(CGameWorld::WORLDTYPE_MAIN, this));
 
 	m_Layers.Init(Map()->EngineMap());
 	m_Collision.Init(&m_Layers);
@@ -169,7 +174,7 @@ bool CGameMap::PlayerOnMap(int ClientID)
 int CGameMap::FreeNpcSlot()
 {
 	int ClientID = MAX_CLIENTS;
-	CNpc *pFirst = (CNpc *)m_World.FindFirst(CGameWorld::ENTTYPE_NPC);
+	CNpc *pFirst = (CNpc *)m_lpWorlds[0]->FindFirst(CGameWorld::ENTTYPE_NPC);
 	bool Found = false;
 	while (Found == false)
 	{
@@ -189,7 +194,7 @@ int CGameMap::FreeNpcSlot()
 
 CNpc *CGameMap::GetNpc(int ClientID)
 {
-	for (CNpc *pNpc = (CNpc *)m_World.FindFirst(CGameWorld::ENTTYPE_NPC); pNpc; pNpc = (CNpc *)pNpc->TypeNext())
+	for (CNpc *pNpc = (CNpc *)m_lpWorlds[0]->FindFirst(CGameWorld::ENTTYPE_NPC); pNpc; pNpc = (CNpc *)pNpc->TypeNext())
 		if (pNpc->GetCID() == ClientID)
 			return pNpc;
 	return 0x0;
@@ -202,7 +207,7 @@ int CGameMap::NumTranslateItems()
 		if (m_apPlayers[i] != 0x0)
 			Num++;
 
-	for (CEntity *pEnt = m_World.FindFirst(CGameWorld::ENTTYPE_NPC); pEnt; pEnt = pEnt->TypeNext())
+	for (CEntity *pEnt = m_lpWorlds[0]->FindFirst(CGameWorld::ENTTYPE_NPC); pEnt; pEnt = pEnt->TypeNext())
 		Num++;
 
 	return Num;
@@ -215,7 +220,7 @@ void CGameMap::FillTranslateItems(CTranslateItem *pTranslateItems)
 		if (m_apPlayers[i] != 0x0)
 			mem_copy(&pTranslateItems[Num++], m_apPlayers[i]->GetTranslateItem(), sizeof(CTranslateItem));
 
-	for (CNpc *pNpc = (CNpc *)m_World.FindFirst(CGameWorld::ENTTYPE_NPC); pNpc; pNpc = (CNpc *)pNpc->TypeNext())
+	for (CNpc *pNpc = (CNpc *)m_lpWorlds[0]->FindFirst(CGameWorld::ENTTYPE_NPC); pNpc; pNpc = (CNpc *)pNpc->TypeNext())
 		mem_copy(&pTranslateItems[Num++], pNpc->GetTranslateItem(), sizeof(CTranslateItem));
 }
 
@@ -288,6 +293,8 @@ void CGameMap::Snap(int SnappingClient)
 
 	for (int i = 0; i < m_NumComponents; i++)
 		m_apComponents[i]->Snap(SnappingClient);
+
+	m_lpWorlds[0]->Snap(SnappingClient);
 }
 
 CGameEvent *CGameMap::CreateGameEvent(int Index)
@@ -370,7 +377,7 @@ void CGameMap::PlayerKilled(int ClientID)
 
 void CGameMap::Tick()
 {
-	mem_copy(&m_World.m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_World.m_Core.m_Tuning));
+	mem_copy(&m_lpWorlds[0]->m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_lpWorlds[0]->m_Core.m_Tuning));
 	DoMapTunings();
 
 	for (int i = 0; i < m_NumComponents; i++)
@@ -378,6 +385,9 @@ void CGameMap::Tick()
 
 	if (m_pGameEvent != 0x0)
 		m_pGameEvent->Tick();
+
+	for (int i = 0; i < m_lpWorlds.size(); i++)
+		m_lpWorlds[0]->Tick();
 }
 
 void CGameMap::SendChat(int ChatterClientID, const char *pText)

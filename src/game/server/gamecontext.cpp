@@ -165,7 +165,7 @@ void CGameContext::CreateHammerHit(CGameMap *pGameMap, vec2 Pos)
 }
 
 
-void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner)
+void CGameContext::CreateExplosion(CGameMap *pGameMap, CGameWorld *pGameWorld, vec2 Pos, int Owner)
 {
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
@@ -178,7 +178,7 @@ void CGameContext::CreateExplosion(CGameMap *pGameMap, vec2 Pos, int Owner)
 	CEntity *apEnts[MAX_CLIENTS];
 	float Radius = 135.0f;
 	float InnerRadius = 48.0f;
-	int Num = pGameMap->World()->FindTees(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS);
+	int Num = pGameWorld->FindTees(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS);
 	for(int i = 0; i < Num; i++)
 	{
 		vec2 Diff = apEnts[i]->m_Pos - Pos;
@@ -1191,8 +1191,8 @@ void CGameContext::OnClientConnected(int ClientID)
 	if (StartTeam == 0 && g_Config.m_SvAccountForce == 1 && Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 		StartTeam = TEAM_SPECTATORS;
 
-	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	CGameMap *pGameMap = Server()->CurrentGameMap(ClientID);
+	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, pGameMap, ClientID, StartTeam);
 	if (pGameMap->PlayerJoin(ClientID) == 0)
 	{
 		Server()->DropClient(ClientID, "Map is full");

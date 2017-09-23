@@ -26,10 +26,10 @@ class CPlayer
 	MACRO_ALLOC_POOL_ID()
 
 public:
-	CPlayer(CGameContext *pGameServer, int ClientID, int Team);
+	CPlayer(CGameContext *pGameServer, CGameMap *pGameMap, int ClientID, int Team);
 	~CPlayer();
 
-	bool TryRespawnEvent();
+	bool TryRespawnQuick();
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
@@ -59,6 +59,7 @@ public:
 	IServer::CClientInfo *ClientInfo() { return m_pClientInfo; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CGameMap *GameMap() const { return m_pGameMap; }
+	CGameWorld *GameWorld() const { return m_pGameWorld; }
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -123,6 +124,7 @@ public:
 	int64 m_AttackedByTick;
 	bool m_Blocked;
 	int64 m_UnblockedTick;
+	// -- 
 
 	int64 m_CreateTick;
 
@@ -136,6 +138,7 @@ private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
 	CGameMap *m_pGameMap;
+	CGameWorld *m_pGameWorld;
 
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const;

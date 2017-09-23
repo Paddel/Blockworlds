@@ -4,18 +4,20 @@
 #define GAME_SERVER_GAMEWORLD_H
 
 #include <game/server/srv_gamecore.h>
-#include <game/server/component.h>
 
 
 class CEntity;
 class CCharacter;
+class CGameMap;
+class CGameContext;
+class IServer;
 
 /*
 	Class: Game World
 		Tracks all entities in the game. Propagates tick and
 		snap calls to all entities.
 */
-class CGameWorld : public CComponentMap
+class CGameWorld
 {
 public:
 	enum
@@ -28,23 +30,30 @@ public:
 		ENTTYPE_NPC,
 		ENTTYPE_DRAGGER,
 		ENTTYPE_LASERGUN,
-		NUM_ENTTYPES
+		NUM_ENTTYPES,
+
+		WORLDTYPE_MAIN = 0,
+		WORLDTYPE_EVENT,
+		WORLDTYPE_1ON1,
 	};
 
 private:
 	void Reset();
 	void RemoveEntities();
 
+	int m_WorldType;
+	CGameMap *m_pGameMap;
+	CGameContext *m_pGameServer;
+	IServer *m_pServer;
+
 	CEntity *m_pNextTraverseEntity;
 	CEntity *m_apFirstEntityTypes[NUM_ENTTYPES];
 
-
 public:
-
 	bool m_ResetRequested;
 	CSrvWorldCore m_Core;
 
-	CGameWorld();
+	CGameWorld(int WorldType, CGameMap *pGameMap);
 	~CGameWorld();
 
 	CEntity *FindFirst(int Type);
@@ -144,6 +153,12 @@ public:
 
 	*/
 	virtual void Tick();
+
+
+	int GetWorldType() const { return m_WorldType; }
+	CGameContext *GameServer() const { return m_pGameServer; }
+	IServer *Server() const { return m_pServer; }
+	CGameMap *GameMap() const { return m_pGameMap; }
 };
 
 #endif

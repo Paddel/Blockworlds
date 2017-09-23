@@ -32,10 +32,10 @@ CRaceComponents::~CRaceComponents()
 	m_lTeleTo.delete_all();
 }
 
-float CRaceComponents::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos)
+float CRaceComponents::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, CGameWorld *pWorld)
 {
 	float Score = 0.0f;
-	CCharacter *pC = static_cast<CCharacter *>(GameMap()->World()->FindFirst(CGameWorld::ENTTYPE_CHARACTER));
+	CCharacter *pC = static_cast<CCharacter *>(pWorld->FindFirst(CGameWorld::ENTTYPE_CHARACTER));
 	for (; pC; pC = (CCharacter *)pC->TypeNext())
 	{
 		// team mates are not as dangerous as enemies
@@ -50,14 +50,24 @@ float CRaceComponents::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos)
 	return Score;
 }
 
-void CRaceComponents::EvaluateSpawnType(CSpawnEval *pEval, int Type)
+void CRaceComponents::EvaluateSpawnType(CSpawnEval *pEval, CGameWorld *pWorld)
 {
+	int Type = 0;
+
+	switch (pWorld->GetWorldType())
+	{
+	case CGameWorld::WORLDTYPE_MAIN: Type = 0; break;
+	case CGameWorld::WORLDTYPE_EVENT: Type = 1; break;
+	case CGameWorld::WORLDTYPE_1ON1: Type = 2; break;
+	default: Type = 0;
+	}
+
 	// get spawn point
 	for (int i = 0; i < m_aNumSpawnPoints[Type]; i++)
 	{
 		// check if the position is occupado
 		CCharacter *aEnts[MAX_CLIENTS];
-		int Num = GameMap()->World()->FindEntities(m_aaSpawnPoints[Type][i], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		int Num = pWorld->FindEntities(m_aaSpawnPoints[Type][i], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };	// start, left, up, right, down
 		int Result = -1;
 		for (int Index = 0; Index < 5 && Result == -1; ++Index)
@@ -75,7 +85,7 @@ void CRaceComponents::EvaluateSpawnType(CSpawnEval *pEval, int Type)
 			continue;	// try next spawn point
 
 		vec2 P = m_aaSpawnPoints[Type][i] + Positions[Result];
-		float S = EvaluateSpawnPos(pEval, P);
+		float S = EvaluateSpawnPos(pEval, P, pWorld);
 		if (!pEval->m_Got || pEval->m_Score > S)
 		{
 			pEval->m_Got = true;
@@ -124,12 +134,12 @@ bool CRaceComponents::OnEntity(int Index, vec2 Pos)
 		Index == ENTITY_DRAGGER_MEDIUM ||
 		Index == ENTITY_DRAGGER_STRONG)
 	{
-		new CDragger(GameMap()->World(), Pos, float(Index - ENTITY_DRAGGER_WEAK + 1));
+		new CDragger(GameMap()->MainWorld(), Pos, float(Index - ENTITY_DRAGGER_WEAK + 1));
 	}
 
 	if (Type != -1)
 	{
-		CPickup *pPickup = new CPickup(GameMap()->World(), Type, SubType);
+		CPickup *pPickup = new CPickup(GameMap()->MainWorld(), Type, SubType);
 		pPickup->m_Pos = Pos;
 		return true;
 	}
@@ -242,7 +252,7 @@ void CRaceComponents::InitExtras()
 					int Type = str_toint(pData);
 					pData += +gs_ExtrasSizes[Tile][1];
 
-					new CLaserGun(GameMap()->World(), Pos, ID, Type);
+					new CLaserGun(GameMap()->MainWorld(), Pos, ID, Type);
 				}
 			}
 		}
@@ -281,15 +291,11 @@ void CRaceComponents::SnapDoors(int SnappingClient)
 }
 
 
-bool CRaceComponents::CanSpawn(int Team, vec2 *pOutPos)
+bool CRaceComponents::CanSpawn(vec2 *pOutPos, CGameWorld *pWorld)
 {
 	CSpawnEval Eval;
 
-	// spectators can't spawn
-	if (Team == TEAM_SPECTATORS)
-		return false;
-
-	EvaluateSpawnType(&Eval, Team);
+	EvaluateSpawnType(&Eval, pWorld);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -326,7 +332,7 @@ void CRaceComponents::OnDoorHandle(int ID, int Delay, bool Activate)
 
 void CRaceComponents::OnLasergunTrigger(int ID, int Delay)
 {
-	CLaserGun *pFirst = (CLaserGun *)GameMap()->World()->FindFirst(CGameWorld::ENTTYPE_LASERGUN);
+	CLaserGun *pFirst = (CLaserGun *)GameMap()->MainWorld()->FindFirst(CGameWorld::ENTTYPE_LASERGUN);
 	for (CLaserGun *pLaserGun = pFirst; pLaserGun; pLaserGun = (CLaserGun *)pLaserGun->TypeNext())
 		if (pLaserGun->GetID() == ID)
 			pLaserGun->SetActive(Delay);

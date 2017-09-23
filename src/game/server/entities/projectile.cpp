@@ -74,7 +74,7 @@ void CProjectile::Tick()
 			GameServer()->CreateSound(GameMap(), CurPos, m_SoundImpact);
 
 		if(m_Explosive)
-			GameServer()->CreateExplosion(GameMap(), CurPos, m_Owner);
+			GameServer()->CreateExplosion(GameMap(), GameWorld(), CurPos, m_Owner);
 
 		if(m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN && GameServer()->CosmeticsHandler()->DoGundesign(m_Owner, CurPos, m_Direction) == false)
 			GameServer()->CreateDamageInd(GameMap(), CurPos, -atan2(m_Direction.x, m_Direction.y), 10);

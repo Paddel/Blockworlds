@@ -1,14 +1,17 @@
 #pragma once
 
+#include <base/tl/array.h>
 #include <game/layers.h>
 #include <game/collision.h>
+#include <game/server/gameworld.h>
 #include <game/server/components_map/eventhandler.h>
-#include <game/server/components_map/gameworld.h>
 #include <game/server/components_map/shop.h>
 #include <game/server/components_map/animations.h>
 #include <game/server/components_map/lobby.h>
 #include <game/server/components_map/race_components.h>
 #include <game/server/components_map/mapvoting.h>
+
+//TODO: remove includes + refactor
 
 class CMap;
 class IServer;
@@ -18,9 +21,6 @@ class CTranslateItem;
 class IConsole;
 class CGameEvent;
 
-//TODO: voting system in extra class
-
-//TODO: remove includes
 class CGameMap
 {
 private:
@@ -30,7 +30,7 @@ private:
 	IConsole *m_pConsole;
 	CLayers m_Layers;
 	CCollision m_Collision;
-	CGameWorld m_World;
+	array <CGameWorld *> m_lpWorlds;
 	CEventHandler m_Events;
 	CGameEvent *m_pGameEvent;//current map event
 	CShop m_Shop;
@@ -102,7 +102,7 @@ public:
 	IServer *Server() const { return m_pServer; }
 	CLayers *Layers() { return &m_Layers; };
 	CCollision *Collision() { return &m_Collision; };
-	CGameWorld *World() { return &m_World; };
+	CGameWorld *MainWorld() { return m_lpWorlds[0]; };//main world
 	CEventHandler *Events() { return &m_Events; }
 	CAnimationHandler *AnimationHandler() { return &m_AnimationHandler; }
 	CRaceComponents *RaceComponents() { return &m_RaceComponents; }

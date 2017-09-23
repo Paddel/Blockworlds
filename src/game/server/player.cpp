@@ -12,9 +12,11 @@ MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
-CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
+CPlayer::CPlayer(CGameContext *pGameServer, CGameMap *pGameMap, int ClientID, int Team)
 {
 	m_pGameServer = pGameServer;
+	m_pGameMap = pGameMap;
+	m_pGameWorld = pGameMap->MainWorld();
 	m_DieTick = Server()->Tick();
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
@@ -32,7 +34,6 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_UnblockedTick = Server()->Tick();//hast to be at least 60 seconds on server to give exp
 	m_LastDeathnote = Server()->Tick();
 	m_SubscribeEvent = false;
-	m_pGameMap = pGameServer->Server()->CurrentGameMap(m_ClientID);
 	m_UseSpawnState = false;
 	m_CreateTick = Server()->Tick();
 	m_FirstInput = true;
@@ -51,7 +52,7 @@ void CPlayer::Tick()
 	if(!Server()->ClientIngame(m_ClientID))
 		return;
 
-	mem_copy(&m_Tuning, &GameMap()->World()->m_Core.m_Tuning, sizeof(m_Tuning));
+	mem_copy(&m_Tuning, &GameWorld()->m_Core.m_Tuning, sizeof(m_Tuning));
 	DoPlayerTuning();
 	if (mem_comp(&m_Tuning, &m_LastTuning, sizeof(m_Tuning)) != 0)
 	{
@@ -234,7 +235,7 @@ void CPlayer::DoPlayerTuning()
 {//this is only for client predictions
 	if (GetCharacter() && GetCharacter()->IsAlive())
 	{
-		CCharacter *pChr = GameMap()->World()->ClosestCharacter(GetCharacter()->m_Pos, 32.0f, GetCharacter());
+		CCharacter *pChr = GameWorld()->ClosestCharacter(GetCharacter()->m_Pos, 32.0f, GetCharacter());
 
 		if (GetCharacter()->IsInviolable() || (pChr != 0x0 && pChr->IsInviolable()))
 		{
@@ -390,14 +391,14 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	}
 }
 
-bool CPlayer::TryRespawnEvent()
+bool CPlayer::TryRespawnQuick()
 {
 	vec2 SpawnPos;
 
 	if (m_Team == TEAM_SPECTATORS)
 		return false;
 
-	if (!GameMap()->RaceComponents()->CanSpawn(1, &SpawnPos))
+	if (!GameMap()->RaceComponents()->CanSpawn(&SpawnPos, GameWorld()))
 		return false;
 
 	if (m_pCharacter != 0x0 && m_pCharacter->IsAlive() == false)
@@ -406,7 +407,7 @@ bool CPlayer::TryRespawnEvent()
 	KillCharacter();
 
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
+	m_pCharacter = new(m_ClientID) CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(GameMap(), SpawnPos);
 	return true;
@@ -419,12 +420,12 @@ void CPlayer::TryRespawn()
 	if (m_Team == TEAM_SPECTATORS)
 		return;
 
-	if (!GameMap()->RaceComponents()->CanSpawn(0, &SpawnPos))
+	if (!GameMap()->RaceComponents()->CanSpawn(&SpawnPos, GameWorld()))
 		return;
 
 
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientID) CCharacter(GameMap()->World());
+	m_pCharacter = new(m_ClientID) CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
 
 	if (m_UseSpawnState == true)

@@ -167,7 +167,7 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 			if (pGameServer->Server()->GetClientInfo(Recv)->m_DDNetVersion >= VERSION_DDNET_WHISPER)
 			{
 				Msg.m_Team = 2 + i;
-				Msg.m_pMessage = pMessage;
+				Msg.m_pMessage = pMessage + str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
 				Msg.m_ClientID = Send;
 				pGameServer->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, Recv);
 			}

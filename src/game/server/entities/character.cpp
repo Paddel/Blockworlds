@@ -1003,7 +1003,7 @@ void CCharacter::HandleTiles()
 	if (Tile == TILE_RESTART)
 	{
 		vec2 Pos;
-		if (GameMap()->RaceComponents()->CanSpawn(0, &Pos))
+		if (GameMap()->RaceComponents()->CanSpawn(&Pos, GameWorld()))
 		{
 			m_Core.m_Pos = Pos;
 			m_Core.m_HookState = HOOK_RETRACTED;

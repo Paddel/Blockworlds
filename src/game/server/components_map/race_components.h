@@ -50,8 +50,8 @@ private:
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 
-	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos);
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type);
+	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, CGameWorld *pWorld);
+	void EvaluateSpawnType(CSpawnEval *pEval, CGameWorld *pWorld);
 	bool OnEntity(int Index, vec2 Pos);
 	void InitDoorTile(CDoorTile *pTile);
 
@@ -63,7 +63,7 @@ public:
 	CRaceComponents();
 	~CRaceComponents();
 
-	bool CanSpawn(int Team, vec2 *pOutPos);
+	bool CanSpawn(vec2 *pOutPos, CGameWorld *pWorld);
 	CDoorTile *GetDoorTile(int Index);
 	bool DoorTileActive(CDoorTile *pDoorTile) const;
 	void OnDoorHandle(int ID, int Delay, bool Activate);

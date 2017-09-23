@@ -64,7 +64,7 @@ void CLobby::Init()
 			{
 				vec2 Pos = vec2(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
 
-				CNpc *pNpc = new CClanNpc(GameMap()->World(), GameMap()->FreeNpcSlot());
+				CNpc *pNpc = new CClanNpc(GameMap()->MainWorld(), GameMap()->FreeNpcSlot());
 				pNpc->Spawn(Pos);
 			}
 

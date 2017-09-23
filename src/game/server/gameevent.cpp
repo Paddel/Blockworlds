@@ -73,7 +73,7 @@ void CGameEvent::Start()
 			m_CharState[i].m_NumJumps = GameMap()->m_apPlayers[i]->GetCharacter()->Core()->m_MaxAirJumps;
 		}
 
-		if (GameMap()->m_apPlayers[i]->TryRespawnEvent() == false)
+		if (GameMap()->m_apPlayers[i]->TryRespawnQuick() == false)
 		{
 			GameMap()->m_apPlayers[i]->m_SubscribeEvent = false;
 			continue;

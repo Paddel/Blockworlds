@@ -69,7 +69,7 @@ void CLaserGun::DoBulletMove(int Index)
 		pBullet->m_SpawnTick + Server()->TickSpeed() * 1.5 < Server()->Tick())
 		Remove = true;
 
-	CCharacter *pChr = GameMap()->World()->IntersectCharacter(pBullet->m_Pos, NextPos, 0.0f, ExplodePos);
+	CCharacter *pChr = GameWorld()->IntersectCharacter(pBullet->m_Pos, NextPos, 0.0f, ExplodePos);
 	if (pChr)
 	{
 		if (m_Type == 0)
@@ -84,7 +84,7 @@ void CLaserGun::DoBulletMove(int Index)
 	if (Remove)
 	{
 		if (m_Type == 2)
-			GameServer()->CreateExplosion(GameMap(), ExplodePos, WEAPON_WORLD);
+			GameServer()->CreateExplosion(GameMap(), GameWorld(), ExplodePos, WEAPON_WORLD);
 
 		Server()->SnapFreeID(pBullet->m_ID);
 		delete pBullet;
