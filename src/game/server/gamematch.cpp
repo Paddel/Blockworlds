@@ -73,7 +73,7 @@ void CGameMatch::UpdateParcitipants()
 			GameMap()->m_apPlayers[i]->GameWorld() != m_pGameWorld)
 			m_aParticipants[i] = false;
 
-		if (GameMap()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS)
+		if (GameMap()->m_apPlayers[i] != 0x0 && GameMap()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS)
 		{
 			GameMap()->m_apPlayers[i]->MovePlayer(GameMap()->MainWorld());
 			m_aParticipants[i] = false;
