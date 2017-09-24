@@ -1,4 +1,13 @@
 
+rückmeldung bei sonstigen fehlern
+blockpoints im chat
+next line in score broadcast
+
+pro
+vip stuff
+
+--
+
 Clean up includes and refactor gamemap!
 refactor gamematch
 

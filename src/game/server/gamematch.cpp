@@ -40,6 +40,9 @@ void CGameMatch::DoScoreBroadcast()
 		str_fcat(aBuf, sizeof(aBuf), "%s: %i\n", Server()->ClientName(i), m_Scores[i]);
 	}
 
+	if (aBuf[0] != '\0')
+		aBuf[str_length(aBuf) - 1] = '\0';
+
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if (m_aParticipants[i] == false)
@@ -82,7 +85,7 @@ void CGameMatch::ResetMatchup()
 {
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if (m_aParticipants[i] == false)
+		if (m_aParticipants[i] == false || GameMap()->m_apPlayers[i] == 0x0)
 			continue;
 
 		if (GameMap()->m_apPlayers[i]->TryRespawnQuick() == false)
@@ -147,7 +150,7 @@ void CGameMatch::SetWinner(int ClientID)
 	if (m_Pot > 0 && GameMap()->m_apPlayers[ClientID] != 0x0 && Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
 	{
 		Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints += m_Pot;
-		str_format(aBuf, sizeof(aBuf), " and got %i blockpoints", m_Pot);
+		str_fcat(aBuf, sizeof(aBuf), " and got %i blockpoints", m_Pot);
 	}
 
 	str_append(aBuf, "!", sizeof(aBuf));

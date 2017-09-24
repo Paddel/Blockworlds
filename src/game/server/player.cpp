@@ -416,7 +416,25 @@ void CPlayer::MatchRequest(int OptionID, const unsigned char *pData, int ClientI
 	}
 
 	if (pThis->CanChallengeMatch(ChallengerID) == false)
+	{
+		pGameServer->SendChatTarget(ChallengerID, "Player could not accept your match request");
 		return;
+	}
+
+	if (Blockpoints > 0)
+	{
+		if (pThis->ClientInfo()->m_LoggedIn == false)
+		{
+			pGameServer->SendChatTarget(pThis->m_ClientID, "You must be logged in to bet blockpoints");
+			return;
+		}
+
+		if (pThis->ClientInfo()->m_AccountData.m_BlockPoints < Blockpoints)
+		{
+			pGameServer->SendChatTarget(pThis->m_ClientID, "You don't have enough blockpoints to set this wager");
+			return;
+		}
+	}
 
 	pThis->GameMap()->CreateGameMatch(ChallengerID, ClientID, Blockpoints);
 }

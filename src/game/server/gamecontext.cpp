@@ -1956,6 +1956,9 @@ void CGameContext::ConTestEvent(IConsole::IResult *pResult, void *pUser)
 	if (pGameMap == 0x0)
 		return;
 
+	if (pGameMap->GetEvent() != 0x0)
+		return;
+
 	pGameMap->StartRandomEvent();
 	if (pGameMap->GetEvent() == 0x0)
 		return;
