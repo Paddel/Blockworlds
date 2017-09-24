@@ -749,6 +749,7 @@ void CCharacter::ResetZones()
 	m_ZoneSpawn = false;
 	m_ZoneUntouchable = false;
 	m_ZoneProtection = false;
+	m_ZoneFreeze = false;
 }
 
 bool CCharacter::HandleExtrasLayer(int Layer)
@@ -806,7 +807,10 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	}
 
 	if (Tile == EXTRAS_FREEZE)
+	{
 		Freeze(3.0f);
+		m_ZoneFreeze;
+	}
 
 	if (Tile == EXTRAS_UNFREEZE)
 		Unfreeze();
@@ -988,7 +992,10 @@ void CCharacter::HandleTiles()
 	int NewTile = Tile != LastTile ? Tile : TILE_AIR;
 
 	if (Tile == TILE_FREEZE)
+	{
 		Freeze(3.0f);
+		m_ZoneFreeze = true;
+	}
 	if (Tile == TILE_UNFREEZE)
 		Unfreeze();
 	if (Tile == TILE_FREEZE_DEEP)

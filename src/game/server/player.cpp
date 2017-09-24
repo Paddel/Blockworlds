@@ -538,6 +538,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	if(m_Team == Team)
 		return;
 
+	//TODO: rewrite this nicer
+	if(Team == TEAM_SPECTATORS && m_pGameWorld->GetWorldType() == CGameWorld::WORLDTYPE_GAMEMATCH)
+		GameMap()->SendChat(-1, "You lost the 1ON1!");
+
+	MovePlayer(GameMap()->MainWorld());
 	m_SubscribeEvent = false;
 	m_Pause = false;
 

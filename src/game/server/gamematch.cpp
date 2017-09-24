@@ -21,6 +21,8 @@ CGameMatch::CGameMatch(CGameMap *pGameMap, int Blockpoints)
 	m_pGameWorld = pGameMap->CreateNewWorld(CGameWorld::WORLDTYPE_GAMEMATCH);
 	mem_zero(&m_aParticipants, sizeof(m_aParticipants));
 	mem_zero(&m_Scores, sizeof(m_Scores));
+
+	m_RoundStartTime = Server()->Tick();
 }
 
 CGameMatch::~CGameMatch()
@@ -97,6 +99,8 @@ void CGameMatch::ResetMatchup()
 
 		GameMap()->m_apPlayers[i]->GetCharacter()->Freeze(3.0f);
 	}
+
+	m_RoundStartTime = Server()->Tick();
 }
 
 void CGameMatch::ScorePlayer(int ClientID)
@@ -105,7 +109,7 @@ void CGameMatch::ScorePlayer(int ClientID)
 		return;
 
 	CCharacter *pChr = GameServer()->GetPlayerChar(ClientID);
-	if (pChr != 0x0 && pChr->IsAlive() && pChr->IsFreezed() == false)
+	if ((pChr != 0x0 && pChr->IsAlive() && pChr->InFreezeZone() == false) || m_RoundStartTime + Server()->TickSpeed() * 3.5f > Server()->Tick())
 	{
 		m_Scores[ClientID]++;
 
@@ -155,6 +159,27 @@ void CGameMatch::SetWinner(int ClientID)
 
 	str_append(aBuf, "!", sizeof(aBuf));
 	SendChat(aBuf);
+}
+
+void CGameMatch::CheckDraws()
+{
+	bool Draw = true;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (m_aParticipants[i] == false)
+			continue;
+
+		CCharacter *pChr = GameServer()->GetPlayerChar(i);
+		if (pChr != 0x0 && pChr->IsAlive() &&
+			(pChr->IsFreezed() == false || pChr->FreezeTick() + Server()->TickSpeed() * 5.0f > Server()->Tick()))
+			Draw = false;
+	}
+
+	if (Draw == true)
+	{
+		SendChat("Draw!");
+		ResetMatchup();
+	}
 }
 
 void CGameMatch::PlayerBlocked(int ClientID, vec2 Pos)
@@ -222,6 +247,7 @@ void CGameMatch::Tick()
 	}
 
 	DoScoreBroadcast();
+	CheckDraws();
 }
 
 void CGameMatch::Start()

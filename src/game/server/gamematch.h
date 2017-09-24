@@ -19,6 +19,7 @@ private:
 	int m_Scores[MAX_CLIENTS];
 	int m_Blockpoints;
 	int m_Pot;
+	int64 m_RoundStartTime;
 
 	void DoScoreBroadcast();
 	int NumParticipants();
@@ -27,6 +28,7 @@ private:
 	void ScorePlayer(int ClientID);
 	void SendChat(const char *pMessage);
 	void SetWinner(int ClientID);
+	void CheckDraws();
 public:
 	CGameMatch(CGameMap *pGameMap, int Blockpoints);
 	~CGameMatch();
