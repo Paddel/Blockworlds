@@ -8,7 +8,6 @@
 
 // this include should perhaps be removed
 #include "entities/character.h"
-#include "gamecontext.h"
 
 struct CCharState
 {
@@ -48,6 +47,11 @@ public:
 	bool CanBeDeathnoted();
 	bool HideIdentity();
 	bool InEvent();
+	bool TrySubscribeToEvent();
+	bool CanChallengeMatch(int TargetID);
+	void TryChallengeMatch(int TargetID, const char *pBlockpoints);
+	static void MatchRequest(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
+	void MovePlayer(CGameWorld *pGameWorld);
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();

@@ -294,7 +294,16 @@ void CGameMap::Snap(int SnappingClient)
 	for (int i = 0; i < m_NumComponents; i++)
 		m_apComponents[i]->Snap(SnappingClient);
 
+	//Everyone sees Main World
 	m_lpWorlds[0]->Snap(SnappingClient);
+	if (m_apPlayers[SnappingClient] != 0x0)
+	{
+		if(m_apPlayers[SnappingClient]->GameWorld() != m_lpWorlds[0])//If you're not in the Main World you see your own World too
+			m_apPlayers[SnappingClient]->GameWorld()->Snap(SnappingClient);
+		else
+			for (int i = 1; i < m_lpWorlds.size(); i++)//People in the Main World can spectate all Worlds
+				m_lpWorlds[i]->Snap(SnappingClient);
+	}
 }
 
 CGameEvent *CGameMap::CreateGameEvent(int Index)
@@ -363,21 +372,51 @@ void CGameMap::ClientSubscribeEvent(int ClientID)
 		m_pGameEvent->ClientSubscribe(ClientID);
 }
 
-void CGameMap::PlayerBlocked(int ClientID, bool Dead, vec2 Pos)
+void CGameMap::CreateGameMatch(int Client0, int Client1, int Blockpoints)
+{
+	CGameMatch *pGameMatch = new CGameMatch(this, Blockpoints);
+	pGameMatch->AddParticipant(Client0);
+	pGameMatch->AddParticipant(Client1);
+	pGameMatch->Start();
+	m_lpMatches.add(pGameMatch);
+}
+
+void CGameMap::DeleteGameMatch(CGameMatch *pGameMatch)
+{
+	for (int i = 0; i < m_lpMatches.size(); i++)
+	{
+		if (m_lpMatches[i] != pGameMatch)
+			continue;
+		m_lpMatches.remove_index(i);
+		i--;
+	}
+
+	delete pGameMatch;
+}
+
+void CGameMap::PlayerBlocked(int ClientID, vec2 Pos)
 {
 	if (m_pGameEvent != 0x0)
-		m_pGameEvent->PlayerBlocked(ClientID, Dead, Pos);
+		m_pGameEvent->PlayerBlocked(ClientID, Pos);
+
+	for (int i = 0; i < m_lpMatches.size(); i++)
+		m_lpMatches[i]->PlayerBlocked(ClientID, Pos);
 }
 
 void CGameMap::PlayerKilled(int ClientID)
 {
 	if (m_pGameEvent != 0x0)
 		m_pGameEvent->PlayerKilled(ClientID);
+
+	for (int i = 0; i < m_lpMatches.size(); i++)
+		m_lpMatches[i]->PlayerKilled(ClientID);
 }
 
 void CGameMap::Tick()
 {
-	mem_copy(&m_lpWorlds[0]->m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_lpWorlds[0]->m_Core.m_Tuning));
+	for (int i = 0; i < m_lpWorlds.size(); i++)
+		mem_copy(&m_lpWorlds[i]->m_Core.m_Tuning, GameServer()->Tuning(), sizeof(m_lpWorlds[i]->m_Core.m_Tuning));
+
 	DoMapTunings();
 
 	for (int i = 0; i < m_NumComponents; i++)
@@ -387,7 +426,10 @@ void CGameMap::Tick()
 		m_pGameEvent->Tick();
 
 	for (int i = 0; i < m_lpWorlds.size(); i++)
-		m_lpWorlds[0]->Tick();
+		m_lpWorlds[i]->Tick();
+
+	for (int i = 0; i < m_lpMatches.size(); i++)
+		m_lpMatches[i]->Tick();
 }
 
 void CGameMap::SendChat(int ChatterClientID, const char *pText)
@@ -429,4 +471,23 @@ void CGameMap::SendBroadcast(const char *pText)
 void CGameMap::OnClientEnter(int ClientID)
 {
 	m_MapVoting.UpdateVotes();
+}
+
+CGameWorld *CGameMap::CreateNewWorld(int Type)
+{
+	CGameWorld *pGameWorld = new CGameWorld(Type, this);
+	m_lpWorlds.add(pGameWorld);
+	return pGameWorld;
+}
+
+void CGameMap::DeleteWorld(CGameWorld *pWorld)
+{
+	for (int i = 0; i < m_lpWorlds.size(); i++)
+	{
+		if (m_lpWorlds[i] != pWorld)
+			continue;
+		m_lpWorlds.remove_index(i);
+		i--;
+	}
+	delete pWorld;
 }

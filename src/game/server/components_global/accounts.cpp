@@ -855,11 +855,7 @@ void CAccountsHandler::ClanInvite(int OptionID, const unsigned char *pData, int 
 	CAccountsHandler *pThis = pGameServer->AccountsHandler();
 
 	if (g_Config.m_SvAccountsystem == 0 || pThis->m_ClanSystemError)
-	{
-		pGameServer->SendChatTarget(ClientID, "Clansystem disabled on this server!");
 		return;
-	}
-
 
 	char aBuf[64];
 	IServer::CClanData *pClan = *((IServer::CClanData **)pData);
@@ -867,6 +863,7 @@ void CAccountsHandler::ClanInvite(int OptionID, const unsigned char *pData, int 
 
 	if (OptionID == -1 || pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
+		pGameServer->SendChatTarget(ClientID, "Clan invitation expired");
 		pGameServer->SendChatTarget(LeaderID, "No response to your claninvitation");
 	}
 	else if (OptionID == 0)
@@ -905,10 +902,7 @@ void CAccountsHandler::ClanClose(int OptionID, const unsigned char *pData, int C
 	IServer::CClanData *pClan = *((IServer::CClanData **)pData);
 
 	if (g_Config.m_SvAccountsystem == 0 || pThis->m_ClanSystemError)
-	{
-		pGameServer->SendChatTarget(ClientID, "Clansystem disabled on this server!");
 		return;
-	}
 
 	if (OptionID == 0)
 	{

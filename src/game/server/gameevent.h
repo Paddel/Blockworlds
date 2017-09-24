@@ -21,7 +21,8 @@ private:
 	CGameMap *m_pGameMap;
 	CGameContext *m_pGameServer;
 	IServer *m_pServer;
-	CCharState m_CharState[MAX_CLIENTS];
+	CGameWorld *m_pGameWorld;
+	CCharState m_aCharStates[MAX_CLIENTS];
 	int m_Type;
 	int64 m_CreateTick;
 	bool m_Started;
@@ -39,13 +40,13 @@ protected:
 
 public:
 	CGameEvent(int Type, CGameMap *pGameMap);
-	virtual ~CGameEvent() {}
+	virtual ~CGameEvent();
 
 	virtual void OnTick() {}
 	virtual void Snap(int SnappingClient) {}
 	virtual const char *EventName() = 0;
 
-	virtual void OnPlayerBlocked(int ClientID, bool Dead, vec2 Pos) {}
+	virtual void OnPlayerBlocked(int ClientID, vec2 Pos) {}
 	virtual void OnPlayerKilled(int ClientID) {}
 
 	
@@ -57,7 +58,7 @@ public:
 	void ResumeClient(int ClientID);
 	void EndEvent();
 	void PlayerKilled(int ClientID);
-	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
+	void PlayerBlocked(int ClientID, vec2 Pos);
 
 	CGameMap *GameMap() const { return m_pGameMap; }
 	CGameContext *GameServer() const { return m_pGameServer; }

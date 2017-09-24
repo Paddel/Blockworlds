@@ -2,6 +2,7 @@
 #include <game/server/player.h>
 #include <game/server/entities/character.h>
 #include <game/server/gamemap.h>
+#include <game/server/gamecontext.h>
 
 #include "dragger.h"
 

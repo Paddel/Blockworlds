@@ -5,6 +5,7 @@
 #include <game/extras.h>
 #include <game/server/player.h>
 #include <game/server/gamemap.h>
+#include <game/server/gamecontext.h>
 #include <game/server/entities/character.h>
 #include <game/server/entities/pickup.h>
 #include <game/server/entities/dragger.h>
@@ -58,7 +59,7 @@ void CRaceComponents::EvaluateSpawnType(CSpawnEval *pEval, CGameWorld *pWorld)
 	{
 	case CGameWorld::WORLDTYPE_MAIN: Type = 0; break;
 	case CGameWorld::WORLDTYPE_EVENT: Type = 1; break;
-	case CGameWorld::WORLDTYPE_1ON1: Type = 2; break;
+	case CGameWorld::WORLDTYPE_GAMEMATCH: Type = 2; break;
 	default: Type = 0;
 	}
 

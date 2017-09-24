@@ -4,6 +4,7 @@
 #include <game/layers.h>
 #include <game/collision.h>
 #include <game/server/gameworld.h>
+#include <game/server/gamematch.h>
 #include <game/server/components_map/eventhandler.h>
 #include <game/server/components_map/shop.h>
 #include <game/server/components_map/animations.h>
@@ -30,7 +31,6 @@ private:
 	IConsole *m_pConsole;
 	CLayers m_Layers;
 	CCollision m_Collision;
-	array <CGameWorld *> m_lpWorlds;
 	CEventHandler m_Events;
 	CGameEvent *m_pGameEvent;//current map event
 	CShop m_Shop;
@@ -39,6 +39,8 @@ private:
 	CRaceComponents m_RaceComponents;
 	CMapVoting m_MapVoting;
 	class CComponentMap *m_apComponents[16];
+	array <CGameWorld *> m_lpWorlds;
+	array <CGameMatch *> m_lpMatches;
 	int m_NumComponents;
 	
 	int m_RoundStartTick;
@@ -81,7 +83,11 @@ public:
 	void EndEvent();
 	void SetEventCooldown();
 	void ClientSubscribeEvent(int ClientID);
-	void PlayerBlocked(int ClientID, bool Dead, vec2 Pos);
+
+	void CreateGameMatch(int Client0, int Client1, int Blockpoints);
+	void DeleteGameMatch(CGameMatch *pGameMatch);
+
+	void PlayerBlocked(int ClientID, vec2 Pos);
 	void PlayerKilled(int ClientID);
 
 	bool IsBlockMap() const { return m_BlockMap; }
@@ -95,6 +101,10 @@ public:
 	void SendChat(int ChatterClientID, const char *pText);
 	void SendBroadcast(const char *pText);
 	void OnClientEnter(int ClientID);
+
+	CGameWorld *CreateNewWorld(int Type);
+	void DeleteWorld(CGameWorld *pWorld);
+
 
 	CMap *Map() const { return m_pMap; };
 	CGameContext *GameServer() const { return m_pGameServer; };

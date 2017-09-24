@@ -439,8 +439,8 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 		if(Kill)
 			m_CosmeticsHandler.DoKnockoutEffect(pPlayer->m_AttackedBy, Pos);
 
-		//for events
-		pChr->GameMap()->PlayerBlocked(ClientID, Kill, Pos);
+		if(Kill == false)
+			pChr->GameMap()->PlayerBlocked(ClientID, Pos);
 
 		pPlayer->m_AttackedBy = -1;
 	}
@@ -583,6 +583,10 @@ void CGameContext::DoGeneralTuning()
 
 void CGameContext::OnTick()
 {
+//#ifdef CONF_RELEASE
+//	g_Config.m_DbgGame = 0;
+//#endif
+
 	DoGeneralTuning();
 
 	for (int i = 0; i < m_NumComponents; i++)
@@ -1398,11 +1402,18 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				m_VoteMenuHandler.CallVote(ClientID, pMsg->m_Value, pReason);
 			}
-			else if(str_comp_nocase(pMsg->m_Type, "kick") == 0)
+			else if (str_comp_nocase(pMsg->m_Type, "kick") == 0 ||
+				str_comp_nocase(pMsg->m_Type, "spectate") == 0 ||
+				str_comp_nocase(pMsg->m_Type, "1on1") == 0)
 			{
-			}
-			else if(str_comp_nocase(pMsg->m_Type, "spectate") == 0)
-			{
+				int TargetID = Server()->ReverseTranslate(ClientID, str_toint(pMsg->m_Value));
+				if (TargetID < 0 || TargetID >= MAX_CLIENTS)
+				{
+					SendChatTarget(ClientID, "Invalid player");
+					return;
+				}
+
+				pPlayer->TryChallengeMatch(TargetID, pMsg->m_Reason);
 			}
 		}
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
@@ -1580,19 +1591,16 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(pPlayer->m_IsReady)
 				return;
 
-			if (Server()->ClientOnline(ClientID) == false)//ignore packet on mapchange
-			{
-				CNetMsg_Cl_StartInfo *pMsg = (CNetMsg_Cl_StartInfo *)pRawMsg;
-				pPlayer->m_LastChangeInfo = Server()->Tick();
+			CNetMsg_Cl_StartInfo *pMsg = (CNetMsg_Cl_StartInfo *)pRawMsg;
+			pPlayer->m_LastChangeInfo = Server()->Tick();
 
-				// set start infos
-				Server()->SetClientName(ClientID, pMsg->m_pName);
-				Server()->SetClientCountry(ClientID, pMsg->m_Country);
-				str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
-				pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-				pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-				pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
-			}
+			// set start infos
+			Server()->SetClientName(ClientID, pMsg->m_pName);
+			Server()->SetClientCountry(ClientID, pMsg->m_Country);
+			str_copy(pPlayer->m_TeeInfos.m_SkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_SkinName));
+			pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
+			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
+			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 
 			m_VoteMenuHandler.OnClientJoin(ClientID);
 

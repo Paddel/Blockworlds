@@ -5,6 +5,7 @@
 #include <game/server/gamemap.h>
 #include <game/server/entities/npc.h>
 #include <game/server/gameevent.h>
+#include <game/server/gamecontext.h>
 #include "player.h"
 
 
@@ -180,7 +181,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(!pPlayerInfo)
 		return;
 
-	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
+	pPlayerInfo->m_Latency = GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = TranslatedID;
 	pPlayerInfo->m_Score = 0;
@@ -268,6 +269,167 @@ bool CPlayer::InEvent()
 	if (m_SubscribeEvent == true && GameMap()->GetEvent() != 0x0 && GameMap()->GetEvent()->OnCountdown() == false)
 		return true;
 	return false;
+}
+
+bool CPlayer::TrySubscribeToEvent()
+{
+	if (m_Team == TEAM_SPECTATORS)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You cannot subscribe to an event as a spectator");
+		return false;
+	}
+
+	if (Server()->GetClientInfo(m_ClientID)->m_LoggedIn == false)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You are not logged in");
+		return false;
+	}
+
+	if (m_pGameWorld != GameMap()->MainWorld())
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You cannot subscribe at the moment");
+		return false;
+	}
+
+	return true;
+}
+
+bool CPlayer::CanChallengeMatch(int TargetID)
+{
+	if(Server()->ClientIngame(TargetID) == false)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "Player not online");
+		return false;
+	}
+
+	if (GameMap()->m_apPlayers[TargetID] == 0x0)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "Player is on a different map");
+		return false;
+	}
+
+	if (m_Team == TEAM_SPECTATORS)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You cannot start an 1ON1 match as a spectator");
+		return false;
+	}
+
+	if (m_pGameWorld != GameMap()->MainWorld())
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You cannot start an 1n1 match at the moment");
+		return false;
+	}
+
+	if (GameMap()->HasArena() == false)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "This map does not have an arena");
+		return false;
+	}
+	return true;
+}
+
+void CPlayer::TryChallengeMatch(int TargetID, const char *pBlockpoints)
+{
+	int Blockpoints = 0;
+	int BPStringLen = str_length(pBlockpoints);
+
+	if (CanChallengeMatch(TargetID) == false)
+		return;
+
+	if (BPStringLen > 5)//eventhough input starts with 0s
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You don't have enough blockpoints to set this wager");
+		return;
+	}
+
+	for (int i = 0; i < BPStringLen; i++)
+	{
+		if (pBlockpoints[i] >= '0' && pBlockpoints[i] <= '9')
+			continue;
+
+		GameServer()->SendChatTarget(m_ClientID, "Invalid blockpoints insert");
+		return;
+	}
+
+	Blockpoints = str_toint(pBlockpoints);
+
+	if (Blockpoints > 0)
+	{
+		if (ClientInfo()->m_LoggedIn == false)
+		{
+			GameServer()->SendChatTarget(m_ClientID, "You must be logged in to bet blockpoints");
+			return;
+		}
+
+		if (ClientInfo()->m_AccountData.m_BlockPoints < Blockpoints)
+		{
+			GameServer()->SendChatTarget(m_ClientID, "You don't have enough blockpoints to set this wager");
+			return;
+		}
+	}
+
+	if (GameServer()->InquiriesHandler()->NewInquiryPossible(TargetID) == false)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "Request cannot be send right now. Try again in a few seconds");
+		return;
+	}
+
+	unsigned char aData[INQUIRY_DATA_SIZE];
+	mem_copy(aData, &m_ClientID, sizeof(int));
+	mem_copy(aData + sizeof(int), &Blockpoints, sizeof(int));
+
+	CInquiry *pInquiry = new CInquiry(CPlayer::MatchRequest, Server()->Tick() + Server()->TickSpeed() * 15, aData);
+	pInquiry->AddOption("accept");
+	pInquiry->AddOption("decline");
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "%s challenged you for an 1ON1 (Wager: %i BP)",
+		Server()->ClientName(m_ClientID), Blockpoints);
+
+	GameServer()->InquiriesHandler()->NewInquiry(TargetID, pInquiry, aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "Match request has been sent to %s (Wager: %i BP)",
+		Server()->ClientName(TargetID), Blockpoints);
+	GameServer()->SendChatTarget(m_ClientID, aBuf);
+
+}
+
+void CPlayer::MatchRequest(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer)
+{
+	int ChallengerID = (int)*(pData);
+	int Blockpoints = (int)*(pData + sizeof(int));
+	CPlayer *pThis = pGameServer->m_apPlayers[ClientID];
+	if (pThis == 0x0)
+		return;
+
+	if (OptionID == -1)
+	{
+		pGameServer->SendChatTarget(ClientID, "Match request expired");
+		pGameServer->SendChatTarget(ChallengerID, "Player did not react to your match request");
+		return;
+	}
+	else if (OptionID == 1)
+	{
+		pGameServer->SendChatTarget(ChallengerID, "Player declined your match request");
+		pGameServer->SendChatTarget(ClientID, "Match request declined");
+		return;
+	}
+
+	if (pThis->CanChallengeMatch(ChallengerID) == false)
+		return;
+
+	pThis->GameMap()->CreateGameMatch(ChallengerID, ClientID, Blockpoints);
+}
+
+void CPlayer::MovePlayer(CGameWorld *pGameWorld)
+{
+	if (m_pGameWorld == pGameWorld)//already in this world
+		return;
+
+	//remove character out of old world
+	KillCharacter();
+	
+	m_pGameWorld = pGameWorld;
 }
 
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)
@@ -404,7 +566,12 @@ bool CPlayer::TryRespawnQuick()
 	if (m_pCharacter != 0x0 && m_pCharacter->IsAlive() == false)
 		return false;
 
-	KillCharacter();
+	if (m_pCharacter)
+	{
+		m_pCharacter->Die(m_ClientID, WEAPON_GAME);
+		delete m_pCharacter;
+		m_pCharacter = 0;
+	}
 
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(GameWorld());

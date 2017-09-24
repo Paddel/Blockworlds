@@ -38,10 +38,10 @@ void CEventHandler::Snap(int SnappingClient)
 {
 	for(int i = 0; i < m_NumEvents; i++)
 	{
-		if(SnappingClient == -1 || CmaskIsSet(m_aClientMasks[i], SnappingClient))
+		if(CmaskIsSet(m_aClientMasks[i], SnappingClient))
 		{
 			CNetEvent_Common *ev = (CNetEvent_Common *)&m_aData[m_aOffsets[i]];
-			if(SnappingClient == -1 || distance(GameServer()->m_apPlayers[SnappingClient]->m_ViewPos, vec2(ev->m_X, ev->m_Y)) < 1500.0f)
+			if(distance(GameServer()->m_apPlayers[SnappingClient]->m_ViewPos, vec2(ev->m_X, ev->m_Y)) < 1500.0f)
 			{
 				void *d = GameServer()->Server()->SnapNewItem(m_aTypes[i], i, m_aSizes[i]);
 				if(d)

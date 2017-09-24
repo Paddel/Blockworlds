@@ -34,7 +34,7 @@ public:
 
 		WORLDTYPE_MAIN = 0,
 		WORLDTYPE_EVENT,
-		WORLDTYPE_1ON1,
+		WORLDTYPE_GAMEMATCH,//aka 1n1
 	};
 
 private:

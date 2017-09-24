@@ -146,45 +146,46 @@ void CChatCommandsHandler::ComWhisper(CConsole::CResult *pResult, CGameContext *
 			&& str_comp_nocase_num(pGameServer->Server()->ClientName(ClientID), pMessage, str_length(pGameServer->Server()->ClientName(ClientID))) == 0)
 			pGameServer->SendChatTarget(ClientID, "You cannot whisper to yourself");
 		else
-			pGameServer->SendChatTarget(ClientID, "Invalid receiver name");
+			pGameServer->SendChatTarget(ClientID, "Invalid receiver name, or empty message");
+		return;
 	}
-	else if (NumPersons > 1)
+
+	if (NumPersons > 1)
 	{
 		char aBuf[32];
 		str_format(aBuf, sizeof(aBuf), "%i possible receivers found", NumPersons);
 		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
 	}
-	else
+
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "[ %s %s %s ] %s", pGameServer->Server()->ClientName(ClientID), SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage + str_length(pGameServer->Server()->ClientName(TargetID)) + 1);
+
+	for(int i = 0; i < 2; i++)
 	{
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "[ %s %s %s ] %s", pGameServer->Server()->ClientName(ClientID), SignArrowRight, pGameServer->Server()->ClientName(TargetID), pMessage + str_length(pGameServer->Server()->ClientName(TargetID)) + 1);
-
-		for(int i = 0; i < 2; i++)
+		int Recv = ClientID, Send = TargetID;
+		if (i == 1) { Recv = TargetID; Send = ClientID; }
+		CNetMsg_Sv_Chat Msg;
+		if (pGameServer->Server()->GetClientInfo(Recv)->m_DDNetVersion >= VERSION_DDNET_WHISPER)
 		{
-			int Recv = ClientID, Send = TargetID;
-			if (i == 1) { Recv = TargetID; Send = ClientID; }
-			CNetMsg_Sv_Chat Msg;
-			if (pGameServer->Server()->GetClientInfo(Recv)->m_DDNetVersion >= VERSION_DDNET_WHISPER)
-			{
-				Msg.m_Team = 2 + i;
-				Msg.m_pMessage = pMessage + str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
-				Msg.m_ClientID = Send;
-				pGameServer->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, Recv);
-			}
-			else
-			{
-				Msg.m_Team = 0;
-				Msg.m_pMessage = aBuf;
-				Msg.m_ClientID = pGameServer->Server()->UsingMapItems(Recv) - 1;
-				pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, Recv);
-			}
+			Msg.m_Team = 2 + i;
+			Msg.m_pMessage = pMessage + str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
+			Msg.m_ClientID = Send;
+			pGameServer->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, Recv);
 		}
-
-		pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseID = TargetID;
-		pGameServer->Server()->GetClientInfo(TargetID)->m_ConverseID = ClientID;
-		pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseTick = pGameServer->Server()->GetJoinTick(TargetID);
-		pGameServer->Server()->GetClientInfo(TargetID)->m_ConverseTick = pGameServer->Server()->GetJoinTick(ClientID);
+		else
+		{
+			Msg.m_Team = 0;
+			Msg.m_pMessage = aBuf;
+			Msg.m_ClientID = pGameServer->Server()->UsingMapItems(Recv) - 1;
+			pGameServer->Server()->SendMsgFinal(&Msg, MSGFLAG_VITAL, Recv);
+		}
 	}
+
+	pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseID = TargetID;
+	pGameServer->Server()->GetClientInfo(TargetID)->m_ConverseID = ClientID;
+	pGameServer->Server()->GetClientInfo(ClientID)->m_ConverseTick = pGameServer->Server()->GetJoinTick(TargetID);
+	pGameServer->Server()->GetClientInfo(TargetID)->m_ConverseTick = pGameServer->Server()->GetJoinTick(ClientID);
 }
 
 void CChatCommandsHandler::ComConverse(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
@@ -408,6 +409,62 @@ void CChatCommandsHandler::ComExp(CConsole::CResult *pResult, CGameContext *pGam
 	pGameServer->SendChatTarget(ClientID, aBarBot);
 }
 
+void CChatCommandsHandler::ComChallengeMatch(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	if (pResult->NumArguments() == 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "Challenge another player by writing '/1on1 name (blockpoints)'");
+		pGameServer->SendChatTarget(ClientID, "An example would be \"/1on1 nameless tee\" or \"/1on1 vali 30\"");
+		return;
+	}
+
+	const char *pRest = pResult->GetString(0);
+	int Length = str_length(pRest);
+
+	if (pGameServer->m_apPlayers[ClientID] == 0x0 || pGameServer->m_apPlayers[ClientID]->InEvent() == true)
+		return;
+
+	int NumPersons = 0;
+	int TargetID = -1;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pGameServer->Server()->ClientIngame(i) == false || i == ClientID)
+			continue;
+
+		const char *pReceiverName = pGameServer->Server()->ClientName(i);
+		int ReceiverLength = str_length(pReceiverName);
+		if (ReceiverLength > Length  || str_comp_nocase_num(pReceiverName, pRest, ReceiverLength) != 0)
+			continue;
+
+		NumPersons++;
+		TargetID = i;
+	}
+
+	if (NumPersons == 0)
+	{
+		if (str_length(pGameServer->Server()->ClientName(ClientID)) <= Length
+			&& str_comp_nocase_num(pGameServer->Server()->ClientName(ClientID), pRest, str_length(pGameServer->Server()->ClientName(ClientID))) == 0)
+			pGameServer->SendChatTarget(ClientID, "You cannot challenge to yourself");
+		else
+			pGameServer->SendChatTarget(ClientID, "Invalid player name");
+
+		return;
+	}
+	if (NumPersons > 1)
+	{
+		char aBuf[32];
+		str_format(aBuf, sizeof(aBuf), "%i possible players found", NumPersons);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+		return;
+	}
+
+	int NameLength = str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
+	const char *pBlockpoints = "0";
+	if(Length > NameLength)
+		pBlockpoints = pRest + str_length(pGameServer->Server()->ClientName(TargetID)) + 1;
+
+	pGameServer->m_apPlayers[ClientID]->TryChallengeMatch(TargetID, pBlockpoints);
+}
 
 void CChatCommandsHandler::ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
@@ -796,17 +853,8 @@ void CChatCommandsHandler::ComSubscribe(CConsole::CResult *pResult, CGameContext
 	if (pGameServer->m_apPlayers[ClientID] == 0x0)
 		return;
 
-	if (pGameServer->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
-	{
-		pGameServer->SendChatTarget(ClientID, "You cannot subscribe to an event as a spectator");
+	if (pGameServer->m_apPlayers[ClientID]->TrySubscribeToEvent() == false)
 		return;
-	}
-
-	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
-	{
-		pGameServer->SendChatTarget(ClientID, "You are not logged in");
-		return;
-	}
 
 	bool Before = pGameServer->m_apPlayers[ClientID]->m_SubscribeEvent;
 	pGameServer->m_apPlayers[ClientID]->GameMap()->ClientSubscribeEvent(ClientID);
@@ -834,7 +882,7 @@ void CChatCommandsHandler::Init()
 {
 	m_pConsole = GameServer()->Console();
 
-	Register("help", "?s", 0, ComHelp,">--- BOOOM ---<");
+	Register("help", "?s", 0, ComHelp,"A better help than www.google.com");
 	Register("info", "", 0, ComInfo, "Gamemode BW364 made by 13x37");
 	Register("pause", "", CHATCMDFLAG_SPAMABLE, ComPause, "Detaches the camera from you tee to let you discover the map");
 	Register("whisper", "r", 0, ComWhisper, "Personal message to anybody on this server");
@@ -848,6 +896,7 @@ void CChatCommandsHandler::Init()
 	Register("lobby", "", 0, ComLobby, "Moves you to the lobby");
 	Register("detach", "", 0, ComDetach, "Allows you to be on a different map as your dummy");
 	Register("exp", "", 0, ComExp, "Visualizes you your current experience points");
+	Register("1on1", "?r", 0, ComChallengeMatch, "Challenge another player in an one o' one");
 
 	Register("tele", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComTele, "Teleports you to your cursor");
 	Register("perf", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComPerformance, "Sends you performance infos");

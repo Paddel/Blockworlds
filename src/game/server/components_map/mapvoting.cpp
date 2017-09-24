@@ -2,6 +2,7 @@
 #include <engine/server.h>
 #include <game/server/gamemap.h>
 #include <game/server/player.h>
+#include <game/server/gamecontext.h>
 
 #include "mapvoting.h"
 

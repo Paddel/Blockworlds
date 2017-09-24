@@ -1,5 +1,5 @@
 
-
+#include <engine/shared/config.h>
 #include <engine/server.h>
 #include <game/server/gamemap.h>
 #include <game/server/gamecontext.h>
@@ -22,7 +22,14 @@ CGameEvent::CGameEvent(int Type, CGameMap *pGameMap)
 	m_NumParticipants = 0;
 	m_Ending = false;
 
+	m_pGameWorld = pGameMap->CreateNewWorld(CGameWorld::WORLDTYPE_EVENT);;
+
 	Init();
+}
+
+CGameEvent::~CGameEvent()
+{
+	GameMap()->DeleteWorld(m_pGameWorld);
 }
 
 void CGameEvent::Init()
@@ -40,9 +47,7 @@ void CGameEvent::Init()
 
 void CGameEvent::Start()
 {
-	OnStarted();
-
-	mem_zero(&m_CharState, sizeof(m_CharState));
+	mem_zero(&m_aCharStates, sizeof(m_aCharStates));
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -65,16 +70,23 @@ void CGameEvent::Start()
 
 		if (GameMap()->m_apPlayers[i]->GetCharacter())
 		{
-			m_CharState[i].m_Alive = true;
-			m_CharState[i].m_Pos = GameMap()->m_apPlayers[i]->GetCharacter()->m_Pos;
-			mem_copy(&m_CharState[i].m_aWeapons, GameMap()->m_apPlayers[i]->GetCharacter()->Weapons(), sizeof(m_CharState[i].m_aWeapons));
-			m_CharState[i].m_ActiveWeapon = GameMap()->m_apPlayers[i]->GetCharacter()->GetActiveWeapon();
-			m_CharState[i].m_Endless = GameMap()->m_apPlayers[i]->GetCharacter()->GetEndlessHook();
-			m_CharState[i].m_NumJumps = GameMap()->m_apPlayers[i]->GetCharacter()->Core()->m_MaxAirJumps;
+			m_aCharStates[i].m_Alive = true;
+			m_aCharStates[i].m_Pos = GameMap()->m_apPlayers[i]->GetCharacter()->m_Pos;
+			mem_copy(&m_aCharStates[i].m_aWeapons, GameMap()->m_apPlayers[i]->GetCharacter()->Weapons(), sizeof(m_aCharStates[i].m_aWeapons));
+			m_aCharStates[i].m_ActiveWeapon = GameMap()->m_apPlayers[i]->GetCharacter()->GetActiveWeapon();
+			m_aCharStates[i].m_Endless = GameMap()->m_apPlayers[i]->GetCharacter()->GetEndlessHook();
+			m_aCharStates[i].m_NumJumps = GameMap()->m_apPlayers[i]->GetCharacter()->Core()->m_MaxAirJumps;
 		}
 
-		if (GameMap()->m_apPlayers[i]->TryRespawnQuick() == false)
+		bool CouldSubscribe = GameMap()->m_apPlayers[i]->TrySubscribeToEvent();
+		if (g_Config.m_DbgGame == 1)
+			CouldSubscribe = true;
+
+		GameMap()->m_apPlayers[i]->MovePlayer(m_pGameWorld);
+
+		if (GameMap()->m_apPlayers[i]->TryRespawnQuick() == false || CouldSubscribe == false)
 		{
+			GameMap()->m_apPlayers[i]->MovePlayer(GameMap()->MainWorld());
 			GameMap()->m_apPlayers[i]->m_SubscribeEvent = false;
 			continue;
 		}
@@ -83,6 +95,7 @@ void CGameEvent::Start()
 	}
 
 	m_Started = true;
+	OnStarted();
 }
 
 
@@ -193,10 +206,12 @@ void CGameEvent::ClientSubscribe(int ClientID)
 
 void CGameEvent::ResumeClient(int ClientID)
 {
-	if (GameMap()->m_apPlayers[ClientID] == 0x0 || GameMap()->m_apPlayers[ClientID]->m_SubscribeEvent == false)
+	if (GameMap()->m_apPlayers[ClientID] == 0x0 || GameMap()->m_apPlayers[ClientID]->m_SubscribeEvent == false)// other conditions (if buggy)
 		return;
 
-	mem_copy(&GameMap()->m_apPlayers[ClientID]->m_SpawnState, &m_CharState[ClientID], sizeof(CCharState));
+	GameMap()->m_apPlayers[ClientID]->MovePlayer(GameMap()->MainWorld());
+
+	mem_copy(&GameMap()->m_apPlayers[ClientID]->m_SpawnState, &m_aCharStates[ClientID], sizeof(CCharState));
 	GameMap()->m_apPlayers[ClientID]->m_UseSpawnState = true;
 
 	GameMap()->m_apPlayers[ClientID]->KillCharacter();
@@ -225,8 +240,8 @@ void CGameEvent::PlayerKilled(int ClientID)
 		OnPlayerKilled(ClientID);
 }
 
-void CGameEvent::PlayerBlocked(int ClientID, bool Dead, vec2 Pos)
+void CGameEvent::PlayerBlocked(int ClientID, vec2 Pos)
 {
 	if (m_Started == true && m_Ending == false)
-		OnPlayerBlocked(ClientID, Dead, Pos);
+		OnPlayerBlocked(ClientID, Pos);
 }
