@@ -1,6 +1,7 @@
 obj*
 .bam*
 datasrc/__pycache__/*
+src/game/generated
 
 *.suo
 *.sln
