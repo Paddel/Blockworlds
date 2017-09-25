@@ -334,7 +334,7 @@ bool CCosmeticsHandler::ToggleGundesign(int ClientID, const char *pName)
 	return true;
 }
 
-bool CCosmeticsHandler::SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2 Pos, vec2 Dir, int EntityID)
+bool CCosmeticsHandler::SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2 Pos, vec2 Dir, int EntityID, int SnappingClient)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return false;
@@ -343,10 +343,10 @@ bool CCosmeticsHandler::SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2
 	if (HasGundesign(ClientID, Effect) == false)
 		return false;
 
-	return SnapGundesignRaw(pGameWorld, Pos, Dir, Effect, EntityID);
+	return SnapGundesignRaw(pGameWorld, Pos, Dir, Effect, EntityID, SnappingClient);
 }
 
-bool CCosmeticsHandler::SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 Dir, int Effect, int EntityID)
+bool CCosmeticsHandler::SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 Dir, int Effect, int EntityID, int SnappingClient)
 {
 	if (Effect == GUNDESIGN_HEART)
 	{
@@ -393,8 +393,7 @@ bool CCosmeticsHandler::SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 
 		return true;
 	else if (Effect == GUNDESIGN_VIP_STARGUN)
 	{
-		if ((Server()->Tick() % int(Server()->TickSpeed() / 17)) == 0)
-			GameServer()->CreateDamageInd(pGameWorld, Pos, GetAngle(Dir) + 5.1f, 1);
+		GameServer()->CreateDamageInd(pGameWorld, Pos, GetAngle(Dir) + 5.1f, 1, CmaskOne(SnappingClient));
 		return true;
 	}
 

@@ -191,7 +191,7 @@ void CShop::SnapGundesign(int SnappingClient, int Index)
 	if (pChr == 0x0 || within_reach(pChr->m_Pos, pItem->m_Pos - vec2(64, 192.0f), 1100.0f) == false)
 		return;
 
-	if (GameServer()->CosmeticsHandler()->SnapGundesignRaw(pChr->GameWorld(), pItem->m_Pos - vec2(64, 192.0f), vec2(1, 0), pItem->m_Effect, pItem->m_ID) == false)
+	if (GameServer()->CosmeticsHandler()->SnapGundesignRaw(pChr->GameWorld(), pItem->m_Pos - vec2(64, 192.0f), vec2(1, 0), pItem->m_Effect, pItem->m_ID, SnappingClient) == false)
 	{
 		CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, pItem->m_ID, sizeof(CNetObj_Projectile)));
 		if (pProj)

@@ -105,7 +105,7 @@ void CProjectile::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient, GetPos(Ct)))
 		return;
 
-	if (GameServer()->CosmeticsHandler()->SnapGundesign(GameWorld(), m_Owner, GetPos((Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed()), m_Direction, m_ID) == true)
+	if (GameServer()->CosmeticsHandler()->SnapGundesign(GameWorld(), m_Owner, GetPos((Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed()), m_Direction, m_ID, SnappingClient) == true)
 		return;
 
 	CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_ID, sizeof(CNetObj_Projectile)));

@@ -104,7 +104,7 @@ public:
 	CVoteOptionServer *m_pVoteOptionLast;
 
 	// helper functions
-	void CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float AngleMod, int Amount);
+	void CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float AngleMod, int Amount, int Mask = -1);
 	void CreateExplosion(CGameWorld *pGameWorld, vec2 Pos, int Owner);
 	void CreateHammerHit(CGameWorld *pGameWorld, vec2 Pos);
 	void CreatePlayerSpawn(CGameWorld *pGameWorld, vec2 Pos);

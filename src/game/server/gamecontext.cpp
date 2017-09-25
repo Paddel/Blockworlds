@@ -134,7 +134,7 @@ void CGameContext::StringTime(int64 Tick, char *pSrc, int SrcSize)
 	}
 }
 
-void CGameContext::CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float Angle, int Amount)
+void CGameContext::CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float Angle, int Amount, int Mask)
 {
 	float a = 3 * 3.14159f / 2 + Angle;
 	//float a = get_angle(dir);
@@ -143,7 +143,7 @@ void CGameContext::CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float Angle
 	for(int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, float(i+1)/float(Amount+2));
-		CNetEvent_DamageInd *pEvent = (CNetEvent_DamageInd *)pGameWorld->Events()->Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd));
+		CNetEvent_DamageInd *pEvent = (CNetEvent_DamageInd *)pGameWorld->Events()->Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask);
 		if(pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;

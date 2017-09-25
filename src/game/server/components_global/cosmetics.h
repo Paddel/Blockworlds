@@ -77,8 +77,8 @@ public:
 	bool DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, CGameWorld *pGameWorld, vec2 Direction);
 	bool ToggleGundesign(int ClientID, const char *pName);
 
-	bool SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2 Pos, vec2 Dir, int EntityID);
-	bool SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 Dir, int Effect, int EntityID);
+	bool SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2 Pos, vec2 Dir, int EntityID, int SnappingClient);
+	bool SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 Dir, int Effect, int EntityID, int SnappingClient);
 	void FillGundesign(IServer::CAccountData *pFillingData, const char *pValue);
 
 	int FindSkinmani(const char *pName);
