@@ -393,7 +393,7 @@ bool CCosmeticsHandler::SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 
 		return true;
 	else if (Effect == GUNDESIGN_VIP_STARGUN)
 	{
-		if ((Server()->Tick() % int(Server()->TickSpeed() / 25)) == 0)
+		if ((Server()->Tick() % int(Server()->TickSpeed() / 17)) == 0)
 			GameServer()->CreateDamageInd(pGameWorld, Pos, GetAngle(Dir) + 5.1f, 1);
 		return true;
 	}
