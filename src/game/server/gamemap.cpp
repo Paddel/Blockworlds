@@ -36,7 +36,6 @@ void CGameMap::InitComponents()
 	m_NumComponents = 0;
 
 	m_apComponents[m_NumComponents++] = &m_Shop;
-	m_apComponents[m_NumComponents++] = &m_AnimationHandler;
 	m_apComponents[m_NumComponents++] = &m_Lobby;
 	m_apComponents[m_NumComponents++] = &m_RaceComponents;
 	m_apComponents[m_NumComponents++] = &m_MapVoting;

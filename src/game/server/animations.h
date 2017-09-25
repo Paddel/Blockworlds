@@ -3,7 +3,10 @@
 #include <base/system.h>
 #include <base/vmath.h>
 #include <base/tl/array.h>
-#include <game/server/component.h>
+class CGameMap;
+class CGameContext;
+class IServer;
+class CGameWorld;
 
 class CMapAnimation
 {
@@ -29,10 +32,13 @@ public:
 	CGameWorld *GameWorld();
 };
 
-class CAnimationHandler : public CComponentMap
+class CAnimationHandler
 {
 private:
 	array<CMapAnimation *> m_lpAnimations;
+	CGameMap *m_pGameMap;
+	CGameContext *m_pGameServer;
+	IServer *m_pServer;
 
 public:
 	CAnimationHandler();
@@ -40,6 +46,8 @@ public:
 	void Laserwrite(CGameWorld *pGameWorld, const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun = false);
 	void DoAnimation(CGameWorld *pGameWorld, vec2 Pos, int Index);
 	void DoAnimationGundesign(CGameWorld *pGameWorld, vec2 Pos, int Index, vec2 Direction);
+
+	void SetGameMap(CGameMap *pGameMap);
 
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
@@ -52,4 +60,8 @@ public:
 		ANIMATION_STARS_CCW,
 		ANIMATION_STARS_TOC,
 	};
+
+	CGameMap *GameMap() const { return m_pGameMap; };
+	CGameContext *GameServer() const { return m_pGameServer; };
+	IServer *Server() const { return m_pServer; }
 };

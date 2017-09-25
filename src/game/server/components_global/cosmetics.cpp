@@ -155,19 +155,19 @@ void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGam
 			GameServer()->CreateDamageInd(pGameWorld, Pos, i, 1);
 	}
 	else if (Effect == KNOCKOUT_LOVE)
-		pGameMap->AnimationHandler()->DoAnimation(pGameWorld, Pos, CAnimationHandler::ANIMATION_LOVE);
+		pGameWorld->AnimationHandler()->DoAnimation(pGameWorld, Pos, CAnimationHandler::ANIMATION_LOVE);
 	else if (Effect == KNOCKOUT_THUNDERSTORM)
-		pGameMap->AnimationHandler()->DoAnimation(pGameWorld, Pos, CAnimationHandler::ANIMATION_THUNDERSTORM);
+		pGameWorld->AnimationHandler()->DoAnimation(pGameWorld, Pos, CAnimationHandler::ANIMATION_THUNDERSTORM);
 	else if (Effect == KNOCKOUT_KORIP)
-		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "RIP", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameWorld->AnimationHandler()->Laserwrite(pGameWorld, "RIP", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_KOEZ)
-		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "EZ", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameWorld->AnimationHandler()->Laserwrite(pGameWorld, "EZ", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_KONOOB)
-		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "NOOB", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameWorld->AnimationHandler()->Laserwrite(pGameWorld, "NOOB", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_SORRY)
-		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "SORRY c:", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameWorld->AnimationHandler()->Laserwrite(pGameWorld, "SORRY c:", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_PRO)
-		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "PRO", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameWorld->AnimationHandler()->Laserwrite(pGameWorld, "PRO", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else
 		dbg_msg("cosmetics", "ERROR: Knockouteffect '%s' not implemented!", ms_KnockoutNames[Effect]);
 }
@@ -271,7 +271,7 @@ bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap,
 
 	if (Effect == GUNDESIGN_PEW)
 	{
-		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "PEW", Pos, 7.0f, Server()->TickSpeed() * 0.2f);
+		pGameWorld->AnimationHandler()->Laserwrite(pGameWorld, "PEW", Pos, 7.0f, Server()->TickSpeed() * 0.2f);
 	}
 	else if (Effect == GUNDESIGN_REVERSE)
 	{
@@ -289,15 +289,15 @@ bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap,
 	}
 	else if (Effect == GUNDESIGN_CLOCKWISE)
 	{
-		pGameMap->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_CW, Direction);
+		pGameWorld->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_CW, Direction);
 	}
 	else if (Effect == GUNDESIGN_COUNTERCLOCK)
 	{
-		pGameMap->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_CCW, Direction);
+		pGameWorld->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_CCW, Direction);
 	}
 	else if (Effect == GUNDESIGN_TWOCLOCK)
 	{
-		pGameMap->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_TOC, Direction);
+		pGameWorld->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_TOC, Direction);
 	}
 	else if (Effect == GUNDESIGN_VIP_STARGUN)
 	{

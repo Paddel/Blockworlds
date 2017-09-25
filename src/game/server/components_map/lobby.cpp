@@ -84,6 +84,6 @@ void CLobby::Tick()
 			continue;
 
 		str_format(aBuf, sizeof(aBuf), "%i", pGameMap->NumPlayers());
-		GameMap()->AnimationHandler()->Laserwrite(pGameMap->MainWorld(), aBuf, pPlayercount->m_Pos, 10.0f, 1);
+		pGameMap->MainWorld()->AnimationHandler()->Laserwrite(pGameMap->MainWorld(), aBuf, pPlayercount->m_Pos, 10.0f, 1);
 	}
 }

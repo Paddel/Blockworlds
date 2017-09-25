@@ -131,6 +131,13 @@ void CAnimationHandler::DoAnimationGundesign(CGameWorld *pGameWorld, vec2 Pos, i
 	}
 }
 
+void CAnimationHandler::SetGameMap(CGameMap *pGameMap)
+{
+	m_pGameMap = pGameMap;
+	m_pGameServer = pGameMap->GameServer();
+	m_pServer = pGameMap->Server();
+}
+
 void CAnimationHandler::Tick()
 {
 	for (int i = 0; i < m_lpAnimations.size(); i++)

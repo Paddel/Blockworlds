@@ -152,7 +152,7 @@ void CShop::TickPrice(CShopItem *pItem)
 		else
 			str_format(aPrice, sizeof(aPrice), "LVL:%i", pItem->m_Level);
 
-		GameMap()->AnimationHandler()->Laserwrite(GameMap()->MainWorld(), aPrice, pItem->m_Pos - vec2(0, 96.0f - 8.0f), 5.0f, Server()->TickSpeed() * 3, true);
+		GameMap()->MainWorld()->AnimationHandler()->Laserwrite(GameMap()->MainWorld(), aPrice, pItem->m_Pos - vec2(0, 96.0f - 8.0f), 5.0f, Server()->TickSpeed() * 3, true);
 	}
 }
 

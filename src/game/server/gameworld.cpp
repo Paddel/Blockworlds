@@ -17,6 +17,7 @@ CGameWorld::CGameWorld(int WorldType, CGameMap *pGameMap)
 	m_pServer = pGameMap->Server();
 
 	m_EventHandler.SetGameServer(pGameMap->GameServer());
+	m_AnimationHandler.SetGameMap(pGameMap);
 
 	m_ResetRequested = false;
 	for(int i = 0; i < NUM_ENTTYPES; i++)
@@ -143,6 +144,7 @@ void CGameWorld::Snap(int SnappingClient)
 		}
 
 	m_EventHandler.Snap(SnappingClient);
+	m_AnimationHandler.Snap(SnappingClient);
 }
 
 void CGameWorld::Reset()
@@ -208,6 +210,7 @@ void CGameWorld::Tick()
 			pEnt = m_pNextTraverseEntity;
 		}
 
+	m_AnimationHandler.Tick();
 	RemoveEntities();
 }
 

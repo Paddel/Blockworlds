@@ -4,6 +4,7 @@
 #define GAME_SERVER_GAMEWORLD_H
 
 #include <game/server/srv_gamecore.h>
+#include <game/server/animations.h>
 
 #include "eventhandler.h"
 
@@ -43,6 +44,7 @@ private:
 	void RemoveEntities();
 
 	CEventHandler m_EventHandler;
+	CAnimationHandler m_AnimationHandler;
 	int m_WorldType;
 	CGameMap *m_pGameMap;
 	CGameContext *m_pGameServer;
@@ -156,7 +158,7 @@ public:
 	*/
 	virtual void Tick();
 
-
+	CAnimationHandler *AnimationHandler() { return &m_AnimationHandler; }
 	CEventHandler *Events() { return &m_EventHandler; }
 	int GetWorldType() const { return m_WorldType; }
 	CGameContext *GameServer() const { return m_pGameServer; }

@@ -6,7 +6,6 @@
 #include <game/server/gameworld.h>
 #include <game/server/gamematch.h>
 #include <game/server/components_map/shop.h>
-#include <game/server/components_map/animations.h>
 #include <game/server/components_map/lobby.h>
 #include <game/server/components_map/race_components.h>
 #include <game/server/components_map/mapvoting.h>
@@ -32,7 +31,6 @@ private:
 	CCollision m_Collision;
 	CGameEvent *m_pGameEvent;//current map event
 	CShop m_Shop;
-	CAnimationHandler m_AnimationHandler;
 	CLobby m_Lobby;
 	CRaceComponents m_RaceComponents;
 	CMapVoting m_MapVoting;
@@ -111,7 +109,6 @@ public:
 	CLayers *Layers() { return &m_Layers; };
 	CCollision *Collision() { return &m_Collision; };
 	CGameWorld *MainWorld() { return m_lpWorlds[0]; };//main world
-	CAnimationHandler *AnimationHandler() { return &m_AnimationHandler; }
 	CRaceComponents *RaceComponents() { return &m_RaceComponents; }
 	CMapVoting *MapVoting() { return &m_MapVoting; }
 };
