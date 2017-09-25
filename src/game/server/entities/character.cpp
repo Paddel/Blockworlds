@@ -809,7 +809,7 @@ bool CCharacter::HandleExtrasLayer(int Layer)
 	if (Tile == EXTRAS_FREEZE)
 	{
 		Freeze(3.0f);
-		m_ZoneFreeze;
+		m_ZoneFreeze = true;
 	}
 
 	if (Tile == EXTRAS_UNFREEZE)

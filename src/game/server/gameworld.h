@@ -58,7 +58,7 @@ public:
 	CSrvWorldCore m_Core;
 
 	CGameWorld(int WorldType, CGameMap *pGameMap);
-	~CGameWorld();
+	virtual ~CGameWorld();//compiler detects this class as a base class
 
 	CEntity *FindFirst(int Type);
 
