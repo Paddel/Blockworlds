@@ -1,9 +1,5 @@
+giveup
 
-rückmeldung bei sonstigen fehlern
-blockpoints im chat
-next line in score broadcast
-
-pro
 vip stuff
 
 --

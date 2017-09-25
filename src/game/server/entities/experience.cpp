@@ -33,7 +33,7 @@ void CExperience::Tick()
 	{
 		GameServer()->GiveExperience(m_TargetID, m_Amount);
 		GameWorld()->DestroyEntity(this);
-		GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH, CmaskOne(m_TargetID));
+		GameServer()->CreateSound(GameWorld(), m_Pos, SOUND_PICKUP_HEALTH, CmaskOne(m_TargetID));
 		return;
 	}
 

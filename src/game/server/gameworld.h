@@ -5,6 +5,7 @@
 
 #include <game/server/srv_gamecore.h>
 
+#include "eventhandler.h"
 
 class CEntity;
 class CCharacter;
@@ -41,6 +42,7 @@ private:
 	void Reset();
 	void RemoveEntities();
 
+	CEventHandler m_EventHandler;
 	int m_WorldType;
 	CGameMap *m_pGameMap;
 	CGameContext *m_pGameServer;
@@ -155,6 +157,7 @@ public:
 	virtual void Tick();
 
 
+	CEventHandler *Events() { return &m_EventHandler; }
 	int GetWorldType() const { return m_WorldType; }
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const { return m_pServer; }

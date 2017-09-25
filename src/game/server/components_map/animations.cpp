@@ -13,6 +13,7 @@ static bool gs_LetterBits[256][5 * 7] = {};
 CGameMap *CMapAnimation::GameMap() { return m_pGameMap; }
 IServer *CMapAnimation::Server() { return m_pGameMap->Server(); }
 CGameContext *CMapAnimation::GameServer() { return m_pGameMap->GameServer(); }
+CGameWorld *CMapAnimation::GameWorld() { return m_pGameWorld; }
 
 CAnimationHandler::CAnimationHandler()
 {
@@ -98,35 +99,35 @@ CAnimationHandler::CAnimationHandler()
 	mem_copy(gs_LetterBits['|'], gs_LetterLV, sizeof(gs_LetterBits[0]));
 }
 
-void CAnimationHandler::Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun)
+void CAnimationHandler::Laserwrite(CGameWorld *pGameWorld, const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun)
 {
 	int Length = str_length(pText);
 
 	vec2 Pos = StartPos - vec2(Size * Length * 5.5f  * 0.5f + 2.0f * Length, 7 * Size);
 	for (int i = 0; i < Length; i++)
 	{
-		CAnimLetter *pChar = new CAnimLetter(Pos, Server()->Tick(), GameMap(), Ticks, gs_LetterBits[(unsigned char)pText[i]], Size, Shotgun);
+		CAnimLetter *pChar = new CAnimLetter(Pos, Server()->Tick(), GameMap(), pGameWorld, Ticks, gs_LetterBits[(unsigned char)pText[i]], Size, Shotgun);
 		m_lpAnimations.add(pChar);
 		Pos.x += pChar->Width() + Size + 4.0f;
 	}
 }
 
-void CAnimationHandler::DoAnimation(vec2 Pos, int Index)
+void CAnimationHandler::DoAnimation(CGameWorld *pGameWorld, vec2 Pos, int Index)
 {
 	switch (Index)
 	{
-	case ANIMATION_LOVE: m_lpAnimations.add(new CAnimLove(Pos, Server()->Tick(), GameMap())); break;
-	case ANIMATION_THUNDERSTORM: m_lpAnimations.add(new CAnimThunderstorm(Pos, Server()->Tick(), GameMap())); break;
+	case ANIMATION_LOVE: m_lpAnimations.add(new CAnimLove(Pos, Server()->Tick(), GameMap(), pGameWorld)); break;
+	case ANIMATION_THUNDERSTORM: m_lpAnimations.add(new CAnimThunderstorm(Pos, Server()->Tick(), GameMap(), pGameWorld)); break;
 	}
 }
 
-void CAnimationHandler::DoAnimationGundesign(vec2 Pos, int Index, vec2 Direction)
+void CAnimationHandler::DoAnimationGundesign(CGameWorld *pGameWorld, vec2 Pos, int Index, vec2 Direction)
 {
 	switch (Index)
 	{
-	case ANIMATION_STARS_CW: m_lpAnimations.add(new CStarsCW(Pos, Server()->Tick(), GameMap(), Direction)); break;
-	case ANIMATION_STARS_CCW: m_lpAnimations.add(new CStarsCCW(Pos, Server()->Tick(), GameMap(), Direction)); break;
-	case ANIMATION_STARS_TOC: m_lpAnimations.add(new CStarsTOC(Pos, Server()->Tick(), GameMap(), Direction)); break;
+	case ANIMATION_STARS_CW: m_lpAnimations.add(new CStarsCW(Pos, Server()->Tick(), GameMap(), Direction, pGameWorld)); break;
+	case ANIMATION_STARS_CCW: m_lpAnimations.add(new CStarsCCW(Pos, Server()->Tick(), GameMap(), Direction, pGameWorld)); break;
+	case ANIMATION_STARS_TOC: m_lpAnimations.add(new CStarsTOC(Pos, Server()->Tick(), GameMap(), Direction, pGameWorld)); break;
 	}
 }
 

@@ -11,10 +11,11 @@ private:
 	vec2 m_Pos;
 	int64 m_Tick;
 	CGameMap *m_pGameMap;
+	CGameWorld *m_pGameWorld;
 
 public:
-	CMapAnimation(vec2 Pos, int64 Tick, CGameMap *pGameMap)
-		: m_Pos(Pos), m_Tick(Tick), m_pGameMap(pGameMap) {}
+	CMapAnimation(vec2 Pos, int64 Tick, CGameMap *pGameMap, CGameWorld *pGameWorld)
+		: m_Pos(Pos), m_Tick(Tick), m_pGameMap(pGameMap), m_pGameWorld(pGameWorld) {}
 	virtual ~CMapAnimation() {}
 
 	virtual void Tick() = 0;
@@ -25,6 +26,7 @@ public:
 	CGameMap *GameMap();
 	IServer *Server();
 	CGameContext *GameServer();
+	CGameWorld *GameWorld();
 };
 
 class CAnimationHandler : public CComponentMap
@@ -35,9 +37,9 @@ private:
 public:
 	CAnimationHandler();
 
-	void Laserwrite(const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun = false);
-	void DoAnimation(vec2 Pos, int Index);
-	void DoAnimationGundesign(vec2 Pos, int Index, vec2 Direction);
+	void Laserwrite(CGameWorld *pGameWorld, const char *pText, vec2 StartPos, float Size, int Ticks, bool Shotgun = false);
+	void DoAnimation(CGameWorld *pGameWorld, vec2 Pos, int Index);
+	void DoAnimationGundesign(CGameWorld *pGameWorld, vec2 Pos, int Index, vec2 Direction);
 
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);

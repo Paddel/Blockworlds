@@ -5,7 +5,6 @@
 #include <game/collision.h>
 #include <game/server/gameworld.h>
 #include <game/server/gamematch.h>
-#include <game/server/components_map/eventhandler.h>
 #include <game/server/components_map/shop.h>
 #include <game/server/components_map/animations.h>
 #include <game/server/components_map/lobby.h>
@@ -31,7 +30,6 @@ private:
 	IConsole *m_pConsole;
 	CLayers m_Layers;
 	CCollision m_Collision;
-	CEventHandler m_Events;
 	CGameEvent *m_pGameEvent;//current map event
 	CShop m_Shop;
 	CAnimationHandler m_AnimationHandler;
@@ -104,7 +102,7 @@ public:
 
 	CGameWorld *CreateNewWorld(int Type);
 	void DeleteWorld(CGameWorld *pWorld);
-
+	void ClearEvents();
 
 	CMap *Map() const { return m_pMap; };
 	CGameContext *GameServer() const { return m_pGameServer; };
@@ -113,7 +111,6 @@ public:
 	CLayers *Layers() { return &m_Layers; };
 	CCollision *Collision() { return &m_Collision; };
 	CGameWorld *MainWorld() { return m_lpWorlds[0]; };//main world
-	CEventHandler *Events() { return &m_Events; }
 	CAnimationHandler *AnimationHandler() { return &m_AnimationHandler; }
 	CRaceComponents *RaceComponents() { return &m_RaceComponents; }
 	CMapVoting *MapVoting() { return &m_MapVoting; }

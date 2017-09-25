@@ -28,7 +28,7 @@ void CPickup::Tick()
 			case POWERUP_HEALTH:
 				{
 					if(m_pLastEntity != pChr)
-						GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_HEALTH);
+						GameServer()->CreateSound(GameWorld(), m_Pos, SOUND_PICKUP_HEALTH);
 					pChr->Freeze(3.0f);
 				}
 				break;
@@ -36,7 +36,7 @@ void CPickup::Tick()
 			case POWERUP_ARMOR:
 				{
 					if(pChr->TakeWeapons())
-						GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_ARMOR);
+						GameServer()->CreateSound(GameWorld(), m_Pos, SOUND_PICKUP_ARMOR);
 				}
 				break;
 
@@ -46,11 +46,11 @@ void CPickup::Tick()
 					if(pChr->GiveWeapon(m_Subtype))
 					{
 						if(m_Subtype == WEAPON_GRENADE)
-							GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_GRENADE);
+							GameServer()->CreateSound(GameWorld(), m_Pos, SOUND_PICKUP_GRENADE);
 						else if(m_Subtype == WEAPON_SHOTGUN)
-							GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_SHOTGUN);
+							GameServer()->CreateSound(GameWorld(), m_Pos, SOUND_PICKUP_SHOTGUN);
 						else if(m_Subtype == WEAPON_RIFLE)
-							GameServer()->CreateSound(GameMap(), m_Pos, SOUND_PICKUP_SHOTGUN);
+							GameServer()->CreateSound(GameWorld(), m_Pos, SOUND_PICKUP_SHOTGUN);
 
 						if(pChr->GetPlayer())
 							GameServer()->SendWeaponPickup(pChr->GetPlayer()->GetCID(), m_Subtype);

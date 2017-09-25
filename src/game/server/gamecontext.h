@@ -104,12 +104,12 @@ public:
 	CVoteOptionServer *m_pVoteOptionLast;
 
 	// helper functions
-	void CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float AngleMod, int Amount);
-	void CreateExplosion(CGameMap *pGameMap, CGameWorld *pGameWorld, vec2 Pos, int Owner);
-	void CreateHammerHit(CGameMap *pGameMap, vec2 Pos);
-	void CreatePlayerSpawn(CGameMap *pGameMap, vec2 Pos);
-	void CreateDeath(CGameMap *pGameMap, vec2 Pos, int Who);
-	void CreateSound(CGameMap *pGameMap, vec2 Pos, int Sound, int Mask=-1);
+	void CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float AngleMod, int Amount);
+	void CreateExplosion(CGameWorld *pGameWorld, vec2 Pos, int Owner);
+	void CreateHammerHit(CGameWorld *pGameWorld, vec2 Pos);
+	void CreatePlayerSpawn(CGameWorld *pGameWorld, vec2 Pos);
+	void CreateDeath(CGameWorld *pGameWorld, vec2 Pos, int Who);
+	void CreateSound(CGameWorld *pGameWorld, vec2 Pos, int Sound, int Mask=-1);
 	void CreateSoundGlobal(int Sound, int Target=-1);
 
 

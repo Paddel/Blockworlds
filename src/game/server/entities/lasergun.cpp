@@ -84,7 +84,7 @@ void CLaserGun::DoBulletMove(int Index)
 	if (Remove)
 	{
 		if (m_Type == 2)
-			GameServer()->CreateExplosion(GameMap(), GameWorld(), ExplodePos, WEAPON_WORLD);
+			GameServer()->CreateExplosion(GameWorld(), ExplodePos, WEAPON_WORLD);
 
 		Server()->SnapFreeID(pBullet->m_ID);
 		delete pBullet;

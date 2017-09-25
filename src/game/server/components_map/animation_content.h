@@ -10,7 +10,7 @@ class CAnimLove : public CMapAnimation
 	bool m_Spawned[NUM];
 
 public:
-	CAnimLove(vec2 Pos, int64 Tick, CGameMap *pGameMap) : CMapAnimation(Pos, Tick, pGameMap)
+	CAnimLove(vec2 Pos, int64 Tick, CGameMap *pGameMap, CGameWorld *pGameWorld) : CMapAnimation(Pos, Tick, pGameMap, pGameWorld)
 	{
 
 		for (int i = 0; i < NUM; i++)
@@ -41,7 +41,7 @@ public:
 			else if (GetTick() + Server()->TickSpeed() * 1.5f * (i / (float)NUM) <= Server()->Tick() && m_Spawned[i] == false)
 			{
 				m_Spawned[i] = true;
-				GameServer()->CreateSound(GameMap(), m_Pos[i], SOUND_PICKUP_HEALTH);
+				GameServer()->CreateSound(GameWorld(), m_Pos[i], SOUND_PICKUP_HEALTH);
 			}
 		}
 
@@ -86,7 +86,7 @@ class CAnimThunderstorm : public CMapAnimation
 	bool m_Spawned[NUM];
 
 public:
-	CAnimThunderstorm(vec2 Pos, int64 Tick, CGameMap *pGameMap) : CMapAnimation(Pos, Tick, pGameMap)
+	CAnimThunderstorm(vec2 Pos, int64 Tick, CGameMap *pGameMap, CGameWorld *pGameWorld) : CMapAnimation(Pos, Tick, pGameMap, pGameWorld)
 	{
 
 		for (int i = 0; i < NUM; i++)
@@ -113,7 +113,7 @@ public:
 				vec2 Dir = normalize(vec2((rand() % 20 - 10 ) / 10.0f, (rand() % 20 - 10) / 10.0f));
 				m_Pos[i] = GetPos() + Dir * Dist;
 
-				GameServer()->CreateSound(GameMap(), m_Pos[i], SOUND_BODY_LAND);
+				GameServer()->CreateSound(GameWorld(), m_Pos[i], SOUND_BODY_LAND);
 			}
 		}
 	}
@@ -149,7 +149,7 @@ class CStarsCW : public CMapAnimation
 	bool m_Spawned[NUM];
 	vec2 m_Direction;
 public:
-	CStarsCW(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir) : CMapAnimation(Pos, Tick, pGameMap)
+	CStarsCW(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir, CGameWorld *pGameWorld) : CMapAnimation(Pos, Tick, pGameMap, pGameWorld)
 	{
 		for (int i = 0; i < NUM; i++)
 			m_Spawned[i] = false;
@@ -165,7 +165,7 @@ public:
 			{
 				float AngleFrom = GetAngle(m_Direction) + 5.1f;
 				float AngleTo = AngleFrom + ((i - 5) / 5.0f) * pi * 0.3f;
-				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				GameServer()->CreateDamageInd(GameWorld(), GetPos(), AngleTo, 1);
 				m_Spawned[i] = true;
 			}
 		}
@@ -185,7 +185,7 @@ class CStarsCCW : public CMapAnimation
 	bool m_Spawned[NUM];
 	vec2 m_Direction;
 public:
-	CStarsCCW(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir) : CMapAnimation(Pos, Tick, pGameMap)
+	CStarsCCW(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir, CGameWorld *pGameWorld) : CMapAnimation(Pos, Tick, pGameMap, pGameWorld)
 	{
 		for (int i = 0; i < NUM; i++)
 			m_Spawned[i] = false;
@@ -201,7 +201,7 @@ public:
 			{
 				float AngleFrom = GetAngle(m_Direction) + 5.1f;
 				float AngleTo = AngleFrom + ((5 - i) / 5.0f) * pi * 0.3f;
-				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				GameServer()->CreateDamageInd(GameWorld(), GetPos(), AngleTo, 1);
 				m_Spawned[i] = true;
 			}
 		}
@@ -221,7 +221,7 @@ class CStarsTOC : public CMapAnimation
 	bool m_Spawned[NUM];
 	vec2 m_Direction;
 public:
-	CStarsTOC(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir) : CMapAnimation(Pos, Tick, pGameMap)
+	CStarsTOC(vec2 Pos, int64 Tick, CGameMap *pGameMap, vec2 Dir, CGameWorld *pGameWorld) : CMapAnimation(Pos, Tick, pGameMap, pGameWorld)
 	{
 		for (int i = 0; i < NUM; i++)
 			m_Spawned[i] = false;
@@ -237,7 +237,7 @@ public:
 			{
 				float AngleFrom = GetAngle(m_Direction) + 5.0f;
 				float AngleTo = AngleFrom + ((i - 5) / 5.0f) * pi * 0.3f;
-				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				GameServer()->CreateDamageInd(GameWorld(), GetPos(), AngleTo, 1);
 				m_Spawned[i] = true;
 			}
 		}
@@ -248,7 +248,7 @@ public:
 			{
 				float AngleFrom = GetAngle(m_Direction) + 5.0f;
 				float AngleTo = AngleFrom + ((5 - (i - NUM / 2)) / 5.0f) * pi * 0.3f;
-				GameServer()->CreateDamageInd(GameMap(), GetPos(), AngleTo, 1);
+				GameServer()->CreateDamageInd(GameWorld(), GetPos(), AngleTo, 1);
 				m_Spawned[i] = true;
 			}
 		}

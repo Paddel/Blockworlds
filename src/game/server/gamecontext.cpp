@@ -134,7 +134,7 @@ void CGameContext::StringTime(int64 Tick, char *pSrc, int SrcSize)
 	}
 }
 
-void CGameContext::CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float Angle, int Amount)
+void CGameContext::CreateDamageInd(CGameWorld *pGameWorld, vec2 Pos, float Angle, int Amount)
 {
 	float a = 3 * 3.14159f / 2 + Angle;
 	//float a = get_angle(dir);
@@ -143,7 +143,7 @@ void CGameContext::CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float Angle, in
 	for(int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, float(i+1)/float(Amount+2));
-		CNetEvent_DamageInd *pEvent = (CNetEvent_DamageInd *)pGameMap->Events()->Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd));
+		CNetEvent_DamageInd *pEvent = (CNetEvent_DamageInd *)pGameWorld->Events()->Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd));
 		if(pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
@@ -153,10 +153,10 @@ void CGameContext::CreateDamageInd(CGameMap *pGameMap, vec2 Pos, float Angle, in
 	}
 }
 
-void CGameContext::CreateHammerHit(CGameMap *pGameMap, vec2 Pos)
+void CGameContext::CreateHammerHit(CGameWorld *pGameWorld, vec2 Pos)
 {
 	// create the event
-	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)pGameMap->Events()->Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
+	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)pGameWorld->Events()->Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -165,10 +165,10 @@ void CGameContext::CreateHammerHit(CGameMap *pGameMap, vec2 Pos)
 }
 
 
-void CGameContext::CreateExplosion(CGameMap *pGameMap, CGameWorld *pGameWorld, vec2 Pos, int Owner)
+void CGameContext::CreateExplosion(CGameWorld *pGameWorld, vec2 Pos, int Owner)
 {
 	// create the event
-	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameWorld->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -193,10 +193,10 @@ void CGameContext::CreateExplosion(CGameMap *pGameMap, CGameWorld *pGameWorld, v
 	}
 }
 
-void CGameContext::CreatePlayerSpawn(CGameMap *pGameMap, vec2 Pos)
+void CGameContext::CreatePlayerSpawn(CGameWorld *pGameWorld, vec2 Pos)
 {
 	// create the event
-	CNetEvent_Spawn *ev = (CNetEvent_Spawn *)pGameMap->Events()->Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn));
+	CNetEvent_Spawn *ev = (CNetEvent_Spawn *)pGameWorld->Events()->Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn));
 	if(ev)
 	{
 		ev->m_X = (int)Pos.x;
@@ -204,10 +204,10 @@ void CGameContext::CreatePlayerSpawn(CGameMap *pGameMap, vec2 Pos)
 	}
 }
 
-void CGameContext::CreateDeath(CGameMap *pGameMap, vec2 Pos, int ClientID)
+void CGameContext::CreateDeath(CGameWorld *pGameWorld, vec2 Pos, int ClientID)
 {
 	// create the event
-	CNetEvent_Death *pEvent = (CNetEvent_Death *)pGameMap->Events()->Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death));
+	CNetEvent_Death *pEvent = (CNetEvent_Death *)pGameWorld->Events()->Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -216,13 +216,13 @@ void CGameContext::CreateDeath(CGameMap *pGameMap, vec2 Pos, int ClientID)
 	}
 }
 
-void CGameContext::CreateSound(CGameMap *pGameMap, vec2 Pos, int Sound, int Mask)
+void CGameContext::CreateSound(CGameWorld *pGameWorld, vec2 Pos, int Sound, int Mask)
 {
 	if (Sound < 0)
 		return;
 
 	// create a sound
-	CNetEvent_SoundWorld *pEvent = (CNetEvent_SoundWorld *)pGameMap->Events()->Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
+	CNetEvent_SoundWorld *pEvent = (CNetEvent_SoundWorld *)pGameWorld->Events()->Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -641,7 +641,7 @@ void CGameContext::SetLevel(int ClientID, int Level)
 			if (pChr && pChr->IsAlive())
 			{
 				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + 2 * Server()->TickSpeed());
-				CreateSound(pChr->GameMap(), pChr->m_Pos, SOUND_CTF_CAPTURE);
+				CreateSound(pChr->GameWorld(), pChr->m_Pos, SOUND_CTF_CAPTURE);
 			}
 		}
 
@@ -2117,7 +2117,7 @@ void CGameContext::OnPreSnap() {}
 void CGameContext::OnPostSnap()
 {
 	for (int i = 0; i < Server()->GetNumMaps(); i++)
-		Server()->GetGameMap(i)->Events()->Clear();
+		Server()->GetGameMap(i)->ClearEvents();
 }
 
 bool CGameContext::IsClientReady(int ClientID)

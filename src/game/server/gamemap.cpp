@@ -35,7 +35,6 @@ void CGameMap::InitComponents()
 {
 	m_NumComponents = 0;
 
-	m_apComponents[m_NumComponents++] = &m_Events;
 	m_apComponents[m_NumComponents++] = &m_Shop;
 	m_apComponents[m_NumComponents++] = &m_AnimationHandler;
 	m_apComponents[m_NumComponents++] = &m_Lobby;
@@ -490,4 +489,10 @@ void CGameMap::DeleteWorld(CGameWorld *pWorld)
 		i--;
 	}
 	delete pWorld;
+}
+
+void CGameMap::ClearEvents()
+{
+	for (int i = 0; i < m_lpWorlds.size(); i++)
+		m_lpWorlds[i]->Events()->Clear();
 }

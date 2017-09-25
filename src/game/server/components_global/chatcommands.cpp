@@ -325,6 +325,12 @@ void CChatCommandsHandler::ComWeaponkit(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 
+	if (pGameServer->m_apPlayers[ClientID]->GameMap()->IsShopMap())
+	{
+		pGameServer->SendChatTarget(ClientID, "Weaponkits can not be used in a Store");
+		return;
+	}
+
 	if(pGameServer->Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == false && pChr->InSpawnZone() == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You have to be at the spawn to use a weaponkit");

@@ -16,7 +16,7 @@ protected:
 	bool m_Shotgun;
 
 public:
-	CAnimLetter(vec2 Pos, int64 Tick, CGameMap *pGameMap, int Ticks, bool *pBitField, float Size, bool Shotgun) : CMapAnimation(Pos, Tick, pGameMap)
+	CAnimLetter(vec2 Pos, int64 Tick, CGameMap *pGameMap, CGameWorld *pGameWorld, int Ticks, bool *pBitField, float Size, bool Shotgun) : CMapAnimation(Pos, Tick, pGameMap, pGameWorld)
 	{
 		m_Ticks = Ticks;
 		m_pBitField = pBitField;

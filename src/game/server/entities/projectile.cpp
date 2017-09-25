@@ -71,13 +71,13 @@ void CProjectile::Tick()
 	if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
 	{
 		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
-			GameServer()->CreateSound(GameMap(), CurPos, m_SoundImpact);
+			GameServer()->CreateSound(GameWorld(), CurPos, m_SoundImpact);
 
 		if(m_Explosive)
-			GameServer()->CreateExplosion(GameMap(), GameWorld(), CurPos, m_Owner);
+			GameServer()->CreateExplosion(GameWorld(), CurPos, m_Owner);
 
 		if(m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN && GameServer()->CosmeticsHandler()->DoGundesign(m_Owner, CurPos, m_Direction) == false)
-			GameServer()->CreateDamageInd(GameMap(), CurPos, -atan2(m_Direction.x, m_Direction.y), 10);
+			GameServer()->CreateDamageInd(GameWorld(), CurPos, -atan2(m_Direction.x, m_Direction.y), 10);
 
 		GameWorld()->DestroyEntity(this);
 	}
@@ -105,7 +105,7 @@ void CProjectile::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient, GetPos(Ct)))
 		return;
 
-	if (GameServer()->CosmeticsHandler()->SnapGundesign(m_Owner, GetPos((Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed()), m_ID) == true)
+	if (GameServer()->CosmeticsHandler()->SnapGundesign(GameWorld(), m_Owner, GetPos((Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed()), m_Direction, m_ID) == true)
 		return;
 
 	CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_ID, sizeof(CNetObj_Projectile)));

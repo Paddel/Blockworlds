@@ -3,10 +3,10 @@
 #ifndef GAME_SERVER_EVENTHANDLER_H
 #define GAME_SERVER_EVENTHANDLER_H
 
-#include <game/server/component.h>
+class CGameContext;
 
 //
-class CEventHandler : public CComponentMap
+class CEventHandler
 {
 	static const int MAX_EVENTS = 128;
 	static const int MAX_DATASIZE = 128*64;
@@ -19,11 +19,14 @@ class CEventHandler : public CComponentMap
 
 	int m_CurrentOffset;
 	int m_NumEvents;
+
+	CGameContext *m_pGameServer;
 public:
 
 	CEventHandler();
 	void *Create(int Type, int Size, int Mask = -1);
 	void Clear();
+	void SetGameServer(CGameContext *pGameServer) { m_pGameServer = pGameServer; }
 	virtual void Snap(int SnappingClient);
 };
 

@@ -540,7 +540,7 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 
 	//TODO: rewrite this nicer
 	if(Team == TEAM_SPECTATORS && m_pGameWorld->GetWorldType() == CGameWorld::WORLDTYPE_GAMEMATCH)
-		GameMap()->SendChat(-1, "You lost the 1ON1!");
+		GameServer()->SendChatTarget(m_ClientID, "You lost the 1ON1!");
 
 	MovePlayer(GameMap()->MainWorld());
 	m_SubscribeEvent = false;
@@ -599,7 +599,7 @@ bool CPlayer::TryRespawnQuick()
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(GameWorld());
 	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(GameMap(), SpawnPos);
+	GameServer()->CreatePlayerSpawn(GameWorld(), SpawnPos);
 	return true;
 }
 
@@ -633,5 +633,5 @@ void CPlayer::TryRespawn()
 		m_UseSpawnState = false;
 	}
 
-	GameServer()->CreatePlayerSpawn(GameMap(), m_pCharacter->Core()->m_Pos);
+	GameServer()->CreatePlayerSpawn(GameWorld(), m_pCharacter->Core()->m_Pos);
 }

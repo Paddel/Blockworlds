@@ -21,6 +21,7 @@ public:
 		KNOCKOUT_KORIP,
 		KNOCKOUT_KOEZ,
 		KNOCKOUT_KONOOB,
+		KNOCKOUT_PRO,
 
 		KNOCKOUT_SORRY,
 		NUM_KNOCKOUTS,
@@ -36,6 +37,8 @@ public:
 		GUNDESIGN_HEART,
 		GUNDESIGN_PEW,
 		GUNDESIGN_1337,
+
+		GUNDESIGN_VIP_STARGUN,
 		NUM_GUNDESIGNS,
 
 		SKINMANI_FEET_FIRE = 0,
@@ -64,18 +67,18 @@ public:
 	int FindKnockoutEffect(const char *pName);
 	bool HasKnockoutEffect(int ClientID, int Index);
 	bool DoKnockoutEffect(int ClientID, vec2 Pos);
-	void DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGameMap);
+	void DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGameMap, CGameWorld *pGameWorld);
 	bool ToggleKnockout(int ClientID, const char *pName);
 	void FillKnockout(IServer::CAccountData *pFillingData, const char *pValue);
 
 	int FindGundesign(const char *pName);
 	bool HasGundesign(int ClientID, int Index);
 	bool DoGundesign(int ClientID, vec2 Pos, vec2 Direction);
-	bool DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, vec2 Direction);
+	bool DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, CGameWorld *pGameWorld, vec2 Direction);
 	bool ToggleGundesign(int ClientID, const char *pName);
 
-	bool SnapGundesign(int ClientID, vec2 Pos, int EntityID);
-	bool SnapGundesignRaw(vec2 Pos, int Effect, int EntityID);
+	bool SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2 Pos, vec2 Dir, int EntityID);
+	bool SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 Dir, int Effect, int EntityID);
 	void FillGundesign(IServer::CAccountData *pFillingData, const char *pValue);
 
 	int FindSkinmani(const char *pName);

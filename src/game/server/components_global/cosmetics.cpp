@@ -18,6 +18,7 @@ const char *CCosmeticsHandler::ms_KnockoutNames[NUM_KNOCKOUTS] = {
 	"KO RIP",
 	"KO EZ",
 	"KO NOOB",
+	"KO PRO",
 
 	"Sorry c: (Teemo)",
 };
@@ -34,6 +35,7 @@ const char *CCosmeticsHandler::ms_GundesignNames[NUM_GUNDESIGNS] = {
 	"Heartgun",
 	"Pew",
 	"1337 gun",
+	"Stargun (VIP)"
 };
 
 const char *CCosmeticsHandler::ms_SkinmaniNames[NUM_SKINMANIS] = {
@@ -95,7 +97,7 @@ bool CCosmeticsHandler::HasKnockoutEffect(int ClientID, int Index)
 
 bool CCosmeticsHandler::DoKnockoutEffect(int ClientID, vec2 Pos)
 {
-	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS || GameServer()->m_apPlayers[ClientID] == 0x0)
 		return false;
 
 	int Effect = Server()->GetClientInfo(ClientID)->m_CurrentKnockout;
@@ -106,20 +108,20 @@ bool CCosmeticsHandler::DoKnockoutEffect(int ClientID, vec2 Pos)
 	if (pGameMap == 0x0)
 		return false;
 
-	DoKnockoutEffectRaw(Pos, Effect, pGameMap);
+	DoKnockoutEffectRaw(Pos, Effect, pGameMap, GameServer()->m_apPlayers[ClientID]->GameWorld());
 	return true;
 }
 
-void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGameMap)
+void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGameMap, CGameWorld *pGameWorld)
 {
 	/*if (g_Config.m_Debug)
 		dbg_msg("cosmetics", "Knockouteffect %s", ms_KnockoutNames[Effect]);*/
 
 	if (Effect == KNOCKOUT_EXPLOSION)
 	{
-		GameServer()->CreateSound(pGameMap, Pos, SOUND_GRENADE_EXPLODE);
+		GameServer()->CreateSound(pGameWorld, Pos, SOUND_GRENADE_EXPLODE);
 
-		CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+		CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameWorld->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
 		if (pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
@@ -127,22 +129,22 @@ void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGam
 		}
 	}
 	else if (Effect == KNOCKOUT_HAMMERHIT)
-		GameServer()->CreateHammerHit(pGameMap, Pos);
+		GameServer()->CreateHammerHit(pGameWorld, Pos);
 	else if (Effect == KNOCKOUT_KOSTARS)
 	{
 		for (float i = 0.1f; i < 2 * pi; i += pi / 4.0f)
-			GameServer()->CreateDamageInd(pGameMap, Pos, i, 1);
+			GameServer()->CreateDamageInd(pGameWorld, Pos, i, 1);
 	}
 	else if (Effect == KNOCKOUT_STARRING)
 	{
 		for (float i = 0.0f; i < 2 * pi; i += pi / 20.0f)
-			GameServer()->CreateDamageInd(pGameMap, Pos, i, 1);
+			GameServer()->CreateDamageInd(pGameWorld, Pos, i, 1);
 	}
 	else if (Effect == KNOCKOUT_STAREXPLOSION)
 	{
-		GameServer()->CreateSound(pGameMap, Pos, SOUND_GRENADE_EXPLODE);
+		GameServer()->CreateSound(pGameWorld, Pos, SOUND_GRENADE_EXPLODE);
 
-		CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameMap->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+		CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)pGameWorld->Events()->Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
 		if (pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
@@ -150,20 +152,22 @@ void CCosmeticsHandler::DoKnockoutEffectRaw(vec2 Pos, int Effect, CGameMap *pGam
 		}
 
 		for (float i = 0.1f; i < 2 * pi; i += pi / 4.0f)
-			GameServer()->CreateDamageInd(pGameMap, Pos, i, 1);
+			GameServer()->CreateDamageInd(pGameWorld, Pos, i, 1);
 	}
 	else if (Effect == KNOCKOUT_LOVE)
-		pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_LOVE);
+		pGameMap->AnimationHandler()->DoAnimation(pGameWorld, Pos, CAnimationHandler::ANIMATION_LOVE);
 	else if (Effect == KNOCKOUT_THUNDERSTORM)
-		pGameMap->AnimationHandler()->DoAnimation(Pos, CAnimationHandler::ANIMATION_THUNDERSTORM);
+		pGameMap->AnimationHandler()->DoAnimation(pGameWorld, Pos, CAnimationHandler::ANIMATION_THUNDERSTORM);
 	else if (Effect == KNOCKOUT_KORIP)
-		pGameMap->AnimationHandler()->Laserwrite("RIP", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "RIP", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_KOEZ)
-		pGameMap->AnimationHandler()->Laserwrite("EZ", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "EZ", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_KONOOB)
-		pGameMap->AnimationHandler()->Laserwrite("NOOB", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "NOOB", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else if (Effect == KNOCKOUT_SORRY)
-		pGameMap->AnimationHandler()->Laserwrite("SORRY c:", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "SORRY c:", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
+	else if (Effect == KNOCKOUT_PRO)
+		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "PRO", Pos + vec2(0, 10.0f), 10.0f, Server()->TickSpeed() * 0.7f);
 	else
 		dbg_msg("cosmetics", "ERROR: Knockouteffect '%s' not implemented!", ms_KnockoutNames[Effect]);
 }
@@ -237,12 +241,16 @@ bool CCosmeticsHandler::HasGundesign(int ClientID, int Index)
 	if (Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 		return false;
 
+	if (Server()->GetClientInfo(ClientID)->m_AccountData.m_Vip == true &&
+		(Index == GUNDESIGN_VIP_STARGUN))
+		return true;
+
 	return Server()->GetClientInfo(ClientID)->m_AccountData.m_aGundesigns[Index] == '1';
 }
 
 bool CCosmeticsHandler::DoGundesign(int ClientID, vec2 Pos, vec2 Direction)
 {
-	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS || GameServer()->m_apPlayers[ClientID] == 0x0)
 		return false;
 
 	int Effect = Server()->GetClientInfo(ClientID)->m_CurrentGundesign;
@@ -253,17 +261,17 @@ bool CCosmeticsHandler::DoGundesign(int ClientID, vec2 Pos, vec2 Direction)
 	if (pGameMap == 0x0)
 		return false;
 
-	return DoGundesignRaw(Pos, Effect, pGameMap, Direction);
+	return DoGundesignRaw(Pos, Effect, pGameMap, GameServer()->m_apPlayers[ClientID]->GameWorld(), Direction);
 }
 
-bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, vec2 Direction)
+bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap, CGameWorld *pGameWorld, vec2 Direction)
 {
 	/*if (g_Config.m_Debug)
 		dbg_msg("cosmetics", "Gundesigneffect %s", ms_GundesignNames[Effect]);*/
 
 	if (Effect == GUNDESIGN_PEW)
 	{
-		pGameMap->AnimationHandler()->Laserwrite("PEW", Pos, 5.0f, Server()->TickSpeed() * 0.2f);
+		pGameMap->AnimationHandler()->Laserwrite(pGameWorld, "PEW", Pos, 7.0f, Server()->TickSpeed() * 0.2f);
 	}
 	else if (Effect == GUNDESIGN_REVERSE)
 	{
@@ -271,25 +279,29 @@ bool CCosmeticsHandler::DoGundesignRaw(vec2 Pos, int Effect, CGameMap *pGameMap,
 		for (int i = 0; i < 10; i++)
 		{
 			float AngleTo = AngleFrom + ((i - 5) / 5.0f) * pi * 0.3f;
-			GameServer()->CreateDamageInd(pGameMap, Pos + GetDir(AngleTo - 5.1f) * 85.0f, AngleTo + pi, 1);
+			GameServer()->CreateDamageInd(pGameWorld, Pos + GetDir(AngleTo - 5.1f) * 85.0f, AngleTo + pi, 1);
 		}
 	}
 	else if (Effect == GUNDESIGN_STARX)
 	{
-		GameServer()->CreateDamageInd(pGameMap, Pos + vec2(1, 1) * 28.0f, 2.7f, 1);
-		GameServer()->CreateDamageInd(pGameMap, Pos + vec2(-1, 1) * 28.0f, 2.7f + pi * 0.5f, 1);
+		GameServer()->CreateDamageInd(pGameWorld, Pos + vec2(1, 1) * 28.0f, 2.7f, 1);
+		GameServer()->CreateDamageInd(pGameWorld, Pos + vec2(-1, 1) * 28.0f, 2.7f + pi * 0.5f, 1);
 	}
 	else if (Effect == GUNDESIGN_CLOCKWISE)
 	{
-		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_CW, Direction);
+		pGameMap->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_CW, Direction);
 	}
 	else if (Effect == GUNDESIGN_COUNTERCLOCK)
 	{
-		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_CCW, Direction);
+		pGameMap->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_CCW, Direction);
 	}
 	else if (Effect == GUNDESIGN_TWOCLOCK)
 	{
-		pGameMap->AnimationHandler()->DoAnimationGundesign(Pos, CAnimationHandler::ANIMATION_STARS_TOC, Direction);
+		pGameMap->AnimationHandler()->DoAnimationGundesign(pGameWorld, Pos, CAnimationHandler::ANIMATION_STARS_TOC, Direction);
+	}
+	else if (Effect == GUNDESIGN_VIP_STARGUN)
+	{
+		GameServer()->CreateDamageInd(pGameWorld, Pos, GetAngle(Direction) + 5.1f, 1);
 	}
 	else
 		return false;
@@ -322,7 +334,7 @@ bool CCosmeticsHandler::ToggleGundesign(int ClientID, const char *pName)
 	return true;
 }
 
-bool CCosmeticsHandler::SnapGundesign(int ClientID, vec2 Pos, int EntityID)
+bool CCosmeticsHandler::SnapGundesign(CGameWorld *pGameWorld, int ClientID, vec2 Pos, vec2 Dir, int EntityID)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return false;
@@ -331,10 +343,10 @@ bool CCosmeticsHandler::SnapGundesign(int ClientID, vec2 Pos, int EntityID)
 	if (HasGundesign(ClientID, Effect) == false)
 		return false;
 
-	return SnapGundesignRaw(Pos, Effect, EntityID);
+	return SnapGundesignRaw(pGameWorld, Pos, Dir, Effect, EntityID);
 }
 
-bool CCosmeticsHandler::SnapGundesignRaw(vec2 Pos, int Effect, int EntityID)
+bool CCosmeticsHandler::SnapGundesignRaw(CGameWorld *pGameWorld, vec2 Pos, vec2 Dir, int Effect, int EntityID)
 {
 	if (Effect == GUNDESIGN_HEART)
 	{
@@ -379,6 +391,11 @@ bool CCosmeticsHandler::SnapGundesignRaw(vec2 Pos, int Effect, int EntityID)
 	}
 	else if (Effect == GUNDESIGN_INVISBULLET)
 		return true;
+	else if (Effect == GUNDESIGN_VIP_STARGUN)
+	{
+		GameServer()->CreateDamageInd(pGameWorld, Pos, GetAngle(Dir) + 5.1f, 1);
+		return true;
+	}
 
 	return false;
 }
