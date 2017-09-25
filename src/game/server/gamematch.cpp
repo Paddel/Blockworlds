@@ -154,7 +154,7 @@ void CGameMatch::SetWinner(int ClientID)
 	if (m_Pot > 0 && GameMap()->m_apPlayers[ClientID] != 0x0 && Server()->GetClientInfo(ClientID)->m_LoggedIn == true)
 	{
 		Server()->GetClientInfo(ClientID)->m_AccountData.m_BlockPoints += m_Pot;
-		str_fcat(aBuf, sizeof(aBuf), " and got %i blockpoints", m_Pot);
+		str_fcat(aBuf, sizeof(aBuf), " and got %i blockpoints", m_Pot - m_Blockpoints);
 	}
 
 	str_append(aBuf, "!", sizeof(aBuf));
@@ -328,13 +328,13 @@ void CGameMatch::Start()
 				m_Pot += m_Blockpoints;
 			}
 
-			str_format(aBuf, sizeof(aBuf), "%i blockpoints has been taken from your account and added to the pot!", m_Blockpoints);
+			str_format(aBuf, sizeof(aBuf), "Blockpoints has been taken from your account and added to the pot!", m_Blockpoints);
 			SendChat(aBuf);
 		}
 
 		str_format(aBuf, sizeof(aBuf), "Block your opponent %i times to win", MAX_SCORE);
 		if (m_Pot > 0)
-			str_fcat(aBuf, sizeof(aBuf), " and gain %i blockpoints", m_Pot);
+			str_fcat(aBuf, sizeof(aBuf), " and gain %i blockpoints", m_Pot - m_Blockpoints);
 		SendChat(aBuf);
 	}
 }
