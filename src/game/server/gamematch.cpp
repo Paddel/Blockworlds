@@ -344,12 +344,11 @@ void CGameMatch::ResumeClient(int ClientID)
 	if (GameMap()->m_apPlayers[ClientID] == 0x0 || m_aParticipants[ClientID] == false)// other conditions (if buggy)
 		return;
 
-	GameMap()->m_apPlayers[ClientID]->MovePlayer(GameMap()->MainWorld());
 
 	mem_copy(&GameMap()->m_apPlayers[ClientID]->m_SpawnState, &m_aCharStates[ClientID], sizeof(CCharState));
 	GameMap()->m_apPlayers[ClientID]->m_UseSpawnState = true;
 
-	GameMap()->m_apPlayers[ClientID]->KillCharacter();
+	GameMap()->m_apPlayers[ClientID]->MovePlayer(GameMap()->MainWorld());
 
 	m_aParticipants[ClientID] = false;
 }
