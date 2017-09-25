@@ -445,7 +445,12 @@ void CPlayer::MovePlayer(CGameWorld *pGameWorld)
 		return;
 
 	//remove character out of old world
-	KillCharacter();
+	if (m_pCharacter)
+	{
+		m_pCharacter->Die(m_ClientID, WEAPON_GAME);
+		delete m_pCharacter;
+		m_pCharacter = 0;
+	}
 	
 	m_pGameWorld = pGameWorld;
 }
