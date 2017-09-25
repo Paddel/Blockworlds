@@ -157,9 +157,6 @@ void CAnimationHandler::Tick()
 
 void CAnimationHandler::Snap(int SnappingClient)
 {
-	if (SnappingClient == -1)
-		return;
-
 	for (int i = 0; i < m_lpAnimations.size(); i++)
 	{
 		float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - m_lpAnimations[i]->GetPos().x;
