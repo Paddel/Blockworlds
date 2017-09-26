@@ -13,6 +13,8 @@ save last cosmetics
 
 client crash command
 
+double kill
+
 
 clan room
 

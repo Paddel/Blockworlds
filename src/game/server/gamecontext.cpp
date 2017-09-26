@@ -690,7 +690,10 @@ void CGameContext::ResultBuySkinmani(int OptionID, const unsigned char *pData, i
 		return;
 	}
 	else if (OptionID != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase aborted");
 		return;
+	}
 
 	const char *pName = (const char *)pData;
 
@@ -805,7 +808,10 @@ void CGameContext::ResultBuyGundesign(int OptionID, const unsigned char *pData, 
 		return;
 	}
 	else if (OptionID != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase aborted");
 		return;
+	}
 
 	const char *pName = (const char *)pData;
 
@@ -919,7 +925,10 @@ void CGameContext::ResultBuyKnockouteffect(int OptionID, const unsigned char *pD
 		return;
 	}
 	else if (OptionID != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase aborted");
 		return;
+	}
 
 	const char *pName = (const char *)pData;
 
@@ -1033,7 +1042,10 @@ void CGameContext::ResultBuyExtra(int OptionID, const unsigned char *pData, int 
 		return;
 	}
 	else if (OptionID != 0)
+	{
+		pGameServer->SendChatTarget(ClientID, "Purchase aborted");
 		return;
+	}
 
 	const char *pName = (const char *)pData;
 
@@ -1480,7 +1492,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 			
 			if((pPlayer->GetTeam() != TEAM_SPECTATORS && !pPlayer->GetPause()) || pPlayer->m_SpectatorID == pMsg->m_SpectatorID || ClientID == pMsg->m_SpectatorID ||
-				(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*3 > Server()->Tick()))
+				(g_Config.m_SvSpamprotection && pPlayer->m_LastSetSpectatorMode && pPlayer->m_LastSetSpectatorMode+Server()->TickSpeed()*0.75f > Server()->Tick()))
 				return;
 
 			pPlayer->m_LastSetSpectatorMode = Server()->Tick();

@@ -496,7 +496,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 	if (Effect == SKINMANI_FEET_FIRE)
 	{
 		HSLFeet.h = 0.0f;
-		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.s = (sinf(TickDef / 128.0f) + 1.0f) / 2.0f;
 		HSLFeet.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
@@ -504,7 +504,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 	else if (Effect == SKINMANI_FEET_WATER)
 	{
 		HSLFeet.h = 0.6f;
-		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.s = (sinf(TickDef / 128.0f) + 1.0f) / 2.0f;
 		HSLFeet.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
@@ -512,7 +512,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 	else if (Effect == SKINMANI_FEET_POISON)
 	{
 		HSLFeet.h = 0.3f;
-		HSLFeet.s = (sinf(TickDef / 255.0f) + 1.0f) / 2.0f;
+		HSLFeet.s = (sinf(TickDef / 128.0f) + 1.0f) / 2.0f;
 		HSLFeet.l = 0.5f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
@@ -521,7 +521,7 @@ void CCosmeticsHandler::SnapSkinmaniRaw(int64 Tick, CNetObj_ClientInfo *pClientI
 	{
 		HSLFeet.h = 0.0f;
 		HSLFeet.s = 0.0f;
-		HSLFeet.l = (sinf(TickDef / 255.0f) + 3.0f) / 4.0f;
+		HSLFeet.l = (sinf(TickDef / 128.0f) + 3.0f) / 4.0f;
 		pClientInfo->m_ColorFeet = HslToCc(HSLFeet);
 		pClientInfo->m_UseCustomColor = 1;
 	}

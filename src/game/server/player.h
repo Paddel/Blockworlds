@@ -52,6 +52,7 @@ public:
 	void TryChallengeMatch(int TargetID, const char *pBlockpoints);
 	static void MatchRequest(int OptionID, const unsigned char *pData, int ClientID, CGameContext *pGameServer);
 	void MovePlayer(CGameWorld *pGameWorld);
+	bool InGameMatch();
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();

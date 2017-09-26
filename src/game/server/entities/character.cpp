@@ -1106,7 +1106,7 @@ void CCharacter::HandleRace()
 	if(m_ZoneUntouchable && m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookTick >= Server()->TickSpeed() * 10.0f)
 		m_Core.m_HookState = HOOK_RETRACTED;
 
-	if (GetPlayer()->InEvent() && m_Core.m_HookState == HOOK_GRABBED
+	if ((GetPlayer()->InEvent() || GetPlayer()->InGameMatch()) && m_Core.m_HookState == HOOK_GRABBED
 		&& m_Core.m_HookedPlayer == -1 && m_Core.m_HookTick >= Server()->TickSpeed() * 2.5f)
 		Freeze(1.0f);
 }

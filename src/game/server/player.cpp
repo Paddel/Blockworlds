@@ -455,6 +455,11 @@ void CPlayer::MovePlayer(CGameWorld *pGameWorld)
 	m_pGameWorld = pGameWorld;
 }
 
+bool CPlayer::InGameMatch()
+{
+	return m_pGameWorld->GetWorldType() == CGameWorld::WORLDTYPE_GAMEMATCH;
+}
+
 void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput)
 {
 	// skip the input if chat is active
@@ -544,7 +549,7 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 		return;
 
 	//TODO: rewrite this nicer
-	if(Team == TEAM_SPECTATORS && m_pGameWorld->GetWorldType() == CGameWorld::WORLDTYPE_GAMEMATCH)
+	if(Team == TEAM_SPECTATORS && InGameMatch())
 		GameServer()->SendChatTarget(m_ClientID, "You lost the 1ON1!");
 
 	MovePlayer(GameMap()->MainWorld());
