@@ -1202,7 +1202,7 @@ void CGameContext::OnClientEnter(int ClientID, bool MapSwitching)
 	{
 		SendBroadcast("Get the ATH-Client for:", ClientID);
 		SendBroadcast(" - Client predictions", ClientID);
-		SendBroadcast(" - All DDNet functions", ClientID);
+		SendBroadcast(" - All DDNet functions (Zoom + Emote wheel)", ClientID);
 		SendBroadcast(" - Less lags", ClientID);
 		SendBroadcast("", ClientID);
 		SendBroadcast("allthehaxx.github.io", ClientID);
