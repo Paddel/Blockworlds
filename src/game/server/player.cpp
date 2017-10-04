@@ -67,10 +67,10 @@ void CPlayer::Tick()
 
 	if (ClientInfo()->m_SentClientSuggestion == false)
 	{
-		if (m_CreateTick + Server()->TickSpeed() * 11 < Server()->Tick() ||
+		if (m_CreateTick + Server()->TickSpeed() * 21 < Server()->Tick() ||
 			ClientInfo()->m_IsAthClient == true)
 			ClientInfo()->m_SentClientSuggestion = true;
-		else if (m_CreateTick + Server()->TickSpeed() * 3 < Server()->Tick())
+		else if (m_CreateTick + Server()->TickSpeed() * 11 < Server()->Tick())
 		{
 			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, "Get the ATH-Client for:");
 			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, " - Client predictions");
