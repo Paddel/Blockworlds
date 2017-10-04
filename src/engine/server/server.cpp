@@ -845,7 +845,7 @@ void CServer::SendMap(int ClientID)
 void CServer::SendConnectionReady(int ClientID)
 {
 	CMsgPacker Msg(NETMSG_CON_READY);
-	Msg.AddInt(541);
+	//Msg.AddInt(1);
 	SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID, true);
 }
 
@@ -916,8 +916,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	int Sys = Msg&1;
 	Msg >>= 1;
 
-	if(Unpacker.Error())
+	if (Unpacker.Error())
+	{
+		dbg_msg(0, "err"):
 		return;
+	}
 
 	if(Sys)
 	{
@@ -1085,6 +1088,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		else  if(Msg == NETMSG_RCON_CMD)
 		{
 			const char *pCmd = Unpacker.GetString();
+
+			dbg_msg(0, "%s", pCmd);
 
 			if (!str_utf8_check(pCmd))
 				return;
