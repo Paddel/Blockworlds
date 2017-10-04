@@ -918,7 +918,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 	if (Unpacker.Error())
 	{
-		dbg_msg(0, "err"):
+		dbg_msg(0, "err");
 		return;
 	}
 
