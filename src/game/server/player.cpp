@@ -264,7 +264,7 @@ void CPlayer::DoPlayerTuning()
 
 bool CPlayer::CanBeDeathnoted()
 {
-	if (m_SubscribeEvent == true && GameMap()->GetEvent() != 0x0)
+	if (InEvent() || InGameMatch())
 		return false;
 
 	if (GameMap()->IsBlockMap() == false)

@@ -1581,7 +1581,7 @@ int CServer::Run()
 
 	// start game
 	m_Lastheartbeat = 0;
-	m_GameStartTime = time_get();
+	m_GameStartTime = time_get() - (m_CurrentGameTick / TickSpeed()) * time_freq();
 
 	if(g_Config.m_Debug)
 	{
