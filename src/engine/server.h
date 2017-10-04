@@ -70,6 +70,7 @@ public:
 		int m_EmoteStop;
 		int m_DDNetVersion;
 		bool m_IsAthClient;
+		bool m_SentClientSuggestion;
 		int m_ConverseID;
 		int64 m_ConverseTick;
 

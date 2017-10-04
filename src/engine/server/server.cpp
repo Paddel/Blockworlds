@@ -917,10 +917,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	Msg >>= 1;
 
 	if (Unpacker.Error())
-	{
-		dbg_msg(0, "err");
 		return;
-	}
 
 	if(Sys)
 	{
@@ -1088,8 +1085,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		else  if(Msg == NETMSG_RCON_CMD)
 		{
 			const char *pCmd = Unpacker.GetString();
-
-			dbg_msg(0, "%s", pCmd);
 
 			if (!str_utf8_check(pCmd))
 				return;

@@ -64,6 +64,22 @@ void CPlayer::Tick()
 	if (GameMap()->IsShopMap() == true || InEvent())
 		m_Pause = false;
 
+
+	if (ClientInfo()->m_SentClientSuggestion == false)
+	{
+		if (m_CreateTick + Server()->TickSpeed() * 11 < Server()->Tick() ||
+			ClientInfo()->m_IsAthClient == true)
+			ClientInfo()->m_SentClientSuggestion = true;
+		else if (m_CreateTick + Server()->TickSpeed() * 3 < Server()->Tick())
+		{
+			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, "Get the ATH-Client for:");
+			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, " - Client predictions");
+			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, " - All DDNet functions (Zoom + Emote wheel)");
+			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, " - Less lags");
+			GameServer()->BroadcastHandler()->AddSideCast(m_ClientID, "\nallthehaxx.github.io");
+		}
+	}
+
 	// do latency stuff
 	{
 		int Latency = Server()->GetClientLatency(m_ClientID);
