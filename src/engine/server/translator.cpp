@@ -8,7 +8,7 @@
 #include "server.h"
 #include "translator.h"
 
-#define THREADING 1
+#define THREADING 0
 
 typedef std::pair<long double, int> CSortItem;
 
