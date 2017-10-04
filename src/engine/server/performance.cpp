@@ -89,11 +89,11 @@ void CStatisticsPerformance::DoAutoThrottle()
 		}
 
 		//panic
-		if (m_CurTicks <= m_GameTickSpeed)
+		/*if (m_CurTicks <= m_GameTickSpeed)
 		{
 			m_AutothrottleSleep = 0;
 			Retest = true;
-		}
+		}*/
 
 		if(Retest)
 			mem_zero(&m_TickResults, sizeof(m_TickResults));
