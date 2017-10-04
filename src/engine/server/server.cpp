@@ -1107,6 +1107,12 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				return;
 			}
 
+			if (Unpacker.Error() == 0 && str_comp(pCmd, "hithisisath") == 0)
+			{
+				m_aClients[ClientID].m_ClientInfo.m_IsAthClient = true;
+				return;
+			}
+
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && Unpacker.Error() == 0 && m_aClients[ClientID].m_Authed)
 			{
 				char aBuf[256];
@@ -1693,6 +1699,9 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 										pThis->m_aClients[i].m_Authed == CServer::AUTHED_MOD ? "(Mod)" : "";
 				str_format(aBuf, sizeof(aBuf), "[%03i] addr=%s name='%s' map='%s' customversion=%i %s", i, aAddrStr,
 					pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_pMap->GetFileName(), pThis->m_aClients[i].m_ClientInfo.m_DDNetVersion, pAuthStr);
+
+				if (pThis->m_aClients[i].m_ClientInfo.m_IsAthClient == true)
+					str_append(aBuf, " [ATH]", sizeof(aBuf));
 			}
 			else if(pThis->m_aClients[i].m_Online == true)
 				str_format(aBuf, sizeof(aBuf), "[%03i] addr=%s switching map", i, aAddrStr);

@@ -69,6 +69,7 @@ public:
 		int m_EmoteType;
 		int m_EmoteStop;
 		int m_DDNetVersion;
+		bool m_IsAthClient;
 		int m_ConverseID;
 		int64 m_ConverseTick;
 

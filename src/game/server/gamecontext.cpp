@@ -1197,6 +1197,16 @@ void CGameContext::OnClientEnter(int ClientID, bool MapSwitching)
 	}
 
 	pGameMap->MapVoting()->UpdateVotes();
+
+	if (MapSwitching == false && Server()->GetClientInfo(ClientID)->m_IsAthClient == false)
+	{
+		SendBroadcast("Get the ATH-Client for:", ClientID);
+		SendBroadcast(" - Client predictions", ClientID);
+		SendBroadcast(" - All DDNet functions", ClientID);
+		SendBroadcast(" - Less lags", ClientID);
+		SendBroadcast("", ClientID);
+		SendBroadcast("allthehaxx.github.io", ClientID);
+	}
 }
 
 void CGameContext::OnClientConnected(int ClientID)
