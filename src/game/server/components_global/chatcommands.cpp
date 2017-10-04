@@ -472,6 +472,33 @@ void CChatCommandsHandler::ComChallengeMatch(CConsole::CResult *pResult, CGameCo
 	pGameServer->m_apPlayers[ClientID]->TryChallengeMatch(TargetID, pBlockpoints);
 }
 
+void CChatCommandsHandler::ComGetCID(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	const char *pName = pResult->GetString(0);
+
+	int TargetID = -1;
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (pGameServer->Server()->ClientIngame(i) == false)
+			continue;
+
+		if(str_comp(pGameServer->Server()->ClientName(i), pName) != 0)
+			continue;
+
+		TargetID = i;
+		break;
+	}
+
+	if(TargetID == -1)
+		pGameServer->SendChatTarget(ClientID, "Player not found");
+	else
+	{
+		char aBuf[32];
+		str_format(aBuf, sizeof(aBuf), "%s: %i", pName, TargetID);
+		pGameServer->SendChatTarget(ClientID, aBuf);
+	}
+}
+
 void CChatCommandsHandler::ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
 	if (g_Config.m_DbgGame == 0)
@@ -904,8 +931,10 @@ void CChatCommandsHandler::Init()
 	Register("exp", "", 0, ComExp, "Visualizes you your current experience points");
 	Register("1on1", "?r", 0, ComChallengeMatch, "Challenge another player in an one o' one");
 
+	Register("getcid", "r", CHATCMDFLAG_MOD, ComGetCID, "Sends you the ClientID of a player");
+
 	Register("tele", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComTele, "Teleports you to your cursor");
-	Register("perf", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComPerformance, "Sends you performance infos");
+	Register("perf", "", CHATCMDFLAG_ADMIN, ComPerformance, "Sends you performance infos");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

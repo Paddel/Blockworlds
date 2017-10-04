@@ -48,6 +48,7 @@ private:
 	static void ComDetach(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComExp(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComChallengeMatch(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComGetCID(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComPerformance(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);

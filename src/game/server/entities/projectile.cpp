@@ -76,7 +76,10 @@ void CProjectile::Tick()
 		if(m_Explosive)
 			GameServer()->CreateExplosion(GameWorld(), CurPos, m_Owner);
 
-		if(m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN && GameServer()->CosmeticsHandler()->DoGundesign(m_Owner, CurPos, m_Direction) == false)
+		if (m_LifeSpan >= 0 && m_Weapon == WEAPON_GUN &&
+			m_Owner >= 0 && m_Owner < MAX_CLIENTS &&
+			GameMap()->m_apPlayers[m_Owner] && GameMap()->m_apPlayers[m_Owner]->HideIdentity() == false &&
+			GameServer()->CosmeticsHandler()->DoGundesign(m_Owner, CurPos, m_Direction) == false)
 			GameServer()->CreateDamageInd(GameWorld(), CurPos, -atan2(m_Direction.x, m_Direction.y), 10);
 
 		GameWorld()->DestroyEntity(this);

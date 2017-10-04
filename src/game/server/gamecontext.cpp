@@ -436,7 +436,7 @@ void CGameContext::BlockSystemFinish(int ClientID, vec2 Pos, bool Kill)
 			new CExperience(pChrAttacker->GameWorld(), Pos, ExperienceAmount, pPlayer->m_AttackedBy);
 
 		//knockout effect
-		if(Kill)
+		if(Kill && pPlayer->HideIdentity() == false)
 			m_CosmeticsHandler.DoKnockoutEffect(pPlayer->m_AttackedBy, Pos);
 
 		if(Kill == false)

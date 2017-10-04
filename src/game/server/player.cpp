@@ -195,6 +195,8 @@ void CPlayer::Snap(int SnappingClient)
 	if (m_Pause && m_ClientID == SnappingClient)
 		pPlayerInfo->m_Team = TEAM_SPECTATORS;
 
+	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo);
+
 	if (HideIdentity() && Server()->GetClientAuthed(SnappingClient) <= IServer::AUTHED_NO)
 	{
 		StrToInts(&pClientInfo->m_Name0, 4, "");
@@ -212,8 +214,6 @@ void CPlayer::Snap(int SnappingClient)
 		if (m_ClientID != SnappingClient)
 			pPlayerInfo->m_Latency = 0;
 	}
-
-	GameServer()->CosmeticsHandler()->SnapSkinmani(m_ClientID, m_CreateTick, pClientInfo);
 
 	if(m_ClientID == SnappingClient && pPlayerInfo->m_Team == TEAM_SPECTATORS)
 	{

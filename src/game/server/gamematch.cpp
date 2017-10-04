@@ -361,6 +361,7 @@ void CGameMatch::End()
 		if (GameMap()->m_apPlayers[i] == 0x0 || m_aParticipants[i] == false)
 			continue;
 
+		GameServer()->AccountsHandler()->Save(i);
 		ResumeClient(i);
 	}
 

@@ -8,7 +8,7 @@
 #include "server.h"
 #include "translator.h"
 
-#define THREADING 0
+#define THREADING 1
 
 typedef std::pair<long double, int> CSortItem;
 
@@ -16,8 +16,11 @@ CTranslator::CTranslator(CServer *pServer)
 {
 	m_pServer = pServer;
 	m_aNumItems = 0x0;
-	//for(int i = 0; i < MAX_CLIENTS; i++)
 	mem_zero(&m_Sortions, sizeof(m_Sortions));
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		for (int j = 0; j < MAX_CLIENTS; j++)
+			m_Sortions[i].m_aIDMap[j] = -1;
+	
 }
 
 void CTranslator::SortMap(void *pData)
@@ -39,25 +42,12 @@ void CTranslator::SortMap(void *pData)
 		for (int i = 0; i < MAX_CLIENTS; i++)
 			pSortionData->m_aIDMap[i] = -1;
 
-		//fill in correct IDs
+		//fill in already old IDs
 		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
 		{
-			if (aFillingList[i] >= pSortionData->m_UsingMapItems - 1)// no -1 if you dont need last id
-				continue;
-
-			pSortionData->m_aIDMap[aFillingList[i]] = aFillingList[i];
-			aFillingList[i] = -1;//do not fill me anywhere else
-		}
-
-		//fill in already inserted IDs
-		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
-		{
-			if (aFillingList[i] == -1)
-				continue;
-
 			for (int j = pSortionData->m_UsingMapItems - 2; j >= 0; j--)// -1 if you dont need last id
 			{
-				if (OldMap[j] == aFillingList[i] && pSortionData->m_aIDMap[j] == -1)
+				if (OldMap[j] == aFillingList[i])
 				{
 					pSortionData->m_aIDMap[j] = aFillingList[i];
 					aFillingList[i] = -1;//do not fill me anywhere else
@@ -65,6 +55,18 @@ void CTranslator::SortMap(void *pData)
 				}
 
 			}
+		}
+
+		//fill in correct IDs
+		for (int i = 0; i < pSortionData->m_NumTranslateItems; i++)
+		{
+			if (aFillingList[i] >= pSortionData->m_UsingMapItems - 1 ||// no -1 if you dont need last id
+				pSortionData->m_aIDMap[i] != -1 ||
+				aFillingList[i] == -1)
+				continue;
+
+			pSortionData->m_aIDMap[aFillingList[i]] = aFillingList[i];
+			aFillingList[i] = -1;//do not fill me anywhere else
 		}
 
 		//fill in rest

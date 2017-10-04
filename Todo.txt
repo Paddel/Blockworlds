@@ -11,6 +11,8 @@ refactor gamematch
 
 save last cosmetics
 
+hooks per second
+
 client crash command
 
 double kill
