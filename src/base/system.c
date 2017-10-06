@@ -371,8 +371,12 @@ int io_flush(IOHANDLE io)
 	return 0;
 }
 
+static int temp_tc = 0;
+
 void *thread_init(void (*threadfunc)(void *), void *u)
 {
+	temp_tc++;
+	dbg_msg(0, "nt %i", temp_tc);
 #if defined(CONF_FAMILY_UNIX)
 	pthread_t id;
 	pthread_create(&id, NULL, (void *(*)(void*))threadfunc, u);

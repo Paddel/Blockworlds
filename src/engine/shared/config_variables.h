@@ -122,4 +122,6 @@ MACRO_CONFIG_STR(DbgStressServer, dbg_stress_server, 32, "localhost", CFGFLAG_CL
 MACRO_CONFIG_INT(DbgResizable, dbg_resizable, 0, 0, 0, CFGFLAG_CLIENT, "Enables window resizing")
 
 MACRO_CONFIG_INT(DbgTemp, dbg_temp, 0, 0, 1, CFGFLAG_SERVER, "Temp debugging")
+
+MACRO_CONFIG_INT(DbgDbT, dbg_dbt, 1, 0, 1, CFGFLAG_SERVER, "Temp debugging")
 #endif

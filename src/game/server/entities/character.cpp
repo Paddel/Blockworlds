@@ -477,7 +477,9 @@ void CCharacter::Unfreeze()
 	if (m_DeepFreeze == true || m_FreezeTime <= 0)
 		return;
 
-	m_FreezeTime = 0;
+	if(m_ZoneFreeze == false)
+		m_FreezeTime = 0;
+
 	m_UnfreezeInput = true;
 
 	if (m_ZoneProtection == false && m_ProtectionTime > 1)
