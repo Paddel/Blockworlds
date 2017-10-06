@@ -260,7 +260,10 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 	{
 		void *pTemp = thread_init(QueryThreadFunction, pThreadData);
 		if (g_Config.m_DbgTemp)
-			dbg_msg(0, "Thread start return: %i", (int)pTemp);
+		{
+			int pID = (int)pTemp;
+			dbg_msg(0, "Thread start return: %i", pID);
+		}
 	}
 	else
 	{
