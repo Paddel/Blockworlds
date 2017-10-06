@@ -261,7 +261,7 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 		void *pTemp = thread_init(QueryThreadFunction, pThreadData);
 		if (g_Config.m_DbgTemp)
 		{
-			int pID = (int)pTemp;
+			int pID = (long)pTemp;
 			dbg_msg(0, "Thread start return: %i", pID);
 		}
 	}
