@@ -376,10 +376,10 @@ static int temp_tc = 0;
 void *thread_init(void (*threadfunc)(void *), void *u)
 {
 	temp_tc++;
-	dbg_msg(0, "nt %i", temp_tc);
 #if defined(CONF_FAMILY_UNIX)
 	pthread_t id;
-	pthread_create(&id, NULL, (void *(*)(void*))threadfunc, u);
+	int dbgres = pthread_create(&id, NULL, (void *(*)(void*))threadfunc, u);
+	dbg_msg(0, "%i", dbgres);
 	return (void*)id;
 #elif defined(CONF_FAMILY_WINDOWS)
 	return CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)threadfunc, u, 0, NULL);
