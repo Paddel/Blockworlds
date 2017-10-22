@@ -283,6 +283,7 @@ void CGameMatch::Start()
 			m_aCharStates[i].m_ActiveWeapon = GameMap()->m_apPlayers[i]->GetCharacter()->GetActiveWeapon();
 			m_aCharStates[i].m_Endless = GameMap()->m_apPlayers[i]->GetCharacter()->GetEndlessHook();
 			m_aCharStates[i].m_NumJumps = GameMap()->m_apPlayers[i]->GetCharacter()->Core()->m_MaxAirJumps;
+			m_aCharStates[i].m_Freezed = GameMap()->m_apPlayers[i]->GetCharacter()->IsFreezed();
 		}
 
 		GameMap()->m_apPlayers[i]->MovePlayer(m_pGameWorld);

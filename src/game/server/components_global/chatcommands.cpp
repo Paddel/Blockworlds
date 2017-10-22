@@ -317,6 +317,8 @@ void CChatCommandsHandler::ComWeaponkit(CConsole::CResult *pResult, CGameContext
 		return;
 	}
 
+	if (pGameServer->m_apPlayers[ClientID] != 0x0 && pGameServer->m_apPlayers[ClientID]->InGameMatch())
+		return;
 
 	CCharacter *pChr = pGameServer->GetPlayerChar(ClientID);
 	if (pChr == 0x0 || pChr->IsAlive() == false)
@@ -534,6 +536,9 @@ void CChatCommandsHandler::ComPerformance(CConsole::CResult *pResult, CGameConte
 
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
+	if (pGameServer->m_apPlayers[ClientID] != 0x0 && pGameServer->m_apPlayers[ClientID]->InGameMatch())
+		return;
+
 	if (pResult->NumArguments() == 2)
 		pGameServer->AccountsHandler()->Login(ClientID, pResult->GetString(0), pResult->GetString(1));
 	else
@@ -542,6 +547,9 @@ void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pG
 
 void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
+	if (pGameServer->m_apPlayers[ClientID] != 0x0 && pGameServer->m_apPlayers[ClientID]->InGameMatch())
+		return;
+
 	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You are not logged in.");

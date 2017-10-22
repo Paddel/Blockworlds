@@ -17,6 +17,7 @@ struct CCharState
 	int m_ActiveWeapon;
 	bool m_Endless;
 	int m_NumJumps;
+	bool m_Freezed;
 };
 
 // player object

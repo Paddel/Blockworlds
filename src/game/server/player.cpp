@@ -341,6 +341,13 @@ bool CPlayer::CanChallengeMatch(int TargetID)
 		GameServer()->SendChatTarget(m_ClientID, "This map does not have an arena");
 		return false;
 	}
+
+	if(Server()->CompClientAddr(m_ClientID, TargetID) == true)
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You cannot challenge your dummy");
+		return false;
+	}
+
 	return true;
 }
 
@@ -655,6 +662,8 @@ void CPlayer::TryRespawn()
 			m_pCharacter->Unfreeze();
 			m_pCharacter->SetEndlessHook(m_SpawnState.m_Endless);
 			m_pCharacter->Core()->m_MaxAirJumps = m_SpawnState.m_NumJumps;
+			if (m_SpawnState.m_Freezed == true)
+				m_pCharacter->Freeze(3.0f);
 		}
 		m_UseSpawnState = false;
 	}
