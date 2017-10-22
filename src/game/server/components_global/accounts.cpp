@@ -480,8 +480,7 @@ void CAccountsHandler::Login(int ClientID, const char *pName, const char *pPassw
 	char aQuery[QUERY_MAX_STR_LEN];
 	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s WHERE name=", TABLE_ACCOUNTS);
 	CDatabase::AddQueryStr(aQuery, pName, sizeof(aQuery));
-	for(int i = 0; i < g_Config.m_DbgTNum; i++)
-		m_Database.Query(aQuery, ResultLogin, pResultData);
+	m_Database.Query(aQuery, ResultLogin, pResultData);
 }
 
 void CAccountsHandler::Register(int ClientID, const char *pName, const char *pPassword)
