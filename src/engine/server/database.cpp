@@ -108,14 +108,10 @@ void CDatabase::ExecuteQuery(void *pData)
 
 void CDatabase::QueryThreadFunction(void *pData)
 {
-	if (g_Config.m_DbgTemp)
-		dbg_msg(0, "InThread");
 	CQueryData *pThreadData = (CQueryData *)pData;
 
 	if(USE_LOCK)
 		lock_wait(s_QueryLock);
-	if (g_Config.m_DbgTemp)
-		dbg_msg(0, "ExecuteQuery");
 	ExecuteQuery(pThreadData);
 	if(USE_LOCK)
 		lock_unlock(s_QueryLock);
@@ -253,17 +249,9 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 	pThreadData->m_Working = true;
 
 	m_ThreadData.add(pThreadData);
-
-	if (g_Config.m_DbgTemp)
-		dbg_msg(0, "Starting thread");
 	if (g_Config.m_DbgDbT == 1)
 	{
-		void *pTemp = thread_init(QueryThreadFunction, pThreadData);
-		if (g_Config.m_DbgTemp)
-		{
-			int pID = (long)pTemp;
-			dbg_msg(0, "Thread start return: %i", pID);
-		}
+		thread_init(QueryThreadFunction, pThreadData);
 	}
 	else
 	{

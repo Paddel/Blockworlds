@@ -940,8 +940,8 @@ void CChatCommandsHandler::Init()
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");
 	Register("w", "r", CHATCMDFLAG_HIDDEN, ComWhisper, "Personal message to anybody on this server");
 	Register("c", "r", CHATCMDFLAG_HIDDEN, ComConverse, "Response to last whisper");
-	Register("login", "?ss", CHATCMDFLAG_HIDDEN, ComLogin, "Login into your Blockworlds account. For more informatino write /account");
-	Register("logout", "", CHATCMDFLAG_HIDDEN, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
+	Register("login", "?ss", CHATCMDFLAG_HIDDEN | CHATCMDFLAG_SPAMABLE, ComLogin, "Login into your Blockworlds account. For more informatino write /account");
+	Register("logout", "", CHATCMDFLAG_HIDDEN | CHATCMDFLAG_SPAMABLE, ComLogout, "Logout of your Blockworlds account. For more informatino write /account");
 	Register("register", "?ss", CHATCMDFLAG_HIDDEN, ComRegister, "Register a new Blockworlds account. For more informatino write /account");
 	Register("password", "ss", CHATCMDFLAG_HIDDEN, ComChangePassword, "Set a password to your Blockworlds account. For more informatino write /account");
 	Register("clan_create", "r", CHATCMDFLAG_HIDDEN, ComClanCreate, "Create a new clan. For more informatino write /clan");
