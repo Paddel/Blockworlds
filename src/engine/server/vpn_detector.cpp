@@ -207,7 +207,8 @@ void CVpnDetector::NewClient(int ClientID, char *pAddress)
 	pRequest->m_RemoveTime = Server()->Tick() + Server()->TickSpeed() * 5.0f;
 
 	m_lRequestList.add(pRequest);
-	thread_init(VpnCheckThread, pRequest);
+	void *pThread = thread_init(VpnCheckThread, pRequest);
+	thread_detach(pThread);
 }
 
 bool CVpnDetector::CheckList(int ClientID)

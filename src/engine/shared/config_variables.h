@@ -120,7 +120,4 @@ MACRO_CONFIG_INT(DbgGraphs, dbg_graphs, 0, 0, 1, CFGFLAG_CLIENT, "Performance gr
 MACRO_CONFIG_INT(DbgHitch, dbg_hitch, 0, 0, 0, CFGFLAG_SERVER, "Hitch warnings")
 MACRO_CONFIG_STR(DbgStressServer, dbg_stress_server, 32, "localhost", CFGFLAG_CLIENT, "Server to stress")
 MACRO_CONFIG_INT(DbgResizable, dbg_resizable, 0, 0, 0, CFGFLAG_CLIENT, "Enables window resizing")
-
-MACRO_CONFIG_INT(DbgDbT, dbg_dbt, 1, 0, 1, CFGFLAG_SERVER, "Temp debugging")
-MACRO_CONFIG_INT(DbgTNum, dbg_t_num, 1000, 0, 999999, CFGFLAG_SERVER, "Temp debugging")
 #endif

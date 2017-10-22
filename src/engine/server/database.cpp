@@ -249,15 +249,8 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 	pThreadData->m_Working = true;
 
 	m_ThreadData.add(pThreadData);
-	if (g_Config.m_DbgDbT == 1)
-	{
-		thread_init(QueryThreadFunction, pThreadData);
-	}
-	else
-	{
-		QueryThreadFunction(pThreadData);
-	}
-
+	void *pThread = thread_init(QueryThreadFunction, pThreadData);
+	thread_detach(pThread);
 }
 
 void CDatabase::QueryOrderly(const char *pCommand, ResultFunction fResultCallback, void *pUserData)

@@ -542,11 +542,6 @@ void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pG
 
 void CChatCommandsHandler::ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
-	for (int i = 0; i < g_Config.m_DbgTNum; i++)
-		pGameServer->AccountsHandler()->Save(ClientID);//REMOVE!!
-
-	return;
-
 	if (pGameServer->Server()->GetClientInfo(ClientID)->m_LoggedIn == false)
 	{
 		pGameServer->SendChatTarget(ClientID, "You are not logged in.");
