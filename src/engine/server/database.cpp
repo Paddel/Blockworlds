@@ -250,7 +250,7 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 
 	m_ThreadData.add(pThreadData);
 	void *pThread = thread_init(QueryThreadFunction, pThreadData);
-	thread_detach(pThread);
+	//thread_detach(pThread);
 }
 
 void CDatabase::QueryOrderly(const char *pCommand, ResultFunction fResultCallback, void *pUserData)

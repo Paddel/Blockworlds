@@ -208,7 +208,7 @@ void CVpnDetector::NewClient(int ClientID, char *pAddress)
 
 	m_lRequestList.add(pRequest);
 	void *pThread = thread_init(VpnCheckThread, pRequest);
-	thread_detach(pThread);
+	//thread_detach(pThread);
 }
 
 bool CVpnDetector::CheckList(int ClientID)
