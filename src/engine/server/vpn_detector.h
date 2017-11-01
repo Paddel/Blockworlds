@@ -19,12 +19,13 @@ public:
 
 	struct CVpnRequest
 	{
-		int m_ClientID;// class write
-		char m_aAddress[256];// class write
-		int64 m_RemoveTime;// class write
-		int m_ResultState;//thread write
-		//char m_aResultCountry[256];//thread write
-		bool m_TimeLimitExceeded;//both write
+		int m_ClientID;// class writes
+		char m_aAddress[256];// class writes
+		int64 m_RemoveTime;// class writes
+		void *m_pThread;//class writes
+		int m_ResultState;//thread writes
+		//char m_aResultCountry[256];//thread writes
+		bool m_TimeLimitExceeded;//both writes
 	};
 
 private:

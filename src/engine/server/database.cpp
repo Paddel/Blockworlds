@@ -203,6 +203,7 @@ void CDatabase::Tick()
 		if (pData->m_fResultCallback)
 			pData->m_fResultCallback(pData, pData->m_Error, pData->m_pUserData);
 
+		thread_detach(m_ThreadData[i]->m_pThread);
 		DeleteThreadData(m_ThreadData[i]);
 		m_ThreadData.remove_index(i);
 	}
@@ -248,8 +249,8 @@ void CDatabase::Query(const char *pCommand, ResultFunction fResultCallback, void
 	str_copy(pThreadData->m_aSchema, m_aSchema, sizeof(pThreadData->m_aSchema));
 	pThreadData->m_Working = true;
 
+	pThreadData->m_pThread = thread_init(QueryThreadFunction, pThreadData);
 	m_ThreadData.add(pThreadData);
-	void *pThread = thread_init(QueryThreadFunction, pThreadData);
 	//thread_detach(pThread);
 }
 

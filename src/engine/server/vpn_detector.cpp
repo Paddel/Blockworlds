@@ -147,6 +147,7 @@ void CVpnDetector::WorkStack()
 
 		if (pRequest->m_RemoveTime < Server()->Tick() || Done == true)
 		{
+			thread_detach(pRequest->m_pThread);
 			m_lRequestList.remove_index(0);
 			delete pRequest;
 		}
@@ -188,6 +189,7 @@ void CVpnDetector::ResetState(int ClientID)
 		if (m_lRequestList[i]->m_ClientID != i)
 			continue;
 
+		thread_detach(m_lRequestList[i]->m_pThread);
 		delete m_lRequestList[i];
 		m_lRequestList.remove_index(i);
 		i--;
@@ -206,9 +208,8 @@ void CVpnDetector::NewClient(int ClientID, char *pAddress)
 	pRequest->m_TimeLimitExceeded = false;
 	pRequest->m_RemoveTime = Server()->Tick() + Server()->TickSpeed() * 5.0f;
 
+	pRequest->m_pThread = thread_init(VpnCheckThread, pRequest);
 	m_lRequestList.add(pRequest);
-	void *pThread = thread_init(VpnCheckThread, pRequest);
-	//thread_detach(pThread);
 }
 
 bool CVpnDetector::CheckList(int ClientID)

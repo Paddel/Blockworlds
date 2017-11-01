@@ -22,6 +22,7 @@ class CDatabase
 			char m_aCommand[QUERY_MAX_STR_LEN];
 			ResultFunction m_fResultCallback;
 			void *m_pUserData;
+			void *m_pThread;
 			
 			//thread writes
 			bool m_Error;
