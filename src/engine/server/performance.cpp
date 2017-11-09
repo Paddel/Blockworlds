@@ -46,7 +46,7 @@ void CStatisticsPerformance::SetTesting()
 
 void CStatisticsPerformance::DoAutoThrottle()
 {
-	int WantedTicks = max(g_Config.m_SrvAutoThrottle, m_GameTickSpeed + 20);
+	int WantedTicks = max(g_Config.m_SvAutoThrottle, m_GameTickSpeed + 20);
 
 	if (m_CurTickTesting != -1)
 	{
@@ -111,14 +111,14 @@ void CStatisticsPerformance::OnTick()
 		if (m_CurTicks < m_GameTickSpeed)
 			m_WarningCPU = m_CurTicks;
 
-		if (g_Config.m_SrvAutoThrottle > 0)
+		if (g_Config.m_SvAutoThrottle > 0)
 			DoAutoThrottle();
 
 		m_LastTickResult = m_CurTicks;
 		m_CurTicks = 0;
 	}
 
-	if (g_Config.m_SrvAutoThrottle > 0 && m_AutothrottleSleep > 0)
+	if (g_Config.m_SvAutoThrottle > 0 && m_AutothrottleSleep > 0)
 		thread_sleep(m_AutothrottleSleep);
 
 	if (mem_stats()->allocated > m_HighestRam)

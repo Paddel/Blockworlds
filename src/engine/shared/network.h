@@ -172,6 +172,7 @@ private:
 
 public:
 	void Init(NETSOCKET Socket, bool BlockCloseMsg);
+	void SetConnected(NETADDR *pAddr);
 	int Connect(NETADDR *pAddr);
 	void Disconnect(const char *pReason);
 
@@ -260,12 +261,19 @@ class CNetServer
 	CSlot m_aSlots[NET_MAX_CLIENTS];
 	int m_MaxClients;
 	int m_MaxClientsPerIP;
+	int64 m_OpenTime;
 
 	NETFUNC_NEWCLIENT m_pfnNewClient;
 	NETFUNC_DELCLIENT m_pfnDelClient;
 	void *m_UserPtr;
 
 	CNetRecvUnpacker m_RecvUnpacker;
+
+	int CalcToken(const NETADDR *pAddr);
+	int TryAcceptNewClient(NETSOCKET Socket, NETADDR& Addr, bool Direct);
+	void SendSpoofCheck(NETSOCKET Socket, NETADDR& Addr);
+	void ReceiveSpoofCheck(NETSOCKET Socket, NETADDR &Addr, CNetPacketConstruct &Packet);
+	void SendMsgs(NETSOCKET Socket, NETADDR &Addr, const class CMsgPacker *Msgs[], int Num);
 
 public:
 	int SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_DELCLIENT pfnDelClient, void *pUser);
@@ -291,6 +299,7 @@ public:
 
 	//
 	void SetMaxClientsPerIP(int Max);
+	bool CheckSpoofing();
 };
 
 class CNetConsole

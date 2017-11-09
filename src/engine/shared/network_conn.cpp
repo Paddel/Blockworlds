@@ -161,6 +161,21 @@ void CNetConnection::Resend()
 		ResendChunk(pResend);
 }
 
+void CNetConnection::SetConnected(NETADDR *pAddr)
+{
+	Reset();
+	m_PeerAddr = *pAddr;
+	mem_zero(m_ErrorString, sizeof(m_ErrorString));
+	m_State = NET_CONNSTATE_ONLINE;
+
+	int64 Now = time_get();
+	m_LastSendTime = Now;
+	m_LastRecvTime = Now;
+	m_LastUpdateTime = Now;
+
+	m_Sequence = 6;
+}
+
 int CNetConnection::Connect(NETADDR *pAddr)
 {
 	if(State() != NET_CONNSTATE_OFFLINE)

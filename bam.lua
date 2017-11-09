@@ -127,13 +127,13 @@ if family == "windows" then
 	--table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysqld.dll"))
 	table.insert(server_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysql.dll"))
 
-	if config.compiler.driver == "cl" then
-		client_link_other = {ResCompile("other/icons/teeworlds_cl.rc")}
-		server_link_other = {ResCompile("other/icons/teeworlds_srv_cl.rc")}
-	elseif config.compiler.driver == "gcc" then
-		client_link_other = {ResCompile("other/icons/teeworlds_gcc.rc")}
-		server_link_other = {ResCompile("other/icons/teeworlds_srv_gcc.rc")}
-	end
+	--if config.compiler.driver == "cl" then
+		--client_link_other = {ResCompile("other/icons/teeworlds_cl.rc")}
+		--server_link_other = {ResCompile("other/icons/teeworlds_srv_cl.rc")}
+	--elseif config.compiler.driver == "gcc" then
+		--client_link_other = {ResCompile("other/icons/teeworlds_gcc.rc")}
+		--server_link_other = {ResCompile("other/icons/teeworlds_srv_gcc.rc")}
+	--end
 end
 
 function Intermediate_Output(settings, input)
@@ -205,6 +205,7 @@ function build(settings)
 	-- build the small libraries
 	wavpack = Compile(settings, Collect("src/engine/external/wavpack/*.c"))
 	pnglite = Compile(settings, Collect("src/engine/external/pnglite/*.c"))
+	md5 = Compile(settings, Collect("src/engine/external/md5/*.cpp"))
 
 	-- build game components
 	engine_settings = settings:Copy()
@@ -274,11 +275,11 @@ function build(settings)
 
 	-- build client, server, version server and master server
 	client_exe = Link(client_settings, "Blockworlds_cl", game_shared, game_client,
-		engine, client, game_editor, zlib, pnglite, wavpack,
+		engine, client, game_editor, zlib, pnglite, wavpack, md5,
 		client_link_other, client_osxlaunch)
 
 	server_exe = Link(server_settings, "Blockworlds", engine, server,
-		game_shared, game_server, zlib, server_link_other)
+		game_shared, game_server, zlib, md5, server_link_other)
 
 	serverlaunch = {}
 	if platform == "macosx" then

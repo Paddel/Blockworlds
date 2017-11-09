@@ -721,7 +721,6 @@ void CServer::HandleVpnDetector()
 int CServer::NewClientCallback(int ClientID, void *pUser)
 {
 	CServer *pThis = (CServer *)pUser;
-	pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_Country = -1;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
@@ -734,6 +733,15 @@ int CServer::NewClientCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_ClientInfo.Reset();
 
 	pThis->SetMapOnConnect(ClientID);
+
+	if (pThis->m_NetServer.CheckSpoofing() == true)
+	{
+		pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
+		pThis->SendMap(ClientID);
+	}
+	else
+		pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;
+
 	return 0;
 }
 
