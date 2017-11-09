@@ -206,6 +206,7 @@ void CDatabase::Tick()
 		thread_detach(m_ThreadData[i]->m_pThread);
 		DeleteThreadData(m_ThreadData[i]);
 		m_ThreadData.remove_index(i);
+		i--;
 	}
 }
 
