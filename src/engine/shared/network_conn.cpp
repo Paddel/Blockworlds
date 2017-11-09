@@ -173,7 +173,7 @@ void CNetConnection::SetConnected(NETADDR *pAddr)
 	m_LastRecvTime = Now;
 	m_LastUpdateTime = Now;
 
-	m_Sequence = 6;
+	m_Sequence = 7;
 }
 
 int CNetConnection::Connect(NETADDR *pAddr)

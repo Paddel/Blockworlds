@@ -8,6 +8,8 @@
 #include <engine/message.h>
 #include <engine/shared/protocol.h>
 
+#include <game/generated/protocol.h>
+
 #include "config.h"
 #include "netban.h"
 #include "network.h"
@@ -61,8 +63,8 @@ int CNetServer::CalcToken(const NETADDR *pAddr)
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 
 	net_addr_str(pAddr, aAddrStr, sizeof(aAddrStr), true);
-	str_format(aHashIn, sizeof(aHashIn), "%s:%s:%i", aAddrStr, SALT, 0);
-	int Result = absolute((int)str_quickhash(md5(aHashIn).c_str()));
+	str_format(aHashIn, sizeof(aHashIn), "%s:%s:%i", aAddrStr, SALT, m_OpenTime);
+	int Result = (absolute((int)str_quickhash(md5(aHashIn).c_str())) % 100000) + 10000;
 	return Result;
 }
 
@@ -123,15 +125,20 @@ void CNetServer::SendSpoofCheck(NETSOCKET Socket, NETADDR& Addr)
 
 	CMsgPacker ConReadyMsg(NETMSG_CON_READY);
 
+	CNetMsg_Sv_ReadyToEnter Msg;
+	CMsgPacker ReadyToEnter(Msg.MsgID());
+	if (Msg.Pack(&ReadyToEnter))
+		return;
+
 	CMsgPacker SnapEmptyMsg(NETMSG_SNAPEMPTY);
 	int Token = CalcToken(&Addr);
 	SnapEmptyMsg.AddInt(Token);
 	SnapEmptyMsg.AddInt(Token + 1);
 
 	// send all chunks/msgs in one packet
-	const CMsgPacker *Msgs[] = { &MapChangeMsg, &MapDataMsg, &ConReadyMsg,
+	const CMsgPacker *Msgs[] = { &MapChangeMsg, &MapDataMsg, &ConReadyMsg, &ReadyToEnter,
 		&SnapEmptyMsg, &SnapEmptyMsg, &SnapEmptyMsg };
-	SendMsgs(Socket, Addr, Msgs, 6);
+	SendMsgs(Socket, Addr, Msgs, 7);
 }
 
 void CNetServer::ReceiveSpoofCheck(NETSOCKET Socket, NETADDR &Addr, CNetPacketConstruct &Packet)
@@ -149,7 +156,10 @@ void CNetServer::ReceiveSpoofCheck(NETSOCKET Socket, NETADDR &Addr, CNetPacketCo
 	{
 		int Token = Unpacker.GetInt();
 		if (Token == CalcToken(&Addr))
+		{
+			dbg_msg(0, "accept");
 			TryAcceptNewClient(Socket, Addr, false);
+		}
 	}
 }
 
@@ -169,7 +179,8 @@ void CNetServer::SendMsgs(NETSOCKET Socket, NETADDR &Addr, const CMsgPacker *Msg
 		pChunkData = Header.Pack(pChunkData);
 		mem_copy(pChunkData, pMsg->Data(), pMsg->Size());
 		*((unsigned char*)pChunkData) <<= 1;
-		*((unsigned char*)pChunkData) |= 1;
+		if(i != 3)
+			*((unsigned char*)pChunkData) |= 1;
 		pChunkData += pMsg->Size();
 		m_Construct.m_NumChunks++;
 	}
