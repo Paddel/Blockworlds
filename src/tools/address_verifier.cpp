@@ -131,6 +131,7 @@ static void CheckNewAddess(NETADDR& Addr)
 
 	str_format(aQuery, sizeof(aQuery), "REPLACE INTO address_verifier(address, date) VALUES('%s', NOW())", aAddrStr);
 	Database.Query(aQuery, 0x0, 0x0);
+	dbg_msg(0, "Queried");
 }
 
 static int Run()
@@ -253,10 +254,7 @@ int main(int argc, char **argv)
 			pServerName = *argv;
 		}
 		else if (str_comp(*argv, "-d") == 0)
-		{
-			argc--; argv++;
 			g_Config.m_DbgDatabase = 1;
-		}
 
 	argc--; argv++;
 	}
