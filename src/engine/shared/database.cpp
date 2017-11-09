@@ -277,6 +277,8 @@ void CDatabase::QueryOrderly(const char *pCommand, ResultFunction fResultCallbac
 
 	if(fResultCallback)
 		fResultCallback(pThreadData, pThreadData->m_Error, pThreadData->m_pUserData);
+
+	DeleteThreadData(pThreadData);
 }
 
 int CDatabase::NumRunningThreads()
