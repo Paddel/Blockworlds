@@ -175,7 +175,12 @@ static int Run()
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWOK) &&
 					mem_comp(p.m_pData, SERVERBROWSE_FWOK, sizeof(SERVERBROWSE_FWOK)) == 0)
 				{
-					dbg_msg("register", "no firewall/nat problems detected");
+					static bool FirstOutput = false;
+					if (FirstOutput == false)
+					{
+						dbg_msg("register", "no firewall/nat problems detected");
+						FirstOutput = true;
+					}
 				}
 			}
 		}
@@ -246,6 +251,11 @@ int main(int argc, char **argv)
 		{
 			argc--; argv++;
 			pServerName = *argv;
+		}
+		else if (str_comp(*argv, "-d") == 0)
+		{
+			argc--; argv++;
+			g_Config.m_DbgDatabase = 1;
 		}
 
 	argc--; argv++;
