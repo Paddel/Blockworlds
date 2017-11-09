@@ -16,8 +16,11 @@ int Flags = 1;
 const char *pMap = "dm1";
 const char *pServerName = "unnamed server";
 
-NETADDR aMasterServers[16] = { { 0,{ 0 },0 } };
-int NumMasters = 0;
+static const int NumMasters = 4;
+NETADDR aMasterServers[NumMasters] = { { 0,{ 0 },0 } };
+const char *pMasterNames[NumMasters] =
+{ "master1.teeworlds.com", "master2.teeworlds.com",
+"master3.teeworlds.com", "master4.teeworlds.com"};
 
 const char *PlayerNames[16] = { 0 };
 int PlayerScores[16] = { 0 };
@@ -151,6 +154,7 @@ static int Run()
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
 					mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
 				{
+					dbg_msg(0, "get first response");
 					SendFWCheckResponse(&p.m_Address);
 				}
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWOK) &&
@@ -160,7 +164,7 @@ static int Run()
 					if (RegisterOk == false)
 					{
 						dbg_msg("register", "no firewall/nat problems detected");
-						RegisterOk = true;
+						//RegisterOk = true;
 					}
 				}
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWERROR) &&
@@ -193,6 +197,9 @@ int main(int argc, char **argv)
 {
 	net_init();
 	dbg_logger_stdout();
+
+	for (int i = 0; i < NumMasters; i++)
+		net_host_lookup(pMasterNames[i], &aMasterServers[i], NETTYPE_ALL);
 
 	pNet = new CNetServer;
 
