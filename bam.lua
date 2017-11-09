@@ -207,6 +207,14 @@ function build(settings)
 	pnglite = Compile(settings, Collect("src/engine/external/pnglite/*.c"))
 	md5 = Compile(settings, Collect("src/engine/external/md5/*.cpp"))
 
+	settings.cc.includes:Add("other/mysql/include")
+	settings.link.libpath:Add("other/mysql/lib")
+	if family == "windows" then
+		settings.link.libs:Add("libmysql")
+	else
+		settings.link.libs:Add("mysqlclient")
+	end
+	
 	-- build game components
 	engine_settings = settings:Copy()
 	server_settings = engine_settings:Copy()
@@ -230,14 +238,6 @@ function build(settings)
 		client_settings.link.libs:Add("opengl32")
 		client_settings.link.libs:Add("glu32")
 		client_settings.link.libs:Add("winmm")
-	end
-	
-	server_settings.cc.includes:Add("other/mysql/include")
-	server_settings.link.libpath:Add("other/mysql/lib")
-	if family == "windows" then
-		server_settings.link.libs:Add("libmysql")
-	else
-		server_settings.link.libs:Add("mysqlclient")
 	end
 
 

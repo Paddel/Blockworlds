@@ -1,7 +1,7 @@
 #pragma once
 
 #include <base/tl/array.h>
-#include <engine/server/database.h>
+#include <engine/shared/database.h>
 #include <game/server/component.h>
 
 class CAccountsHandler : public CComponentGlobal

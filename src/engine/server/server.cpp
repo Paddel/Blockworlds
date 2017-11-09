@@ -18,10 +18,10 @@
 #include <engine/shared/filecollection.h>
 #include <engine/shared/packer.h>
 #include <engine/shared/external_defines.h>
+#include <engine/shared/database.h>
 
 #include <mastersrv/mastersrv.h>
 
-#include "database.h"
 #include "register.h"
 #include "server.h"
 

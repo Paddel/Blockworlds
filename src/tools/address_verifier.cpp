@@ -3,15 +3,17 @@
 #include <base/system.h>
 #include <engine/shared/config.h>
 #include <engine/shared/network.h>
+#include <engine/shared/database.h>
 #include <mastersrv/mastersrv.h>
 #include <game/version.h>
+
 
 #define PORT 8303
 
 CNetServer *pNet;
 
 int GameType = 0;
-int Flags = 1;
+int Flags = 0;
 
 const char *pMap = "dm1";
 const char *pServerName = "unnamed server";
@@ -25,11 +27,13 @@ const char *pMasterNames[NumMasters] =
 const char *PlayerNames[16] = { 0 };
 int PlayerScores[16] = { 0 };
 int NumPlayers = 0;
-int MaxPlayers = 16;
+int MaxPlayers = 8;
 
 char aInfoMsg[1024];
 int aInfoMsgSize;
 NETSOCKET Socket;
+
+CDatabase Database;
 
 static void SendHeartBeats()
 {
@@ -118,6 +122,17 @@ static void SendFWCheckResponse(NETADDR *pAddr)
 	pNet->SendConnless(&p, Socket);
 }
 
+static void CheckNewAddess(NETADDR& Addr)
+{
+	char aAddrStr[NETADDR_MAXSTRSIZE];
+	char aQuery[QUERY_MAX_STR_LEN];
+
+	net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), false);
+
+	str_format(aQuery, sizeof(aQuery), "REPLACE INTO address_verifier(address, date) VALUES('%s', NOW())", aAddrStr);
+	Database.Query(aQuery, 0x0, 0x0);
+}
+
 static int Run()
 {
 	int64 NextHeartBeat = 0;
@@ -150,36 +165,19 @@ static int Run()
 				{
 					BuildInfoMsg(((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
 					SendServerInfo(&p.m_Address);
+					CheckNewAddess(p.m_Address);
 				}
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
 					mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
 				{
-					dbg_msg(0, "get first response");
 					SendFWCheckResponse(&p.m_Address);
 				}
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWOK) &&
 					mem_comp(p.m_pData, SERVERBROWSE_FWOK, sizeof(SERVERBROWSE_FWOK)) == 0)
 				{
-					static bool RegisterOk = false;
-					if (RegisterOk == false)
-					{
-						dbg_msg("register", "no firewall/nat problems detected");
-						//RegisterOk = true;
-					}
-				}
-				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWERROR) &&
-					mem_comp(p.m_pData, SERVERBROWSE_FWERROR, sizeof(SERVERBROWSE_FWERROR)) == 0)
-				{
-					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "ERROR: configure your firewall/nat to let through udp on port %d.", PORT);
-					dbg_msg("register", aBuf);
+					dbg_msg("register", "no firewall/nat problems detected");
 				}
 			}
-			/*else
-			{
-				const char FullMsg[] = "This server is full";
-				CNetBase::SendControlMsg(Socket, &p.m_Address, 0, NET_CTRLMSG_CLOSE, FullMsg, sizeof(FullMsg));
-			}*/
 		}
 
 		/* send heartbeats if needed */
@@ -198,12 +196,13 @@ int main(int argc, char **argv)
 	net_init();
 	dbg_logger_stdout();
 
+	pNet = new CNetServer;
+
+	Database.Init("31.186.250.72", "Paddel", "Uhrenonkel7845", "blockworlds");
+
 	for (int i = 0; i < NumMasters; i++)
 		net_host_lookup(pMasterNames[i], &aMasterServers[i], NETTYPE_ALL);
 
-	dbg_msg(0, "port %i", aMasterServers[0].port);
-
-	pNet = new CNetServer;
 
 	while (argc)
 	{
