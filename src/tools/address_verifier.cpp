@@ -193,6 +193,8 @@ static int Run()
 		}
 
 		thread_sleep(10);
+
+		Database.Tick();
 	}
 }
 

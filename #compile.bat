@@ -58,6 +58,7 @@ echo.
 @echo "<<<-START        Compiling by Paddel->>>"
 @call bam.exe server_release -j 8
 @call bam.exe client_release -j 8
+@call bam.exe release -j 8
 @echo "<<<- FINISHED    Compiling by Paddel->>>"
 echo.
 goto type
