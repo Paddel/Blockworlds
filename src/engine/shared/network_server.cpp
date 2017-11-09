@@ -41,11 +41,9 @@ int CNetServer::CalcToken(const NETADDR *pAddr)
 	char aHashIn[512];
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 
-	int TimeSalt = time_get()/time_freq();
-
 	net_addr_str(pAddr, aAddrStr, sizeof(aAddrStr), true);
 	str_format(aHashIn, sizeof(aHashIn), "%s:%s:%i", aAddrStr, SALT, 0);
-	int Result = abs((int)str_quickhash(md5(aHashIn).c_str()));
+	int Result = absolute((int)str_quickhash(md5(aHashIn).c_str()));
 	return Result;
 }
 
