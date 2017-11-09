@@ -60,5 +60,7 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr)
 	pResultData->m_Passed = false;
 
 	m_Database.QueryOrderly(aQuery, ResultAddrCheck, pResultData);
-	return pResultData->m_Passed;
+	bool Result = pResultData->m_Passed;
+	delete pResultData;
+	return Result;
 }
