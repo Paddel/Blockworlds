@@ -269,6 +269,7 @@ class CNetServer
 
 	CNetRecvUnpacker m_RecvUnpacker;
 
+	int NumPlayersWithIp(const NETADDR *pAddr);
 	int CalcToken(const NETADDR *pAddr);
 	int TryAcceptNewClient(NETSOCKET Socket, NETADDR& Addr, bool Direct);
 	void SendSpoofCheck(NETSOCKET Socket, NETADDR& Addr);

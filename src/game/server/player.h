@@ -9,6 +9,8 @@
 // this include should perhaps be removed
 #include "entities/character.h"
 
+class CBotProtections;
+
 struct CCharState
 {
 	bool m_Alive;
@@ -140,14 +142,17 @@ public:
 	int m_AutomuteScore;
 	int64 m_LastExpAccountAlert;
 
+	CGameContext *GameServer() const { return m_pGameServer; }
+	CBotProtections *BotProtections() const { return m_pBotProtections; }
+	IServer *Server() const;
+
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
 	CGameMap *m_pGameMap;
 	CGameWorld *m_pGameWorld;
+	CBotProtections *m_pBotProtections;
 
-	CGameContext *GameServer() const { return m_pGameServer; }
-	IServer *Server() const;
 	CTranslateItem m_TranslateItem;
 	IServer::CClientInfo *m_pClientInfo;
 

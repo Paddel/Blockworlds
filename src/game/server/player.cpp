@@ -6,6 +6,9 @@
 #include <game/server/entities/npc.h>
 #include <game/server/gameevent.h>
 #include <game/server/gamecontext.h>
+
+#include "botprotections.h"
+
 #include "player.h"
 
 
@@ -39,6 +42,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, CGameMap *pGameMap, int ClientID, in
 	m_CreateTick = Server()->Tick();
 	m_FirstInput = true;
 	m_LastExpAccountAlert = 0;
+
+	m_pBotProtections = new CBotProtections(this);
 }
 
 CPlayer::~CPlayer()
@@ -46,6 +51,7 @@ CPlayer::~CPlayer()
 	delete m_pCharacter;
 	m_pCharacter = 0;
 	OnCharacterDead();
+	delete m_pBotProtections;
 }
 
 void CPlayer::Tick()
@@ -129,6 +135,8 @@ void CPlayer::Tick()
 
 	//automute score
 	m_AutomuteScore *= 0.995f;
+
+	m_pBotProtections->Tick();
 }
 
 void CPlayer::PostTick()
@@ -511,8 +519,11 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 
 	m_PlayerFlags = NewInput->m_PlayerFlags;
 
-	if(m_pCharacter)
+	if (m_pCharacter)
+	{
 		m_pCharacter->OnDirectInput(NewInput);
+		m_pBotProtections->NewInput(NewInput);
+	}
 
 	if (m_FirstInput)
 	{

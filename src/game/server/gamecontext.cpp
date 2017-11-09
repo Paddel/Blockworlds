@@ -13,6 +13,7 @@
 #include <game/server/gameevent.h>
 #include <game/server/entities/experience.h>
 
+#include "botprotections.h"
 #include "component.h"
 #include "balancing.h"
 #include "gamemap.h"
@@ -581,6 +582,24 @@ void CGameContext::DoGeneralTuning()
 	m_Tuning.m_GunSpeed = 1400.0f;
 }
 
+void CGameContext::HandleBotPenality()
+{
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		CPlayer *pPlayer = m_apPlayers[i];
+		if (pPlayer == NULL) continue;
+
+
+		CBotProtections *pProtection = pPlayer->BotProtections();
+		if (pProtection->GetHACountRatio() >= 0.80 && pProtection->GetHACountTotal() >= 120)
+		{
+			char aCmd[100];
+			str_format(aCmd, sizeof(aCmd), "ban %i 30 Do not use a Botter-Client!", i);
+			Console()->ExecuteLine(aCmd);
+		}
+	}
+}
+
 void CGameContext::OnTick()
 {
 //#ifdef CONF_RELEASE
@@ -599,6 +618,7 @@ void CGameContext::OnTick()
 	HandleBlockSystem();
 	HandleBroadcasts();
 	HandlePerformanceWarnings();
+	HandleBotPenality();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -1954,6 +1974,39 @@ void CGameContext::ConShutdown(IConsole::IResult *pResult, void *pUser)
 		pThis->m_ShutdownTimer = 0;
 }
 
+void CGameContext::ConShowBots(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	char aBuf[512];
+
+	if (pResult->GetInteger(0) < 0)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			CPlayer *pPlayer = pSelf->m_apPlayers[i];
+			if (pPlayer == NULL) continue;
+
+			CBotProtections *pProtection = pPlayer->BotProtections();
+			str_format(aBuf, sizeof(aBuf), "Bot-Usage for %s: Hook-Assist: %.2f:%i",
+				pSelf->Server()->ClientName(i), pProtection->GetHACountRatio(), pProtection->GetHACountTotal());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		}
+	}
+	else
+	{
+		int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS - 1);
+		CPlayer *pPlayer = pSelf->m_apPlayers[ClientID];
+		if (pPlayer == NULL)
+			return;
+
+		CBotProtections *pProtection = pPlayer->BotProtections();
+		str_format(aBuf, sizeof(aBuf), "Bot-Usage for %s: Hook-Assist: %.2f:%i",
+			pSelf->Server()->ClientName(ClientID), pProtection->GetHACountRatio(), pProtection->GetHACountTotal());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+	}
+}
+
+
 void CGameContext::ConTestEvent(IConsole::IResult *pResult, void *pUser)
 {
 	CGameContext *pThis = (CGameContext *)pUser;
@@ -2087,6 +2140,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("passive_player", "ii", CFGFLAG_SERVER, ConPassivePlayer, this, "Forbids a player to chat");
 	Console()->Register("vip_player", "ii", CFGFLAG_SERVER, ConVIPSet, this, "Sets vip status for a player");
 	Console()->Register("shutdown", "?i?is", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
+	Console()->Register("show_bots", "i", CFGFLAG_SERVER, ConShowBots, this, "Show the analysis of botusage");
 	Console()->Register("test_event", "", CFGFLAG_SERVER, ConTestEvent, this, "Shut down");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);

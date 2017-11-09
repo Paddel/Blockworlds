@@ -36,6 +36,25 @@ void CNetServer::Open(NETSOCKET Socket, CNetBan *pNetBan, int MaxClients, int Ma
 		m_aSlots[i].m_Connection.Init(Socket, true);
 }
 
+int CNetServer::NumPlayersWithIp(const NETADDR *pAddr)
+{
+	NETADDR ThisAddr = *pAddr, OtherAddr;
+	int FoundAddr = 0;
+
+	ThisAddr.port = 0;
+	for (int i = 0; i < MaxClients(); ++i)
+	{
+		if (m_aSlots[i].m_Connection.State() == NET_CONNSTATE_OFFLINE)
+			continue;
+
+		OtherAddr = *m_aSlots[i].m_Connection.PeerAddress();
+		OtherAddr.port = 0;
+		if (!net_addr_comp(&ThisAddr, &OtherAddr))
+			FoundAddr++;
+	}
+	return FoundAddr;
+}
+
 int CNetServer::CalcToken(const NETADDR *pAddr)
 {
 	char aHashIn[512];
@@ -50,28 +69,13 @@ int CNetServer::CalcToken(const NETADDR *pAddr)
 int CNetServer::TryAcceptNewClient(NETSOCKET Socket, NETADDR& Addr, bool Direct)
 {
 	// only allow a specific number of players with the same ip
-	NETADDR ThisAddr = Addr, OtherAddr;
-	int FoundAddr = 1;
 	int Found = -1;
-
-	ThisAddr.port = 0;
-	for (int i = 0; i < MaxClients(); ++i)
+	if (NumPlayersWithIp(&Addr) > m_MaxClientsPerIP)
 	{
-		if (m_aSlots[i].m_Connection.State() == NET_CONNSTATE_OFFLINE)
-			continue;
-
-		OtherAddr = *m_aSlots[i].m_Connection.PeerAddress();
-		OtherAddr.port = 0;
-		if (!net_addr_comp(&ThisAddr, &OtherAddr))
-		{
-			if (FoundAddr++ >= m_MaxClientsPerIP)
-			{
-				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "Only %d players with the same IP are allowed", m_MaxClientsPerIP);
-				CNetBase::SendControlMsg(Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aBuf, str_length(aBuf) + 1);
-				return -1;
-			}
-		}
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "Only %d players with the same IP are allowed", m_MaxClientsPerIP);
+		CNetBase::SendControlMsg(Socket, &Addr, 0, NET_CTRLMSG_CLOSE, aBuf, str_length(aBuf) + 1);
+		return -1;
 	}
 
 	for (int i = 0; i < MaxClients(); i++)
@@ -289,8 +293,11 @@ int CNetServer::Recv(CNetChunk *pChunk, NETSOCKET Socket)
 					// client that wants to connect
 					if (!Found)
 					{
-						if(CheckSpoofing() == false)
+						if (CheckSpoofing() == false || NumPlayersWithIp(&Addr) > 0)
+						{
 							TryAcceptNewClient(Socket, Addr, true);
+							dbg_msg(0, "in");
+						}
 						else
 							SendSpoofCheck(Socket, Addr);
 					}
