@@ -6,7 +6,7 @@
 #include <mastersrv/mastersrv.h>
 #include <game/version.h>
 
-#define PORT 5410
+#define PORT 8303
 
 CNetServer *pNet;
 
@@ -41,8 +41,8 @@ static void SendHeartBeats()
 	Packet.m_pData = &aData;
 
 	/* supply the set port that the master can use if it has problems */
-	aData[sizeof(SERVERBROWSE_HEARTBEAT)] = 0;
-	aData[sizeof(SERVERBROWSE_HEARTBEAT) + 1] = 0;
+	aData[sizeof(SERVERBROWSE_HEARTBEAT)] = PORT >> 8;
+	aData[sizeof(SERVERBROWSE_HEARTBEAT) + 1] = PORT & 0xff;
 
 	for (int i = 0; i < NumMasters; i++)
 	{
@@ -152,6 +152,23 @@ static int Run()
 					mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
 				{
 					SendFWCheckResponse(&p.m_Address);
+				}
+				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWOK) &&
+					mem_comp(p.m_pData, SERVERBROWSE_FWOK, sizeof(SERVERBROWSE_FWOK)) == 0)
+				{
+					static bool RegisterOk = false;
+					if (RegisterOk == false)
+					{
+						dbg_msg("register", "no firewall/nat problems detected");
+						RegisterOk = true;
+					}
+				}
+				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWERROR) &&
+					mem_comp(p.m_pData, SERVERBROWSE_FWERROR, sizeof(SERVERBROWSE_FWERROR)) == 0)
+				{
+					char aBuf[256];
+					str_format(aBuf, sizeof(aBuf), "ERROR: configure your firewall/nat to let through udp on port %d.", PORT);
+					dbg_msg("register", aBuf);
 				}
 			}
 			/*else
