@@ -11,7 +11,7 @@
 #include "database.h"
 
 #define MAX_THREADS 2000
-#define USE_LOCK 0
+#define USE_LOCK 1
 
 static LOCK s_QueryLock = 0x0;
 static int s_ReconnectVal = 0;

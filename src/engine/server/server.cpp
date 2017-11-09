@@ -1243,6 +1243,9 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 	CPacker p;
 	char aBuf[128];
 
+	if (Offset == 0 && m_ConnlessLimiter.AllowInfo(pAddr) == false)
+		return;
+
 	int WantingMaxClients = Info64 ? 64 : 16;
 	int MaxClientsOnMap = min(g_Config.m_SvMaxClientsPerMap, m_NetServer.MaxClients());
 	int MaxClients = min(WantingMaxClients, MaxClientsOnMap);
@@ -1406,7 +1409,6 @@ void CServer::PumpNetwork()
 						mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
 					{
 						SendServerInfo(&Packet.m_Address, ((unsigned char *)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO)], m_lpMaps[i], m_lpMaps[i]->GetSocket(), false);
-						
 					}
 					else if (Packet.m_DataSize == sizeof(SERVERBROWSE_GETINFO64) + 1 &&
 						mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO64, sizeof(SERVERBROWSE_GETINFO64)) == 0)
@@ -1599,6 +1601,7 @@ int CServer::Run()
 
 	m_Performance.Init(m_TickSpeed);
 	m_VpnDetector.Init(this);
+	m_ConnlessLimiter.Init(this);
 
 	while(m_RunServer)
 	{

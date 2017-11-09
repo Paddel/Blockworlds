@@ -13,6 +13,7 @@
 #include <engine/shared/network.h>
 #include <engine/shared/econ.h>
 
+#include "connless_limiter.h"
 #include "performance.h"
 #include "translator.h"
 #include "map.h"
@@ -159,6 +160,7 @@ public:
 	CTranslator m_Translator;
 	CStatisticsPerformance m_Performance;
 	CVpnDetector m_VpnDetector;
+	CConnlessLimiter m_ConnlessLimiter;
 
 	int64 m_GameStartTime;
 	int m_RunServer;

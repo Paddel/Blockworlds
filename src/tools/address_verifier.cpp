@@ -131,7 +131,6 @@ static void CheckNewAddess(NETADDR& Addr)
 
 	str_format(aQuery, sizeof(aQuery), "REPLACE INTO address_verifier(address, date) VALUES('%s', NOW())", aAddrStr);
 	Database.Query(aQuery, 0x0, 0x0);
-	dbg_msg(0, "Queried");
 }
 
 static int Run()
