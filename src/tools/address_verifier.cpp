@@ -19,8 +19,8 @@ const char *pServerName = "unnamed server";
 static const int NumMasters = 4;
 NETADDR aMasterServers[NumMasters] = { { 0,{ 0 },0 } };
 const char *pMasterNames[NumMasters] =
-{ "master1.teeworlds.com", "master2.teeworlds.com",
-"master3.teeworlds.com", "master4.teeworlds.com"};
+{ "master1.teeworlds.com:8300", "master2.teeworlds.com:8300",
+"master3.teeworlds.com:8300", "master4.teeworlds.com:8300"};
 
 const char *PlayerNames[16] = { 0 };
 int PlayerScores[16] = { 0 };
@@ -200,6 +200,8 @@ int main(int argc, char **argv)
 
 	for (int i = 0; i < NumMasters; i++)
 		net_host_lookup(pMasterNames[i], &aMasterServers[i], NETTYPE_ALL);
+
+	dbg_msg(0, "port %i", aMasterServers[0].port);
 
 	pNet = new CNetServer;
 

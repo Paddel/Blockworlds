@@ -1000,6 +1000,7 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 				netaddr_to_sockaddr_in(addr, &sa);
 
 			d = sendto((int)sock.ipv4sock, (const char*)data, size, 0, (struct sockaddr *)&sa, sizeof(sa));
+			dbg_msg(0, "%i %i", d, net_errno());
 		}
 		/*else
 			dbg_msg("net", "can't sent ipv4 traffic to this socket");*/
