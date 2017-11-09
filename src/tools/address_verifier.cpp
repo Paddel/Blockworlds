@@ -1,31 +1,32 @@
 
-
 #include <stdlib.h> //rand
 #include <base/system.h>
 #include <engine/shared/config.h>
 #include <engine/shared/network.h>
 #include <mastersrv/mastersrv.h>
+#include <game/version.h>
+
+#define PORT 5410
 
 CNetServer *pNet;
 
-int Progression = 50;
 int GameType = 0;
-int Flags = 0;
+int Flags = 1;
 
-const char *pVersion = "trunk";
-const char *pMap = "somemap";
+const char *pMap = "dm1";
 const char *pServerName = "unnamed server";
 
-NETADDR aMasterServers[16] = {{0,{0},0}};
+NETADDR aMasterServers[16] = { { 0,{ 0 },0 } };
 int NumMasters = 0;
 
-const char *PlayerNames[16] = {0};
-int PlayerScores[16] = {0};
+const char *PlayerNames[16] = { 0 };
+int PlayerScores[16] = { 0 };
 int NumPlayers = 0;
-int MaxPlayers = 0;
+int MaxPlayers = 16;
 
 char aInfoMsg[1024];
 int aInfoMsgSize;
+NETSOCKET Socket;
 
 static void SendHeartBeats()
 {
@@ -41,18 +42,18 @@ static void SendHeartBeats()
 
 	/* supply the set port that the master can use if it has problems */
 	aData[sizeof(SERVERBROWSE_HEARTBEAT)] = 0;
-	aData[sizeof(SERVERBROWSE_HEARTBEAT)+1] = 0;
+	aData[sizeof(SERVERBROWSE_HEARTBEAT) + 1] = 0;
 
-	for(int i = 0; i < NumMasters; i++)
+	for (int i = 0; i < NumMasters; i++)
 	{
 		Packet.m_Address = aMasterServers[i];
-		pNet->Send(&Packet);
+		pNet->SendConnless(&Packet, Socket);
 	}
 }
 
 static void WriteStr(const char *pStr)
 {
-	int l = str_length(pStr)+1;
+	int l = str_length(pStr) + 1;
 	mem_copy(&aInfoMsg[aInfoMsgSize], pStr, l);
 	aInfoMsgSize += l;
 }
@@ -64,22 +65,28 @@ static void WriteInt(int i)
 	WriteStr(aBuf);
 }
 
-static void BuildInfoMsg()
+static void BuildInfoMsg(int Token)
 {
+	char aBuf[32];
+	mem_zero(&aInfoMsg, sizeof(aInfoMsg));
+	aInfoMsgSize = 0;
+
 	aInfoMsgSize = sizeof(SERVERBROWSE_INFO);
 	mem_copy(aInfoMsg, SERVERBROWSE_INFO, aInfoMsgSize);
-	WriteInt(-1);
+	str_format(aBuf, sizeof(aBuf), "%d", Token); WriteStr(aBuf);
 
-	WriteStr(pVersion);
+	WriteStr(GAME_VERSION);
 	WriteStr(pServerName);
 	WriteStr(pMap);
 	WriteInt(GameType);
-	WriteInt(Flags);
-	WriteInt(Progression);
-	WriteInt(NumPlayers);
-	WriteInt(MaxPlayers);
+	str_format(aBuf, sizeof(aBuf), "%d", Flags); WriteStr(aBuf);
 
-	for(int i = 0; i < NumPlayers; i++)
+	str_format(aBuf, sizeof(aBuf), "%d", NumPlayers); WriteStr(aBuf); // num players
+	str_format(aBuf, sizeof(aBuf), "%d", MaxPlayers); WriteStr(aBuf); // max players
+	str_format(aBuf, sizeof(aBuf), "%d", NumPlayers); WriteStr(aBuf); // num clients
+	str_format(aBuf, sizeof(aBuf), "%d", MaxPlayers); WriteStr(aBuf); // max clients
+
+	for (int i = 0; i < NumPlayers; i++)
 	{
 		WriteStr(PlayerNames[i]);
 		WriteInt(PlayerScores[i]);
@@ -94,7 +101,7 @@ static void SendServerInfo(NETADDR *pAddr)
 	p.m_Flags = NETSENDFLAG_CONNLESS;
 	p.m_DataSize = aInfoMsgSize;
 	p.m_pData = aInfoMsg;
-	pNet->Send(&p);
+	pNet->SendConnless(&p, Socket);
 }
 
 static void SendFWCheckResponse(NETADDR *pAddr)
@@ -105,111 +112,120 @@ static void SendFWCheckResponse(NETADDR *pAddr)
 	p.m_Flags = NETSENDFLAG_CONNLESS;
 	p.m_DataSize = sizeof(SERVERBROWSE_FWRESPONSE);
 	p.m_pData = SERVERBROWSE_FWRESPONSE;
-	pNet->Send(&p);
+	pNet->SendConnless(&p, Socket);
 }
 
 static int Run()
 {
 	int64 NextHeartBeat = 0;
-	NETADDR BindAddr = {NETTYPE_IPV4, {0},0};
-	NETSOCKET Socket;
+	NETADDR BindAddr;
+	mem_zero(&BindAddr, sizeof(BindAddr));
+	BindAddr.type = NETTYPE_ALL;
+	BindAddr.port = PORT;
 	mem_zero(&Socket, sizeof(Socket));
 
 	Socket = net_udp_create(BindAddr, 0);
 	if (!Socket.type)
+	{
+		//str_format(aBuf, sizeof(aBuf), "couldn't open socket. port %d might already be in use", Port);
+		dbg_msg("server", "Could not open socket");
 		return 0;
+	}
 
 	pNet->Open(Socket, 0, 0, 0, 0);
 
-	while(1)
+	while (1)
 	{
 		CNetChunk p;
 		pNet->Update();
-		while(pNet->Recv(&p, Socket))
+		while (pNet->Recv(&p, Socket))
 		{
-			if(p.m_ClientID == -1)
+			if (p.m_ClientID == -1)
 			{
-				if(p.m_DataSize == sizeof(SERVERBROWSE_GETINFO) + 1 &&
+				if (p.m_DataSize == sizeof(SERVERBROWSE_GETINFO) + 1 &&
 					mem_comp(p.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
 				{
+					BuildInfoMsg(((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
 					SendServerInfo(&p.m_Address);
 				}
-				else if(p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
+				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
 					mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
 				{
 					SendFWCheckResponse(&p.m_Address);
 				}
 			}
+			/*else
+			{
+				const char FullMsg[] = "This server is full";
+				CNetBase::SendControlMsg(Socket, &p.m_Address, 0, NET_CTRLMSG_CLOSE, FullMsg, sizeof(FullMsg));
+			}*/
 		}
 
 		/* send heartbeats if needed */
-		if(NextHeartBeat < time_get())
+		if (NextHeartBeat < time_get())
 		{
-			NextHeartBeat = time_get()+time_freq()*(15+(rand()%15));
+			NextHeartBeat = time_get() + time_freq()*(15 + (rand() % 15));
 			SendHeartBeats();
 		}
 
-		thread_sleep(100);
+		thread_sleep(10);
 	}
 }
 
 int main(int argc, char **argv)
 {
+	net_init();
+	dbg_logger_stdout();
+
 	pNet = new CNetServer;
 
-	while(argc)
+	while (argc)
 	{
 		// ?
 		/*if(str_comp(*argv, "-m") == 0)
 		{
-			argc--; argv++;
-			net_host_lookup(*argv, &aMasterServers[NumMasters], NETTYPE_IPV4);
-			argc--; argv++;
-			aMasterServers[NumMasters].port = str_toint(*argv);
-			NumMasters++;
+		argc--; argv++;
+		net_host_lookup(*argv, &aMasterServers[NumMasters], NETTYPE_IPV4);
+		argc--; argv++;
+		aMasterServers[NumMasters].port = str_toint(*argv);
+		NumMasters++;
 		}
-		else */if(str_comp(*argv, "-p") == 0)
+		else */if (str_comp(*argv, "-p") == 0)
 		{
 			argc--; argv++;
 			PlayerNames[NumPlayers++] = *argv;
 			argc--; argv++;
 			PlayerScores[NumPlayers] = str_toint(*argv);
 		}
-		else if(str_comp(*argv, "-a") == 0)
+		else if (str_comp(*argv, "-a") == 0)
 		{
 			argc--; argv++;
 			pMap = *argv;
 		}
-		else if(str_comp(*argv, "-x") == 0)
+		else if (str_comp(*argv, "-x") == 0)
 		{
 			argc--; argv++;
 			MaxPlayers = str_toint(*argv);
 		}
-		else if(str_comp(*argv, "-t") == 0)
+		else if (str_comp(*argv, "-t") == 0)
 		{
 			argc--; argv++;
 			GameType = str_toint(*argv);
 		}
-		else if(str_comp(*argv, "-g") == 0)
-		{
-			argc--; argv++;
-			Progression = str_toint(*argv);
-		}
-		else if(str_comp(*argv, "-f") == 0)
+		else if (str_comp(*argv, "-f") == 0)
 		{
 			argc--; argv++;
 			Flags = str_toint(*argv);
 		}
-		else if(str_comp(*argv, "-n") == 0)
+		else if (str_comp(*argv, "-n") == 0)
 		{
 			argc--; argv++;
 			pServerName = *argv;
 		}
 
-		argc--; argv++;
+	argc--; argv++;
 	}
 
-	BuildInfoMsg();
 	int RunReturn = Run();
 
 	delete pNet;
