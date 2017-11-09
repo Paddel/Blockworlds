@@ -4,7 +4,7 @@
 #include <base/system.h>
 
 #include <engine/kernel.h>
-#include <engine/map.h>
+#include <engine/mapengine.h>
 #include <engine/storage.h>
 
 

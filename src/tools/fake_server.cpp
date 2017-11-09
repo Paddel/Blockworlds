@@ -112,15 +112,24 @@ static int Run()
 {
 	int64 NextHeartBeat = 0;
 	NETADDR BindAddr = {NETTYPE_IPV4, {0},0};
+	NETSOCKET Socket;
+	mem_zero(&Socket, sizeof(Socket));
 
-	if(!pNet->Open(BindAddr, 0, 0, 0, 0))
+	Socket = net_udp_create(BindAddr, 0);
+	if (!Socket.type)
+	{
+		//str_format(aBuf, sizeof(aBuf), "couldn't open socket. port %d might already be in use", Port);
+		dbg_msg("server", "Could not open socket");
 		return 0;
+	}
+
+	pNet->Open(Socket, 0, 0, 0, 0);
 
 	while(1)
 	{
 		CNetChunk p;
 		pNet->Update();
-		while(pNet->Recv(&p))
+		while(pNet->Recv(&p, Socket))
 		{
 			if(p.m_ClientID == -1)
 			{
