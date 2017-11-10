@@ -180,7 +180,7 @@ static int Run()
 						static const int s_TotalSize = sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr) + 1;
 						unsigned char *aData = new unsigned char[s_TotalSize];
 						CNetChunk Packet;
-						mem_zero(aData, s_TotalSize)
+						mem_zero(aData, s_TotalSize);
 
 						mem_copy(aData, EXINFO_INFO, sizeof(EXINFO_INFO));
 						mem_copy(aData + sizeof(EXINFO_INFO), &((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)], sizeof(int));
