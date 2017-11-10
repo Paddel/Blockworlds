@@ -1418,11 +1418,8 @@ void CServer::PumpNetwork()
 					else if (Packet.m_DataSize > sizeof(EXINFO_INFO) &&
 						mem_comp(Packet.m_pData, EXINFO_INFO, sizeof(EXINFO_INFO)) == 0)
 					{
-						dbg_msg(0, "in");
 						m_ConnlessLimiter.OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
 					}
-					else
-						dbg_msg(0, "unknown %s", Packet.m_pData);
 				}
 			}
 			else
