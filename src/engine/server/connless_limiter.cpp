@@ -123,7 +123,7 @@ void CConnlessLimiter::Tick()
 				OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
 			}
 			else
-				dbg_msg(0, "unknown");
+				dbg_msg(0, "unknown %s", Packet.m_pData);
 		}
 
 	}
