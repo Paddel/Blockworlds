@@ -1,5 +1,6 @@
 
 #include <engine/server/performance.h>
+#include <engine/server/connless_limiter.h>
 #include <engine/shared/external_defines.h>
 #include <engine/shared/config.h>
 #include <game/version.h>
@@ -533,6 +534,16 @@ void CChatCommandsHandler::ComPerformance(CConsole::CResult *pResult, CGameConte
 #endif
 }
 
+void CChatCommandsHandler::ComPerformanceInfo(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
+{
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "Connless Limiter [%s]: %i/s unfiltered, %i/s filtered",
+		pGameServer->Server()->ConnlesLimiter()->FilterActive() ? "active" : "idle",
+		pGameServer->Server()->ConnlesLimiter()->LastUnfilteredResult(),
+		pGameServer->Server()->ConnlesLimiter()->LastFilteredResult());
+
+	pGameServer->SendChatTarget(ClientID, aBuf);
+}
 
 void CChatCommandsHandler::ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID)
 {
@@ -943,6 +954,7 @@ void CChatCommandsHandler::Init()
 
 	Register("tele", "", CHATCMDFLAG_ADMIN | CHATCMDFLAG_SPAMABLE, ComTele, "Teleports you to your cursor");
 	Register("perf", "", CHATCMDFLAG_ADMIN, ComPerformance, "Sends you performance infos");
+	Register("perf_info", "", CHATCMDFLAG_ADMIN, ComPerformanceInfo, "Sends you performance infos");
 
 	Register("cmdlist", "", CHATCMDFLAG_HIDDEN, ComCmdlist, "Sends you a list of all available chatcommands");
 	Register("timeout", "", CHATCMDFLAG_HIDDEN, 0x0, "Timoutprotection not implemented");

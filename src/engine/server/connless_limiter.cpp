@@ -22,6 +22,9 @@ CConnlessLimiter::CConnlessLimiter()
 	m_InquiriesPerSecond = 0;
 	m_LastMesurement = 0;
 	m_FloodDetectionTime = 0;
+	m_LastUnfilteredResult = 0;
+	m_LastFilteredResult = 0;
+	m_FilteredInquiries = 0;
 }
 
 void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUserData)
@@ -33,8 +36,11 @@ void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUser
 	CResultData *pResultData = (CResultData *)pUserData;
 
 	if (pQueryResult->m_lpResultRows.size() == 1)
+	{
 		pResultData->m_pThis->m_pServer->SendServerInfo(&pResultData->m_Addr, pResultData->m_Token,
 			pResultData->m_pMap, pResultData->m_Socket, pResultData->m_Info64, pResultData->m_Offsets, true);
+		pResultData->m_pThis->m_FilteredInquiries += 1 + (int)pResultData->m_Info64;
+	}
 
 	delete pResultData;
 }
@@ -49,6 +55,19 @@ void CConnlessLimiter::Init(class CServer *pServer)
 void CConnlessLimiter::Tick()
 {
 	m_Database.Tick();
+
+	if (m_LastMesurement < time_get())
+	{
+		m_LastUnfilteredResult = m_InquiriesPerSecond;
+		m_LastFilteredResult = m_FilteredInquiries;
+
+		if (m_InquiriesPerSecond >= FLOODING_NUM)
+			m_FloodDetectionTime = time_get() + time_freq() * 3;
+
+		m_InquiriesPerSecond = 0;
+		m_FilteredInquiries = 0;
+		m_LastMesurement = time_get() + time_freq();
+	}
 }
 
 bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offsets)
@@ -57,16 +76,8 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 
 	m_InquiriesPerSecond += 1 + (int)Info64;
-	if (m_LastMesurement < time_get())
-	{
-		if (m_InquiriesPerSecond >= FLOODING_NUM)
-			m_FloodDetectionTime = time_get() + time_freq() * 3;
 
-		m_InquiriesPerSecond = 0;
-		m_LastMesurement = time_get() + time_freq();
-	}
-
-	if (m_FloodDetectionTime < time_get())
+	if (FilterActive() == false)
 		return true;
 
 	net_addr_str(pAddr, aAddrStr, sizeof(aAddrStr), false);
@@ -83,4 +94,9 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 
 	m_Database.Query(aQuery, ResultAddrCheck, pResultData);
 	return false;
+}
+
+bool CConnlessLimiter::FilterActive()
+{
+	return m_FloodDetectionTime > time_get();
 }

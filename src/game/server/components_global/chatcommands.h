@@ -51,6 +51,7 @@ private:
 	static void ComGetCID(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComTele(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComPerformance(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
+	static void ComPerformanceInfo(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogin(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComLogout(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);
 	static void ComRegister(CConsole::CResult *pResult, CGameContext *pGameServer, int ClientID);

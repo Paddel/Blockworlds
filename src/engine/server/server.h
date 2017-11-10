@@ -288,6 +288,7 @@ public:
 	virtual int Translate(int For, int ClientID) { return m_Translator.Translate(For, ClientID); };
 	virtual int ReverseTranslate(int For, int ClientID) { return m_Translator.ReverseTranslate(For, ClientID); };
 	virtual CStatisticsPerformance *StatisticsPerformance() { return &m_Performance; }
+	virtual CConnlessLimiter *ConnlesLimiter() { return &m_ConnlessLimiter; }
 };
 
 #endif

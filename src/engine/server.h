@@ -214,7 +214,8 @@ public:
 
 	virtual int Translate(int For, int ClientID) = 0;
 	virtual int ReverseTranslate(int For, int ClientID) = 0;
-	virtual class  CStatisticsPerformance *StatisticsPerformance() = 0;
+	virtual class CStatisticsPerformance *StatisticsPerformance() = 0;
+	virtual class CConnlessLimiter *ConnlesLimiter() = 0;
 };
 
 class IGameServer : public IInterface

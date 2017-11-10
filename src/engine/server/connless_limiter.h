@@ -9,8 +9,10 @@ private:
 	class CServer *m_pServer;
 	int m_InquiriesPerSecond;
 	int64 m_LastMesurement;
-
 	int64 m_FloodDetectionTime;
+	int m_LastUnfilteredResult;
+	int m_LastFilteredResult;
+	int m_FilteredInquiries;
 
 	static void ResultAddrCheck(void *pQueryData, bool Error, void *pUserData);
 
@@ -20,4 +22,8 @@ public:
 	void Tick();
 
 	bool AllowInfo(const NETADDR *pAddr, int Token, class CMap *pMap, NETSOCKET Socket, bool Info64, int Offset);
+	bool FilterActive();
+
+	int LastUnfilteredResult() const { return m_LastUnfilteredResult; }
+	int LastFilteredResult() const { return m_LastFilteredResult; }
 };
