@@ -168,9 +168,9 @@ static int Run()
 				if (p.m_DataSize == sizeof(SERVERBROWSE_GETINFO) + 1 &&
 					mem_comp(p.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
 				{
-					BuildInfoMsg(((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
-					SendServerInfo(&p.m_Address);
-					CheckNewAddess(p.m_Address);
+					//BuildInfoMsg(((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
+					//SendServerInfo(&p.m_Address);
+					//CheckNewAddess(p.m_Address);
 
 					if (ExternalInfoActive == true)
 					{
