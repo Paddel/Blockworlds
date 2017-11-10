@@ -36,8 +36,6 @@ void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUser
 		pResultData->m_pThis->m_pServer->SendServerInfo(&pResultData->m_Addr, pResultData->m_Token,
 			pResultData->m_pMap, pResultData->m_Socket, pResultData->m_Info64, pResultData->m_Offsets, true);
 
-	dbg_msg(0, "a %i", pQueryResult->m_lpResultRows.size() == 1);
-
 	delete pResultData;
 }
 

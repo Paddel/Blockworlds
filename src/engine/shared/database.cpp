@@ -112,7 +112,7 @@ void CDatabase::QueryThreadFunction(void *pData)
 
 	if(USE_LOCK)
 		lock_wait(s_QueryLock);
-	ExecuteQuery(pThreadData);
+	//ExecuteQuery(pThreadData);
 	if(USE_LOCK)
 		lock_unlock(s_QueryLock);
 }
@@ -196,15 +196,15 @@ void CDatabase::Tick()
 
 	for (int i = 0; i < m_ThreadData.size(); i++)
 	{
-		CQueryData *pData = m_ThreadData[i];
+		CQueryData *pData = m_ThreadData[i]; 
 		if (pData->m_Working == true)
 			continue;
 
 		if (pData->m_fResultCallback)
 			pData->m_fResultCallback(pData, pData->m_Error, pData->m_pUserData);
 
-		thread_detach(m_ThreadData[i]->m_pThread);
-		DeleteThreadData(m_ThreadData[i]);
+		thread_detach(pData->m_pThread);
+		DeleteThreadData(pData);
 		m_ThreadData.remove_index(i);
 		i--;
 	}
