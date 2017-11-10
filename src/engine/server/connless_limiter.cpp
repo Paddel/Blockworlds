@@ -183,5 +183,6 @@ bool CConnlessLimiter::FilterActive()
 
 bool CConnlessLimiter::ExternInfoActive()
 {
-	return m_ExternInfoTime > time_get();
+	return false;
+	//return m_ExternInfoTime > time_get();
 }
