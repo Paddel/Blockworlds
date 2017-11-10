@@ -24,8 +24,6 @@ struct CResultData
 
 CConnlessLimiter::CConnlessLimiter()
 {
-	//m_pNetServer = new CNetServer();
-
 	m_InquiriesPerSecond = 0;
 	m_LastMesurement = 0;
 	m_FloodDetectionTime = 0;
@@ -72,8 +70,6 @@ void CConnlessLimiter::Init(class CServer *pServer)
 		str_format(aBuf, sizeof(aBuf), "couldn't open socket. port %d might already be in use", PORT);
 		m_pServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	}
-	//else
-		//m_pNetServer->Open(m_Socket, 0, 0, 0, 0);
 
 	m_Database.Init(g_Config.m_SvDbAccAddress, g_Config.m_SvDbAccName, g_Config.m_SvDbAccPassword, g_Config.m_SvDbAccSchema);
 }
@@ -116,13 +112,18 @@ void CConnlessLimiter::Tick()
 		m_ExternInfoTime = time_get() + time_freq() * 10;
 	}
 
-	CNetChunk p;
-	//m_pNetServer->Update();
-	while (m_pServer->m_NetServer.Recv(&p, m_Socket))
+	CNetChunk Packet;
+	while (m_pServer->m_NetServer.Recv(&Packet, m_Socket))
 	{
-		dbg_msg(0, "recv");
-		if (p.m_ClientID == -1)
+		if (Packet.m_ClientID == -1)
 		{
+			if (Packet.m_DataSize > sizeof(EXINFO_INFO) &&
+				mem_comp(Packet.m_pData, EXINFO_INFO, sizeof(EXINFO_INFO)) == 0)
+			{
+				OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
+			}
+			else
+				dbg_msg(0, "unknown");
 		}
 
 	}

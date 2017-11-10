@@ -25,7 +25,6 @@ private:
 	NETADDR m_ExternalAddr;
 	NETSOCKET m_Socket;
 	unsigned char m_aExRecvBuffer[128];
-	class CNetServer *m_pNetServer;
 
 	static void ResultAddrCheck(void *pQueryData, bool Error, void *pUserData);
 
