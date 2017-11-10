@@ -24,6 +24,8 @@ struct CResultData
 
 CConnlessLimiter::CConnlessLimiter()
 {
+	m_pNetServer = new CNetServer();
+
 	m_InquiriesPerSecond = 0;
 	m_LastMesurement = 0;
 	m_FloodDetectionTime = 0;
@@ -70,6 +72,8 @@ void CConnlessLimiter::Init(class CServer *pServer)
 		str_format(aBuf, sizeof(aBuf), "couldn't open socket. port %d might already be in use", PORT);
 		m_pServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	}
+	else
+		m_pNetServer->Open(m_Socket, 0, 0, 0, 0);
 
 	m_Database.Init(g_Config.m_SvDbAccAddress, g_Config.m_SvDbAccName, g_Config.m_SvDbAccPassword, g_Config.m_SvDbAccSchema);
 }
@@ -114,18 +118,16 @@ void CConnlessLimiter::Tick()
 
 	while (1)
 	{
-		NETADDR Addr;
-		int Bytes = net_udp_recv(m_Socket, &Addr, m_aExRecvBuffer, sizeof(m_aExRecvBuffer));
+		CNetChunk p;
+		m_pNetServer->Update();
+		while (m_pNetServer->Recv(&p, m_Socket))
+		{
+			dbg_msg(0, "in");
+			if (p.m_ClientID == -1)
+			{
+			}
 
-		dbg_msg(0, "abc %i %i", Bytes, net_errno);
-
-		// no more packets for now
-		if (Bytes <= 0)
-			break;
-
-		m_aExRecvBuffer[Bytes + 1] = 0;
-
-		dbg_msg("recv", "%s", m_aExRecvBuffer);
+		}
 	}
 }
 
