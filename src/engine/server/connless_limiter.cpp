@@ -116,18 +116,15 @@ void CConnlessLimiter::Tick()
 		m_ExternInfoTime = time_get() + time_freq() * 10;
 	}
 
-	while (1)
+	CNetChunk p;
+	m_pNetServer->Update();
+	while (m_pNetServer->Recv(&p, m_Socket))
 	{
-		CNetChunk p;
-		m_pNetServer->Update();
-		while (m_pNetServer->Recv(&p, m_Socket))
+		dbg_msg(0, "in");
+		if (p.m_ClientID == -1)
 		{
-			dbg_msg(0, "in");
-			if (p.m_ClientID == -1)
-			{
-			}
-
 		}
+
 	}
 }
 
