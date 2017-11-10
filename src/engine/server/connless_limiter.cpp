@@ -5,6 +5,7 @@
 #include "connless_limiter.h"
 
 #define FLOODING_NUM 80
+#define MAX_QUERYING 700
 
 struct CResultData
 {
@@ -79,6 +80,9 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 
 	if (FilterActive() == false)
 		return true;
+
+	if (m_InquiriesPerSecond >= MAX_QUERYING)
+		return false;
 
 	net_addr_str(pAddr, aAddrStr, sizeof(aAddrStr), false);
 	str_format(aQuery, sizeof(aQuery), "SELECT address FROM address_verifier WHERE address='%s'", aAddrStr);
