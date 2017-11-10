@@ -95,7 +95,7 @@ void CConnlessLimiter::Tick()
 	}
 
 	static bool s_LastExternInfoActive = false;
-	if (s_LastExternInfoActive != ExternInfoActive() || m_ExternInfoTime < time_get())
+	if (s_LastExternInfoActive != ExternInfoActive() || m_LastExtInfoSent < time_get())
 	{
 		CNetChunk Packet;
 		Packet.m_ClientID = -1;
@@ -109,7 +109,7 @@ void CConnlessLimiter::Tick()
 		Packet.m_Address = m_ExternalAddr;
 		m_pServer->m_NetServer.SendConnless(&Packet, m_Socket);
 
-		m_ExternInfoTime = time_get() + time_freq() * 10;
+		m_LastExtInfoSent = time_get() + time_freq() * 10;
 	}
 
 	CNetChunk Packet;
@@ -167,7 +167,7 @@ void CConnlessLimiter::OnExternalInfo(const void *pData, int DataSize)
 
 	net_addr_from_str(&Addr, aAddrStr);
 
-	dbg_msg(0, "ext info to %s", aAddrStr);
+	dbg_msg(0, "ext info to %s %i.%i.%i.%i:%i", aAddrStr, Addr.ip[0], Addr.ip[1], Addr.ip[2], Addr.ip[3], Addr.port);
 
 	for (int i = 0; i < m_pServer->m_lpMaps.size(); i++)
 	{
