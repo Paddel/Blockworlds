@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <stdlib.h> //rand
 #include <base/system.h>
 #include <engine/shared/config.h>
@@ -191,7 +192,11 @@ static int Run()
 						Packet.m_Address = ExternalAddr;
 						pNet->SendConnless(&Packet, Socket);
 
-						dbg_msg(0, "%s", aData);
+						const char *pData = (const char *)Packet.m_pData;
+						for (int i = 0; i < Packet.m_DataSize; i++)
+							std::cout << pData[i];
+						std::cout << std::endl;
+						
 						delete aData;
 					}
 				}

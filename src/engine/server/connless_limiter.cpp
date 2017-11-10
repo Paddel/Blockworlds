@@ -1,4 +1,6 @@
 
+#include <iostream>
+
 #include <engine/shared/config.h>
 #include <engine/server/server.h>
 
@@ -123,7 +125,13 @@ void CConnlessLimiter::Tick()
 				OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
 			}
 			else
-				dbg_msg(0, "unknown %s", Packet.m_pData);
+			{
+				//dbg_msg(0, "unknown %s", Packet.m_pData);
+				const char *pData = (const char *)Packet.m_pData;
+				for (int i = 0; i < Packet.m_DataSize; i++)
+					std::cout << pData[i];
+				std::cout << std::endl;
+			}
 		}
 
 	}
