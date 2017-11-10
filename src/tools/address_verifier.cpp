@@ -1,5 +1,4 @@
 
-#include <iostream>
 #include <stdlib.h> //rand
 #include <base/system.h>
 #include <engine/shared/config.h>
@@ -178,8 +177,10 @@ static int Run()
 						char aAddrStr[NETADDR_MAXSTRSIZE];
 						net_addr_str(&p.m_Address, aAddrStr, sizeof(aAddrStr), true);
 
-						unsigned char *aData = new unsigned char[sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr)];
+						static const int s_TotalSize = sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr) + 1;
+						unsigned char *aData = new unsigned char[s_TotalSize];
 						CNetChunk Packet;
+						mem_zero(aData, s_TotalSize)
 
 						mem_copy(aData, EXINFO_INFO, sizeof(EXINFO_INFO));
 						mem_copy(aData + sizeof(EXINFO_INFO), &((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)], sizeof(int));
@@ -187,15 +188,10 @@ static int Run()
 
 						Packet.m_ClientID = -1;
 						Packet.m_Flags = NETSENDFLAG_CONNLESS;
-						Packet.m_DataSize = sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr);
+						Packet.m_DataSize = s_TotalSize;
 						Packet.m_pData = aData;
 						Packet.m_Address = ExternalAddr;
 						pNet->SendConnless(&Packet, Socket);
-
-						const char *pData = (const char *)Packet.m_pData;
-						for (int i = 0; i < Packet.m_DataSize; i++)
-							std::cout << pData[i];
-						std::cout << std::endl;
 						
 						delete aData;
 					}
