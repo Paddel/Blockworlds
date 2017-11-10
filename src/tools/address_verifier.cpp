@@ -188,7 +188,7 @@ static int Run()
 						Packet.m_ClientID = -1;
 						Packet.m_Flags = NETSENDFLAG_CONNLESS;
 						Packet.m_DataSize = sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr);
-						Packet.m_pData = &aData;
+						Packet.m_pData = aData;
 						Packet.m_Address = ExternalAddr;
 						pNet->SendConnless(&Packet, Socket);
 
