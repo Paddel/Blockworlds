@@ -120,7 +120,8 @@ void CConnlessLimiter::Tick()
 			if (Packet.m_DataSize > sizeof(EXINFO_INFO) &&
 				mem_comp(Packet.m_pData, EXINFO_INFO, sizeof(EXINFO_INFO)) == 0)
 			{
-				OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
+				if(ExternInfoActive() == true)
+					OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
 			}
 		}
 
@@ -160,9 +161,19 @@ void CConnlessLimiter::OnExternalInfo(const void *pData, int DataSize)
 {
 	int Token;
 	char aAddrStr[NETADDR_MAXSTRSIZE];
+	NETADDR Addr;
 	mem_copy(&Token, (const char*)pData + sizeof(EXINFO_INFO), sizeof(int));
 	mem_copy(&aAddrStr, (const char*)pData + sizeof(EXINFO_INFO) + sizeof(int), DataSize - sizeof(EXINFO_INFO) + sizeof(int));
-	dbg_msg("extdbg", "%i %s", Token, aAddrStr);
+
+	net_addr_from_str(&Addr, aAddrStr);
+
+	dbg_msg(0, "ext info to %s", aAddrStr);
+
+	for (int i = 0; i < m_pServer->m_lpMaps.size(); i++)
+	{
+		if(m_pServer->m_lpMaps[i]->HasNetSocket() == true)
+			m_pServer->SendServerInfo(&Addr, Token, m_pServer->m_lpMaps[i], m_pServer->m_lpMaps[i]->GetSocket(), false, 0, true);
+	}
 }
 
 bool CConnlessLimiter::FilterActive()
