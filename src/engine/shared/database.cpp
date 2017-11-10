@@ -109,6 +109,7 @@ void CDatabase::ExecuteQuery(void *pData)
 void CDatabase::QueryThreadFunction(void *pData)
 {
 	CQueryData *pThreadData = (CQueryData *)pData;
+	pThreadData->m_Working = false;
 
 	if(USE_LOCK)
 		lock_wait(s_QueryLock);
