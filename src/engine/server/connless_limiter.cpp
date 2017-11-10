@@ -1,13 +1,20 @@
 
 #include <engine/shared/config.h>
+#include <engine/server/server.h>
 
 #include "connless_limiter.h"
 
-#define FLOODING_NUM 65
+#define FLOODING_NUM 80
 
 struct CResultData
 {
-	bool m_Passed;
+	CConnlessLimiter *m_pThis;
+	NETADDR m_Addr;
+	int m_Token;
+	CMap *m_pMap;
+	NETSOCKET m_Socket;
+	bool m_Info64;
+	int m_Offsets;
 };
 
 CConnlessLimiter::CConnlessLimiter()
@@ -20,12 +27,19 @@ CConnlessLimiter::CConnlessLimiter()
 void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUserData)
 {
 	if (Error == true)
+	{
+		dbg_msg(0, "error");
 		return;
+	}
 
 	CDatabase::CQueryData *pQueryResult = (CDatabase::CQueryData *)pQueryData;
 	CResultData *pResultData = (CResultData *)pUserData;
 
-	pResultData->m_Passed = pQueryResult->m_lpResultRows.size() == 1;
+	if (pQueryResult->m_lpResultRows.size() == 1)
+		pResultData->m_pThis->m_pServer->SendServerInfo(&pResultData->m_Addr, pResultData->m_Token,
+			pResultData->m_pMap, pResultData->m_Socket, pResultData->m_Info64, pResultData->m_Offsets, true);
+
+	delete pResultData;
 }
 
 void CConnlessLimiter::Init(class CServer *pServer)
@@ -35,7 +49,12 @@ void CConnlessLimiter::Init(class CServer *pServer)
 	m_Database.Init(g_Config.m_SvDbAccAddress, g_Config.m_SvDbAccName, g_Config.m_SvDbAccPassword, g_Config.m_SvDbAccSchema);
 }
 
-bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr)
+void CConnlessLimiter::Tick()
+{
+	m_Database.Tick();
+}
+
+bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offsets)
 {
 	char aQuery[QUERY_MAX_STR_LEN];
 	char aAddrStr[NETADDR_MAXSTRSIZE];
@@ -45,6 +64,8 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr)
 	{
 		if (m_InquiriesPerSecond >= FLOODING_NUM)
 			m_FloodDetectionTime = time_get() + time_freq() * 3;
+
+		dbg_msg(0, "%i", m_InquiriesPerSecond);
 
 		m_InquiriesPerSecond = 0;
 		m_LastMesurement = time_get() + time_freq();
@@ -57,10 +78,14 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr)
 	str_format(aQuery, sizeof(aQuery), "SELECT address FROM address_verifier WHERE address='%s'", aAddrStr);
 
 	CResultData *pResultData = new CResultData();
-	pResultData->m_Passed = false;
+	pResultData->m_pThis = this;
+	pResultData->m_Addr = *pAddr;
+	pResultData->m_Token = Token;
+	pResultData->m_pMap = pMap;
+	pResultData->m_Socket = Socket;
+	pResultData->m_Info64 = Info64;
+	pResultData->m_Offsets = Offsets;
 
-	//m_Database.QueryOrderly(aQuery, ResultAddrCheck, pResultData);
-	bool Result = pResultData->m_Passed;
-	delete pResultData;
-	return Result;
+	m_Database.Query(aQuery, ResultAddrCheck, pResultData);
+	return false;
 }

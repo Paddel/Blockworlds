@@ -1237,13 +1237,13 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	}
 }
 
-void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offset)
+void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offset, bool Force)
 {
 	CNetChunk Packet;
 	CPacker p;
 	char aBuf[128];
 
-	if (Offset == 0 && m_ConnlessLimiter.AllowInfo(pAddr) == false)
+	if (Force == false && m_ConnlessLimiter.AllowInfo(pAddr, Token, pMap, Socket, Info64, Offset) == false)
 		return;
 
 	int WantingMaxClients = Info64 ? 64 : 16;
@@ -1370,7 +1370,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOC
 	m_NetServer.SendConnless(&Packet, Socket);
 
 	if (Info64 && Take < 0)
-		SendServerInfo(pAddr, Token, pMap, Socket, true, Offset + ClientsPerPacket);
+		SendServerInfo(pAddr, Token, pMap, Socket, true, Offset + ClientsPerPacket, true);
 }
 
 void CServer::UpdateServerInfo()
@@ -1616,6 +1616,7 @@ int CServer::Run()
 			NewTicks++;
 
 			m_Translator.Tick();
+			m_ConnlessLimiter.Tick();
 			HandleMutes();
 			HandleVpnDetector();
 

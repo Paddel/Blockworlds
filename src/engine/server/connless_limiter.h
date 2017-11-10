@@ -17,6 +17,7 @@ private:
 public:
 	CConnlessLimiter();
 	void Init(class CServer *pServer);
+	void Tick();
 
-	bool AllowInfo(const NETADDR *pAddr);
+	bool AllowInfo(const NETADDR *pAddr, int Token, class CMap *pMap, NETSOCKET Socket, bool Info64, int Offset);
 };
