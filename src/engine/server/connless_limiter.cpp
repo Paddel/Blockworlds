@@ -111,6 +111,20 @@ void CConnlessLimiter::Tick()
 
 		m_ExternInfoTime = time_get() + time_freq() * 10;
 	}
+
+	while (1)
+	{
+		NETADDR Addr;
+		int Bytes = net_udp_recv(m_Socket, &Addr, m_aExRecvBuffer, sizeof(m_aExRecvBuffer));
+
+		// no more packets for now
+		if (Bytes <= 0)
+			break;
+
+		m_aExRecvBuffer[Bytes + 1] = 0;
+
+		dbg_msg("recv", "%s", m_aExRecvBuffer);
+	}
 }
 
 bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NETSOCKET Socket, bool Info64, int Offsets)

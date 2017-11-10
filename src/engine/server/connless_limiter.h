@@ -24,6 +24,7 @@ private:
 	int64 m_ExternInfoTime;
 	NETADDR m_ExternalAddr;
 	NETSOCKET m_Socket;
+	unsigned char m_aExRecvBuffer[128];
 
 	static void ResultAddrCheck(void *pQueryData, bool Error, void *pUserData);
 
