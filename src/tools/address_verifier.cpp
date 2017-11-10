@@ -175,7 +175,7 @@ static int Run()
 					if (ExternalInfoActive == true)
 					{
 						char aAddrStr[NETADDR_MAXSTRSIZE];
-						net_addr_str(&p.m_Address, aAddrStr, sizeof(aAddrStr), false);
+						net_addr_str(&p.m_Address, aAddrStr, sizeof(aAddrStr), true);
 
 						unsigned char *aData = new unsigned char[sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr)];
 						CNetChunk Packet;

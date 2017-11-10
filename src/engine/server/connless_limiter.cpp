@@ -142,6 +142,16 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 	return false;
 }
 
+void CConnlessLimiter::OnExternalInfo(const void *pData, int DataSize)
+{
+	int Token;
+	char aAddrStr[NETADDR_MAXSTRSIZE];
+	mem_copy(&Token, (const char*)pData + sizeof(EXINFO_INFO), sizeof(int));
+	mem_copy(&aAddrStr, (const char*)pData + sizeof(EXINFO_INFO) + sizeof(int), DataSize - sizeof(EXINFO_INFO) + sizeof(int));
+	aAddrStr[DataSize - sizeof(EXINFO_INFO) + sizeof(int) + 1] = '\0';
+	dbg_msg("extdbg", "%i %s", Token, aAddrStr);
+}
+
 bool CConnlessLimiter::FilterActive()
 {
 	return m_FloodDetectionTime > time_get();

@@ -33,6 +33,7 @@ public:
 	void Tick();
 
 	bool AllowInfo(const NETADDR *pAddr, int Token, class CMap *pMap, NETSOCKET Socket, bool Info64, int Offset);
+	void OnExternalInfo(const void *pData, int DataSize);
 	bool FilterActive();
 	bool ExternInfoActive();
 
