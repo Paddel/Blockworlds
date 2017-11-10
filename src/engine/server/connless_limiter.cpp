@@ -59,13 +59,11 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 	char aQuery[QUERY_MAX_STR_LEN];
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 
-	m_InquiriesPerSecond++;
+	m_InquiriesPerSecond += 1 + (int)Info64;
 	if (m_LastMesurement < time_get())
 	{
 		if (m_InquiriesPerSecond >= FLOODING_NUM)
 			m_FloodDetectionTime = time_get() + time_freq() * 3;
-
-		dbg_msg(0, "%i", m_InquiriesPerSecond);
 
 		m_InquiriesPerSecond = 0;
 		m_LastMesurement = time_get() + time_freq();

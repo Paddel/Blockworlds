@@ -82,7 +82,7 @@ void CDatabase::ExecuteQuery(void *pData)
 		return;
 	}
 
-	int count = (int)pResult->row_count;
+	/*int count = (int)pResult->row_count;
 	for (int i = 0; i < count; i++)
 	{
 		CResultRow *pNewRow = new CResultRow();
@@ -100,7 +100,7 @@ void CDatabase::ExecuteQuery(void *pData)
 		}
 
 		pThreadData->m_lpResultRows.add(pNewRow);
-	}
+	}*/
 	mysql_close(pConn);
 
 	pThreadData->m_Working = false;
