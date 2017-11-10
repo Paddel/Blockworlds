@@ -73,16 +73,17 @@ void CDatabase::ExecuteQuery(void *pData)
 		return;
 	}
 
-	//pResult = mysql_store_result(pConn);
+	pResult = mysql_store_result(pConn);
 
-	//if (!pResult)//no Results. DONE
-	//{
-	//	mysql_close(pConn);
-	//	pThreadData->m_Working = false;
-	//	return;
-	//}
+	if (!pResult)//no Results. DONE
+	{
+		mysql_free_result(pResult);
+		mysql_close(pConn);
+		pThreadData->m_Working = false;
+		return;
+	}
 
-	/*int count = (int)pResult->row_count;
+	int count = (int)pResult->row_count;
 	for (int i = 0; i < count; i++)
 	{
 		CResultRow *pNewRow = new CResultRow();
@@ -100,7 +101,9 @@ void CDatabase::ExecuteQuery(void *pData)
 		}
 
 		pThreadData->m_lpResultRows.add(pNewRow);
-	}*/
+	}
+
+	mysql_free_result(pResult);
 	mysql_close(pConn);
 
 	pThreadData->m_Working = false;

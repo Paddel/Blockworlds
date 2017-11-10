@@ -67,10 +67,7 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 	}
 
 	if (m_FloodDetectionTime < time_get())
-	{
-		dbg_msg(0, "inactive");
 		return true;
-	}
 
 	net_addr_str(pAddr, aAddrStr, sizeof(aAddrStr), false);
 	str_format(aQuery, sizeof(aQuery), "SELECT address FROM address_verifier WHERE address='%s'", aAddrStr);
