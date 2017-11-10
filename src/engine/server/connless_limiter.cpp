@@ -117,6 +117,8 @@ void CConnlessLimiter::Tick()
 		NETADDR Addr;
 		int Bytes = net_udp_recv(m_Socket, &Addr, m_aExRecvBuffer, sizeof(m_aExRecvBuffer));
 
+		dbg_msg(0, "abc %i", Bytes);
+
 		// no more packets for now
 		if (Bytes <= 0)
 			break;
