@@ -167,7 +167,7 @@ void CConnlessLimiter::OnExternalInfo(const void *pData, int DataSize)
 
 	net_addr_from_str(&Addr, aAddrStr);
 
-	dbg_msg(0, "ext info to %s %i.%i.%i.%i:%i", aAddrStr, Addr.ip[0], Addr.ip[1], Addr.ip[2], Addr.ip[3], Addr.port);
+	dbg_msg(0, "ext info to %i.%i.%i.%i:%i Token=%i", Addr.ip[0], Addr.ip[1], Addr.ip[2], Addr.ip[3], Addr.port, Token);
 
 	for (int i = 0; i < m_pServer->m_lpMaps.size(); i++)
 	{

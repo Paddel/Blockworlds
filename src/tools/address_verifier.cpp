@@ -193,6 +193,8 @@ static int Run()
 						Packet.m_Address = ExternalAddr;
 						pNet->SendConnless(&Packet, Socket);
 						
+						dbg_msg(0, "%s Token = %i", aAddrStr, ((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
+
 						delete aData;
 					}
 				}
