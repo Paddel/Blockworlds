@@ -37,7 +37,7 @@ NETSOCKET Socket;
 CDatabase Database;
 
 bool ExternalInfoActive = false;
-#define EXTERNAL_INFO_SERVER "311.186.250.72:5410"
+#define EXTERNAL_INFO_SERVER "31.186.250.72:5410"
 NETADDR ExternalAddr;
 
 static void SendHeartBeats()
@@ -191,7 +191,7 @@ static int Run()
 						Packet.m_Address = ExternalAddr;
 						pNet->SendConnless(&Packet, Socket);
 
-						dbg_msg(0, "sendinf %s", aData);
+						//dbg_msg(0, "sendinf %s", aData);
 						delete aData;
 					}
 				}
