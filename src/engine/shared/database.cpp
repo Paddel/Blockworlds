@@ -11,7 +11,7 @@
 #include "database.h"
 
 #define MAX_THREADS 2000
-#define USE_LOCK 1
+#define USE_LOCK 0
 
 static LOCK s_QueryLock = 0x0;
 static int s_ReconnectVal = 0;
@@ -121,7 +121,7 @@ void CDatabase::QueryTestConnection(void *pData)
 {
 	CDatabase *pThis = (CDatabase *)pData;
 
-	if (USE_LOCK)
+	//if (USE_LOCK)
 		lock_wait(s_QueryLock);
 
 	MYSQL *pConn = mysql_init(0x0);
@@ -130,7 +130,7 @@ void CDatabase::QueryTestConnection(void *pData)
 	{
 		dbg_msg("Database", "Initialing connection to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
-		if (USE_LOCK)
+		//if (USE_LOCK)
 			lock_unlock(s_QueryLock);
 		return;
 	}
@@ -140,7 +140,7 @@ void CDatabase::QueryTestConnection(void *pData)
 		dbg_msg("Database", "Connecting to %s*%s failed: '%s'", pThis->m_aAddr, pThis->m_aSchema, mysql_error(pConn));
 		pThis->m_Connected = false;
 		mysql_close(pConn);
-		if (USE_LOCK)
+		//if (USE_LOCK)
 			lock_unlock(s_QueryLock);
 		return;
 	}
@@ -150,7 +150,7 @@ void CDatabase::QueryTestConnection(void *pData)
 	pThis->m_Connected = true;
 	mysql_close(pConn);
 
-	if (USE_LOCK)
+	//if (USE_LOCK)
 		lock_unlock(s_QueryLock);
 }
 

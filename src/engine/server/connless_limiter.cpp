@@ -27,10 +27,7 @@ CConnlessLimiter::CConnlessLimiter()
 void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUserData)
 {
 	if (Error == true)
-	{
-		dbg_msg(0, "error");
 		return;
-	}
 
 	CDatabase::CQueryData *pQueryResult = (CDatabase::CQueryData *)pQueryData;
 	CResultData *pResultData = (CResultData *)pUserData;
@@ -38,6 +35,8 @@ void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUser
 	if (pQueryResult->m_lpResultRows.size() == 1)
 		pResultData->m_pThis->m_pServer->SendServerInfo(&pResultData->m_Addr, pResultData->m_Token,
 			pResultData->m_pMap, pResultData->m_Socket, pResultData->m_Info64, pResultData->m_Offsets, true);
+
+	dbg_msg(0, "a %i", pQueryResult->m_lpResultRows.size() == 1);
 
 	delete pResultData;
 }
