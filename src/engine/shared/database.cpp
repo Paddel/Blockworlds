@@ -168,7 +168,7 @@ CDatabase::CDatabase()
 
 void CDatabase::Init(const char *pAddr, const char *pUserName, const char *pPass, const char *pSchema)
 {
-	if (s_QueryLock == 0x0 && USE_LOCK)
+	if (s_QueryLock == 0x0)
 		s_QueryLock = lock_create();
 
 	InitConnection(pAddr, pUserName, pPass, pSchema);
