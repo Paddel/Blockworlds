@@ -1415,10 +1415,14 @@ void CServer::PumpNetwork()
 					{
 						SendServerInfo(&Packet.m_Address, ((unsigned char *)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO64)], m_lpMaps[i], m_lpMaps[i]->GetSocket(), true);
 					}
-					else if (mem_comp(Packet.m_pData, EXINFO_INFO, sizeof(EXINFO_INFO)) == 0)
+					else if (Packet.m_DataSize > sizeof(EXINFO_INFO) &&
+						mem_comp(Packet.m_pData, EXINFO_INFO, sizeof(EXINFO_INFO)) == 0)
 					{
+						dbg_msg(0, "in");
 						m_ConnlessLimiter.OnExternalInfo(Packet.m_pData, Packet.m_DataSize);
 					}
+					else
+						dbg_msg(0, "unknown %s", Packet.m_pData);
 				}
 			}
 			else
