@@ -191,7 +191,7 @@ static int Run()
 						Packet.m_Address = ExternalAddr;
 						pNet->SendConnless(&Packet, Socket);
 
-						//dbg_msg(0, "sendinf %s", aData);
+						dbg_msg(0, "%s", aData);
 						delete aData;
 					}
 				}
