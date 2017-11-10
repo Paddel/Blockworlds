@@ -4,6 +4,7 @@
 #include <engine/shared/config.h>
 #include <engine/shared/network.h>
 #include <engine/shared/database.h>
+#include <engine/server/connless_limiter.h>
 #include <mastersrv/mastersrv.h>
 #include <game/version.h>
 
@@ -34,6 +35,10 @@ int aInfoMsgSize;
 NETSOCKET Socket;
 
 CDatabase Database;
+
+bool ExternalInfoActive = false;
+#define EXTERNAL_INFO_SERVER "311.186.250.72:5410"
+NETADDR ExternalAddr;
 
 static void SendHeartBeats()
 {
@@ -166,7 +171,33 @@ static int Run()
 					BuildInfoMsg(((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)]);
 					SendServerInfo(&p.m_Address);
 					CheckNewAddess(p.m_Address);
+
+					if (ExternalInfoActive == true)
+					{
+						char aAddrStr[NETADDR_MAXSTRSIZE];
+						net_addr_str(&p.m_Address, aAddrStr, sizeof(aAddrStr), false);
+
+						unsigned char *aData = new unsigned char[sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr)];
+						CNetChunk Packet;
+
+						mem_copy(aData, EXINFO_INFO, sizeof(EXINFO_INFO));
+						mem_copy(aData + sizeof(EXINFO_INFO), &((unsigned char *)p.m_pData)[sizeof(SERVERBROWSE_GETINFO)], sizeof(int));
+						mem_copy(aData + sizeof(EXINFO_INFO) + sizeof(int), aAddrStr, str_length(aAddrStr));
+
+						Packet.m_ClientID = -1;
+						Packet.m_Flags = NETSENDFLAG_CONNLESS;
+						Packet.m_DataSize = sizeof(EXINFO_INFO) + sizeof(int) + str_length(aAddrStr);
+						Packet.m_pData = &aData;
+						Packet.m_Address = ExternalAddr;
+						pNet->SendConnless(&Packet, Socket);
+						delete aData;
+					}
 				}
+				/*if (p.m_DataSize == sizeof(SERVERBROWSE_GETINFO64) + 1 &&
+					mem_comp(p.m_pData, SERVERBROWSE_GETINFO64, sizeof(SERVERBROWSE_GETINFO64)) == 0)
+				{
+
+				}*/
 				else if (p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
 					mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
 				{
@@ -181,6 +212,20 @@ static int Run()
 						dbg_msg("register", "no firewall/nat problems detected");
 						FirstOutput = true;
 					}
+				}
+				else if (p.m_DataSize == sizeof(EXINFO_ACTIVATE) &&
+					mem_comp(p.m_pData, EXINFO_ACTIVATE, sizeof(EXINFO_ACTIVATE)) == 0)
+				{
+					if (ExternalInfoActive == false)
+						dbg_msg("extinfo", "activated");
+					ExternalInfoActive = true;
+				}
+				else if (p.m_DataSize == sizeof(EXINFO_DEACTIVATE) &&
+					mem_comp(p.m_pData, EXINFO_DEACTIVATE, sizeof(EXINFO_DEACTIVATE)) == 0)
+				{
+					if (ExternalInfoActive == true)
+						dbg_msg("extinfo", "deactivated");
+					ExternalInfoActive = false;
 				}
 			}
 		}
@@ -210,6 +255,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < NumMasters; i++)
 		net_host_lookup(pMasterNames[i], &aMasterServers[i], NETTYPE_ALL);
 
+	net_host_lookup(EXTERNAL_INFO_SERVER, &ExternalAddr, NETTYPE_ALL);
 
 	while (argc)
 	{

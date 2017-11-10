@@ -7,6 +7,10 @@
 #define FLOODING_NUM 80
 #define MAX_QUERYING 700
 
+#define EXTERNAL_INFO_SERVER "78.47.53.206:8303"
+
+#define PORT 5410
+
 struct CResultData
 {
 	CConnlessLimiter *m_pThis;
@@ -26,6 +30,9 @@ CConnlessLimiter::CConnlessLimiter()
 	m_LastUnfilteredResult = 0;
 	m_LastFilteredResult = 0;
 	m_FilteredInquiries = 0;
+
+	m_LastExtInfoSent = 0;
+	m_ExternInfoTime = 0;
 }
 
 void CConnlessLimiter::ResultAddrCheck(void *pQueryData, bool Error, void *pUserData)
@@ -50,6 +57,20 @@ void CConnlessLimiter::Init(class CServer *pServer)
 {
 	m_pServer = pServer;
 
+	net_host_lookup(EXTERNAL_INFO_SERVER, &m_ExternalAddr, NETTYPE_ALL);
+	
+	NETADDR BindAddr;
+	mem_zero(&BindAddr, sizeof(BindAddr));
+	BindAddr.type = NETTYPE_ALL;
+	BindAddr.port = PORT;
+	m_Socket = net_udp_create(BindAddr, 0);
+	if (!m_Socket.type)
+	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "couldn't open socket. port %d might already be in use", PORT);
+		m_pServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+	}
+
 	m_Database.Init(g_Config.m_SvDbAccAddress, g_Config.m_SvDbAccName, g_Config.m_SvDbAccPassword, g_Config.m_SvDbAccSchema);
 }
 
@@ -65,9 +86,30 @@ void CConnlessLimiter::Tick()
 		if (m_InquiriesPerSecond >= FLOODING_NUM)
 			m_FloodDetectionTime = time_get() + time_freq() * 3;
 
+		if (m_InquiriesPerSecond >= MAX_QUERYING)
+			m_ExternInfoTime = time_get() + time_freq() * 30;
+
 		m_InquiriesPerSecond = 0;
 		m_FilteredInquiries = 0;
 		m_LastMesurement = time_get() + time_freq();
+	}
+
+	static bool s_LastExternInfoActive = false;
+	if (s_LastExternInfoActive != ExternInfoActive() || m_ExternInfoTime < time_get())
+	{
+		CNetChunk Packet;
+		Packet.m_ClientID = -1;
+		Packet.m_Flags = NETSENDFLAG_CONNLESS;
+		Packet.m_DataSize = sizeof(EXINFO_ACTIVATE);
+		if(ExternInfoActive() == true)
+			Packet.m_pData = &EXINFO_ACTIVATE;
+		else
+			Packet.m_pData = &EXINFO_DEACTIVATE;
+
+		Packet.m_Address = m_ExternalAddr;
+		m_pServer->m_NetServer.SendConnless(&Packet, m_Socket);
+
+		m_ExternInfoTime = time_get() + time_freq() * 10;
 	}
 }
 
@@ -103,4 +145,9 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 bool CConnlessLimiter::FilterActive()
 {
 	return m_FloodDetectionTime > time_get();
+}
+
+bool CConnlessLimiter::ExternInfoActive()
+{
+	return m_ExternInfoTime > time_get();
 }
