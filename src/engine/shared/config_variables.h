@@ -103,6 +103,7 @@ MACRO_CONFIG_INT(SvVpnDetectorBan, sv_vpndetector_ban, 1, 0, 1, CFGFLAG_SERVER, 
 MACRO_CONFIG_INT(SvNetThrottle, sv_net_throttle, 0, 0, 1, CFGFLAG_SERVER, "Waiting for incoming data as a cpu throttle")
 MACRO_CONFIG_INT(SvAutoThrottle, sv_auto_throttle, 200, 0, 9999999, CFGFLAG_SERVER, "Automaticly keeps the srv at a custom tick frequenze")
 MACRO_CONFIG_INT(SvAntiSpoof, sv_anti_spoof, 1, 0, 1, CFGFLAG_SERVER, "Prevent spoofed joining")
+MACRO_CONFIG_INT(SvConnlessLimier, sv_connless_limiter, 1, 0, 1, CFGFLAG_SERVER, "")
 
 
 MACRO_CONFIG_STR(EcBindaddr, ec_bindaddr, 128, "localhost", CFGFLAG_ECON, "Address to bind the external console to. Anything but 'localhost' is dangerous")

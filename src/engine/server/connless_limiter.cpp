@@ -135,6 +135,9 @@ bool CConnlessLimiter::AllowInfo(const NETADDR *pAddr, int Token, CMap *pMap, NE
 
 	m_InquiriesPerSecond += 1 + (int)Info64;
 
+	if (g_Config.m_SvConnlessLimier == 0)
+		return true;
+
 	if (FilterActive() == false)
 		return true;
 
