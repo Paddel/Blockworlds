@@ -304,7 +304,7 @@ int CNetServer::Recv(CNetChunk *pChunk, NETSOCKET Socket)
 					// client that wants to connect
 					if (!Found)
 					{
-						if (CheckSpoofing() == false || NumPlayersWithIp(&Addr) > 0 || Bytes == 12)
+						if (CheckSpoofing() == false || NumPlayersWithIp(&Addr) > 0)
 							TryAcceptNewClient(Socket, Addr, true);
 						else
 							SendSpoofCheck(Socket, Addr);
