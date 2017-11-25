@@ -72,7 +72,7 @@ int CNetServer::TryAcceptNewClient(NETSOCKET Socket, NETADDR& Addr, bool Direct)
 {
 	// only allow a specific number of players with the same ip
 	int Found = -1;
-	if (NumPlayersWithIp(&Addr) > m_MaxClientsPerIP)
+	if (NumPlayersWithIp(&Addr) >= m_MaxClientsPerIP)
 	{
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "Only %d players with the same IP are allowed", m_MaxClientsPerIP);
@@ -304,11 +304,8 @@ int CNetServer::Recv(CNetChunk *pChunk, NETSOCKET Socket)
 					// client that wants to connect
 					if (!Found)
 					{
-						if (CheckSpoofing() == false || NumPlayersWithIp(&Addr) > 0)
-						{
+						if (CheckSpoofing() == false || NumPlayersWithIp(&Addr) > 0 || Bytes == 12)
 							TryAcceptNewClient(Socket, Addr, true);
-							dbg_msg(0, "in");
-						}
 						else
 							SendSpoofCheck(Socket, Addr);
 					}
